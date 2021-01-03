@@ -173,6 +173,10 @@ class Game():
         self._end = True
         if switchColor:
             self.switch_player()
+        
+        for i in range(5):
+            for j in range(5):
+                self._board[i][j]['active'] = False
         print(self._color , " WINS!")
         self._sub_turn = 'end'
    
@@ -328,6 +332,14 @@ class Game():
     @property
     def sub_turn(self):
         return self._sub_turn
+    
+    @property
+    def turn(self):
+        return self._turn
+    
+    @property
+    def end(self):
+        return self._end
     
     @property
     def col(self):

@@ -7,6 +7,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 RED = (255, 0, 0)
 TEST_COLOR = (100,100,100)
+GOLD = (100, 84.3, 0)
 BLUE = (30 ,150 ,250)
 
 START_H = 100
@@ -43,7 +44,7 @@ def undo_button():
     pygame.draw.rect(screen,RED,
                              [175,450,120,60],3)
 
-def show_thinking(dot = 0):
+def show_thinking(dot = 3):
     elipse = '.' * dot
     pygame.draw.rect(screen,(50,50,50),
                              [175,450,120,60],0)
@@ -75,6 +76,12 @@ def draw_board():
             if board[i][j]['active'] == True:
                 pygame.draw.rect(screen,RED,
                              [V,H,50,50],3)
+            #Draw Winning Space
+            if (board[i][j]['level'] == 3 
+                and board[i][j]['occupant'] != 'O'):
+                pygame.draw.rect(screen,GOLD,
+                             [V,H,50,50],5)
+            
             # Draw height
             text = font.render(str(board[i][j]['level']),True,BLACK)
             screen.blit(text,(V + 20,H + 20))
@@ -94,6 +101,7 @@ clock = pygame.time.Clock()
 turn = 0
 counter = 0
 done = False
+show_board = False
 # -------- Main Program Loop -----------
 pygame.event.clear()
 while not done:
@@ -115,32 +123,35 @@ while not done:
     screen.fill(BLUE)
 
     # Visuals to show on screen 
-    if game1.sub_turn == 'move':
-        undo_button()
     
     # Show that AI is "thinking"
-    if game1.get_turn() > 4 and game1.color == 'G':
-        print(counter)
-        show_thinking(counter % 9 // 3 + 1)
-        game1.future_moves()
-        
     
-    #done  = game1.get_turn() > 4 and not game1.check_valid_move()
-    if event.type == pygame.MOUSEBUTTONDOWN:
+    if game1.end:
+        game1.end_game()
+        end_fanfare(game1.get_color()) #do something for endgame
+    elif game1.turn > 4 and game1.color == 'G':
+        show_thinking()
+        if show_board:
+            game1.future_moves()
+            show_board = False
+        else:
+            show_board = True
+    # Let player undo action
+    elif game1.sub_turn == 'move':
+        undo_button()  
+
+
+    if event.type == pygame.MOUSEBUTTONDOWN and not game1.end:
         pos = pygame.mouse.get_pos()
         x, y = map_numbers(pos[0], pos[1])
-        if game1.get_turn() > 4 and game1.color == 'G':
-            pass
-        elif check_valid(x) and check_valid(y):
+        if check_valid(x) and check_valid(y):
             game1.play_turn(x, y)
         elif check_undo(pos[0], pos[1]) and game1.sub_turn == 'move':
             game1.undo()    
     
     board = game1._board
     draw_board()
-    
-    if game1.get_end():
-        end_fanfare(game1.get_color()) #do something for endgame
+
     # --- Go ahead and update the screen with what we've drawn.
     pygame.display.flip()
  
