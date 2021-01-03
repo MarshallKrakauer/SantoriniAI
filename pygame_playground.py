@@ -6,8 +6,7 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 RED = (255, 0, 0)
-#TEST_COLOR = (100,100,100)
-TEST_COLOR = (50, 50, 50)
+TEST_COLOR = (100,100,100)
 BLUE = (30 ,150 ,250)
 
 START_H = 100
@@ -43,6 +42,13 @@ def undo_button():
     screen.blit(text,(175 + 40,450 + 20))
     pygame.draw.rect(screen,RED,
                              [175,450,120,60],3)
+
+def show_thinking(dot = 0):
+    elipse = '.' * dot
+    pygame.draw.rect(screen,(50,50,50),
+                             [175,450,120,60],0)
+    text = font.render("THINKING" + elipse,True,BLACK)
+    screen.blit(text,(160 + 40,450 + 20))
 
 def draw_board():
     for i in range(5):
@@ -86,7 +92,7 @@ pygame.display.set_caption("Santorini")
 clock = pygame.time.Clock()
 
 turn = 0
-debug = 0
+counter = 0
 done = False
 # -------- Main Program Loop -----------
 pygame.event.clear()
@@ -107,10 +113,16 @@ while not done:
     # If you want a background image, replace this clear with blit'ing the
     # background image.
     screen.fill(BLUE)
- 
+
+    # Visuals to show on screen 
     if game1.sub_turn == 'move':
         undo_button()
-
+    
+    # Show that AI is "thinking"
+    if game1.get_turn() > 4 and game1.color == 'G':
+        print(counter)
+        show_thinking(counter % 9 // 3 + 1)
+    
     #done  = game1.get_turn() > 4 and not game1.check_valid_move()
     if event.type == pygame.MOUSEBUTTONDOWN:
         pos = pygame.mouse.get_pos()
@@ -121,9 +133,8 @@ while not done:
             game1.play_turn(x, y)
         elif check_undo(pos[0], pos[1]) and game1.sub_turn == 'move':
             game1.undo()    
-        #print(game1)
     
-    board = game1.get_board()
+    board = game1._board
     draw_board()
     
     if game1.get_end():
@@ -132,7 +143,8 @@ while not done:
     pygame.display.flip()
  
     # --- Limit to 60 frames per second
-    clock.tick(20)
+    counter += 1
+    clock.tick(30)
  
 # Close the window and quit.
 pygame.quit()

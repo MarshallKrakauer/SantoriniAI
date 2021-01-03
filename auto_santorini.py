@@ -2,8 +2,11 @@ from tree_traversal import Node, level_order
 import copy
 import time
 import datetime as dt
+import random
 
 # This is a comment
+
+sys_random = random.SystemRandom()
 
 class Game():
     
@@ -17,6 +20,28 @@ class Game():
         self._turn = 1
         self._sub_turn = 'select'
         self._message = ''
+
+    def randomize_placement(self):
+        #random.seed(time.now)
+        li = []
+        spaces = [(i, j) for i in range(5) for j in range(5)]
+        for i, j in spaces:
+            adjacent = self.get_adjacent(i,j)
+            for space in adjacent:
+                li.append(((i,j), space))
+        
+        chose_spaces = False
+        while not chose_spaces:
+            sp1, sp2 = sys_random.sample(li, k = 1)[0]
+            x0, y0 = sp1
+            x1, y1 = sp2
+            print(x0, y0)
+            if (self._board[x0][y0]['occupant'] == 'O' and
+                self._board[x1][y1]['occupant'] == 'O'):
+                self._board[x0][y0]['occupant'] = 'G'
+                self._board[x1][y1]['occupant'] = 'G'
+                self._turn = 3
+                chose_spaces = True
 
     def evaluate_board(self):
         score = 0
@@ -277,8 +302,9 @@ class Game():
     def play_turn(self, x , y):
         # Gray Places
         if self._turn in [1,2]:
-            self.change_square(x, y)
-            self.place('G')
+            #self.change_square(x, y)
+            #self.place('G')
+            self.randomize_placement()
         # White Places
         elif self._turn in [3,4]:
             self.change_square(x,y)
@@ -327,11 +353,13 @@ class Game():
     def board(self, color):
         self._color = color
     
-    #ACCESSORS
-    
     def change_square(self, x, y):
         self._row = y
         self._col = x
+    
+    #ACCESSORS
+    
+
     
     def get_board(self):
         return self._board
