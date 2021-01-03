@@ -124,11 +124,13 @@ while not done:
 
     # Visuals to show on screen 
     
-    # Show that AI is "thinking"
+    
     
     if game1.end:
         game1.end_game()
         end_fanfare(game1.get_color()) #do something for endgame
+    # Show that AI is "thinking"
+
     elif game1.turn > 4 and game1.color == 'G':
         show_thinking()
         if show_board:
@@ -137,6 +139,7 @@ while not done:
         else:
             show_board = True
     # Let player undo action
+            
     elif game1.sub_turn == 'move':
         undo_button()  
 
