@@ -122,13 +122,15 @@ while not done:
     if game1.get_turn() > 4 and game1.color == 'G':
         print(counter)
         show_thinking(counter % 9 // 3 + 1)
+        game1.future_moves()
+        
     
     #done  = game1.get_turn() > 4 and not game1.check_valid_move()
     if event.type == pygame.MOUSEBUTTONDOWN:
         pos = pygame.mouse.get_pos()
         x, y = map_numbers(pos[0], pos[1])
         if game1.get_turn() > 4 and game1.color == 'G':
-            game1.future_moves()
+            pass
         elif check_valid(x) and check_valid(y):
             game1.play_turn(x, y)
         elif check_undo(pos[0], pos[1]) and game1.sub_turn == 'move':
