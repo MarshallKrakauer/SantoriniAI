@@ -1,18 +1,41 @@
-from tree_traversal import Node, level_order
+"""Santorini Game with AI"""
 import copy
-import time
-import datetime as dt
 import random
+from tree_traversal import Node
 
-# This is a comment
-
-sys_random = random.SystemRandom()
+SYS_RANDOM = random.SystemRandom()
 
 class Game():
-    
+    """
+    Implentation of the board game Santorini using Pygame.
+
+    White player chooses actions, while gray turns are automated.
+
+    Attributes
+
+    board : list
+        5 x 5 board, each space contains level, occupant, and active bool
+        active meaning it can be chosen as a space
+    row : int
+        current row chosen by player
+    col : int
+        current column chosen by player
+    end : bool
+        true if game has ended
+    color : char
+        player color, G(ray) or W(hite)
+    turn : int
+        which turn the game is on
+    sub_turn : str
+        action within a turn: place, select, move, or build
+    message : str
+        message given to player when they make an invalid choice
+        not currently in action on on the pygame board
+    """
+
     def __init__(self):
-        self._board = [[{'level' : 0, 'occupant' : 'O', 'active' : False} 
-                       for i in range(0,5)] for j in range(0,5)]
+        self._board = [[{'level': 0, 'occupant': 'O', 'active': False}
+                        for i in range(5)] for j in range(5)]
         self._row = 0
         self._col = 0
         self._end = False
@@ -21,188 +44,357 @@ class Game():
         self._sub_turn = 'select'
         self._message = ''
 
+    def __str__(self):
+        """
+        Create ASCII representation of game state.
+
+        Returns
+        -------
+        return_val : str
+            ASCII represntation of the board
+
+        """
+        return_val = 'score: ' + str(self.evaluate_board()) + ' \n'
+        for i in range(5):
+            if i == 0:
+                return_val += "    x0 x1 x2 x3 x4\n"
+                return_val += "    --------------\n"
+            for j in range(5):
+                if j == 0:
+                    return_val += 'y' + str(j) + '| '
+                return_val += (str(self._board[i][j]['level']) +
+                               str(self._board[i][j]['occupant']) +
+                               ' ')
+            return_val += '\n'
+        return return_val
+
+    def change_square(self, x_coor, y_coor):
+        """
+        Change space.
+
+        Parameters
+        ----------
+        x_coor : int
+            x-coordinate ie column value
+        y_coor : int
+            y-coordinate ie row value
+        """
+        self._col = x_coor
+        self._row = y_coor
+
     def randomize_placement(self):
-        #random.seed(time.now)
-        li = []
-        spaces = [(i, j) for i in range(5) for j in range(5)]
-        for i, j in spaces:
-            adjacent = self.get_adjacent(i,j)
+        """Randomly place the two gray pieces on the board."""
+        potential_li = []  # list of potential spaces
+
+        all_spaces = [(i, j) for i in range(5) for j in range(5)]
+
+        # For all spaces, get the adjacent space
+        for i, j in all_spaces:
+            adjacent = self.get_adjacent(i, j)
             for space in adjacent:
-                li.append(((i,j), space))
-        
+                potential_li.append(((i, j), space))
+
+        # Choose random spaces until we have found one where both
+        # spots are open
         chose_spaces = False
         while not chose_spaces:
-            sp1, sp2 = sys_random.sample(li, k = 1)[0]
-            x0, y0 = sp1
-            x1, y1 = sp2
-            print(x0, y0)
-            if (self._board[x0][y0]['occupant'] == 'O' and
-                self._board[x1][y1]['occupant'] == 'O'):
-                self._board[x0][y0]['occupant'] = 'G'
-                self._board[x1][y1]['occupant'] = 'G'
+            space1, space2 = SYS_RANDOM.sample(potential_li, k=1)[0]
+            x_0, y_0 = space1
+            x_1, y_1 = space2
+            if (self._board[x_0][y_0]['occupant'] == 'O' and
+                    self._board[x_1][y_1]['occupant'] == 'O'):
+                self._board[x_0][y_0]['occupant'] = 'G'
+                self._board[x_1][y_1]['occupant'] = 'G'
                 self._turn = 3
                 chose_spaces = True
 
     def evaluate_board(self):
+        """
+        Give numeric score to game.
+
+        Gives a score to the board based on position of the pices
+        Used to for the alpha beta pruning algorith
+
+        Returns
+        -------
+        score : int
+            score of the board needed for alpha-beta pruning
+            higher score is better
+        """
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self._board[i][j]
             adjacent_spaces = self.get_adjacent(i, j)
+
+            # 3^level for occupied spaces, 2^level for adjacent spaces
+            # in both cases, negative points given for opponent pieces
             if space['occupant'] == 'G':
-                score += 3  ** space['level']
+                score += 3 ** space['level']
             elif space['occupant'] == 'W':
                 score -= 3 ** space['level']
             for k, l in adjacent_spaces:
                 space = self._board[k][l]
                 if space['occupant'] == 'G':
-                    score += 2  ** (space['level'] % 4)
+                    score += 2 ** (space['level'] % 4)
                 elif space['occupant'] == 'W':
                     score -= 2 ** (space['level'] % 4)
-        return score        
-    
-    def get_adjacent(self,x,y):
-        spaceLi = [(x - 1, y + 1), (x, y + 1), (x + 1, y + 1),
-                     (x - 1, y), (x + 1 , y ),
-                     (x - 1, y - 1), (x, y - 1), (x + 1, y- 1)]
-        spaceLi = list(filter(
-                        lambda t: t[0] >= 0 and t[0] <= 4 
-                              and t[1] >= 0 and t[1] <= 4,
-                   spaceLi))
-        
-        return spaceLi
-    
-    def create_children(self, color = 'G', level = 0):
+        return score
+
+    def get_adjacent(self, x_coor, y_coor):
+        """
+        Get spaces surrounding the passed one.
+
+        Parameters
+        ----------
+        x_coor : int
+            x_coor-coordinate ie column value
+        y_coor : int
+            y_coor-coordinate ie row value
+
+        Returns
+        -------
+        spaceLi : li
+            list of spaces adjacent to the one provided through
+            x_coor and y_coor
+        """
+        space_list = [(x_coor - 1, y_coor + 1),
+                      (x_coor, y_coor + 1),
+                      (x_coor + 1, y_coor + 1),
+                      (x_coor - 1, y_coor),
+                      (x_coor + 1, y_coor),
+                      (x_coor - 1, y_coor - 1),
+                      (x_coor, y_coor - 1),
+                      (x_coor + 1, y_coor - 1)]
+        space_list = list(filter(
+            lambda t: t[0] >= 0 and t[0] <= 4
+            and t[1] >= 0 and t[1] <= 4,
+            space_list))
+
+        return space_list
+
+    def create_children(self, color='G', level=0):
+        """
+        Add list of possible moves to game state.
+
+        Parameters
+        ----------
+        color : char, optional
+            Player color, G(ray) or W(hite). The default is 'G'.
+        level : char, optional
+            what level of the tree board takes place on
+            Root node is level 0, its children are level 1,
+            children of those children are level 2 etc. The default is 0.
+
+        Returns
+        -------
+        return_li : list
+            Children of that node
+        """
         return_li = []
-        buildLi = []
-        moveLi = []     
-        spotLi = [(i,j) for i in range(5) for j in range(5) if 
-                   self._board[i][j]['occupant'] == color]
-        for spot in spotLi:
+        build_list = []
+        spot_list = [(i, j) for i in range(5) for j in range(5) if
+                     self._board[i][j]['occupant'] == color]
+
+        # Check both of the spaces occupied by the player
+        for spot in spot_list:
             i, j = spot
-            moveLi = self.get_adjacent(i,j) # available moves
-            
-            #check each possible move
-            for m in moveLi:
-                newGame = copy.deepcopy(self)
-                newGame._color = color
-                newGame.select(newGame.color, i, j)
-                if newGame.move(x = m[0], y = m[1]):
-                    buildLi = self.get_adjacent(newGame.col,
-                                                newGame.row)
+
+            # check each possible move
+            for m in self.get_adjacent(i, j):
+                new_game = copy.deepcopy(self)
+                new_game.color = color
+                new_game.select(new_game.color, i, j)
+                if new_game.move(m[0], m[1]):
+                    build_list = self.get_adjacent(new_game.col,
+                                                   new_game.row)
                 # given a legal move, check for each possible build
-                    for b in buildLi:
-                        buildGame = copy.deepcopy(newGame)
-                        if buildGame.build(x = b[0], y = b[1]):
+                    for b in build_list:
+                        buildGame = copy.deepcopy(new_game)
+                        if buildGame.build(b[0], b[1]):
                             nodeGame = copy.deepcopy(buildGame)
                             currentNode = Node(
-                                value = nodeGame.evaluate_board(),
-                                children = [],
-                                state = nodeGame,
-                                level = level + 1)
+                                value=nodeGame.evaluate_board(),
+                                children=[],
+                                state=nodeGame,
+                                level=level + 1)
                             return_li.append(currentNode)
         return return_li
-    
+
     def future_moves(self):
-        gameCopy = copy.deepcopy(self)        
-        rootNode = Node(value = gameCopy.evaluate_board(),
-                        state = gameCopy,
-                        children = [],
-                        level = 0)
-        rootNode.children = gameCopy.create_children('G',0)
+        """
+        Make automatic turn.
+
+        Uses alpha-beta pruning to selection best turn
+        and update game object to that ideal turn
+        """
+        gameCopy = copy.deepcopy(self)
+        rootNode = Node(value=gameCopy.evaluate_board(),
+                        state=gameCopy,
+                        children=[],
+                        level=0)
+        rootNode.children = gameCopy.create_children('G', 0)
         for child in rootNode.children:
             childCopy = copy.deepcopy(child.state)
             child.children = childCopy.create_children('W', 1)
             print(child.children)
-        
+
         best_state = rootNode.alpha_beta_search()
-        self._board = best_state._board
-        self._end = best_state._end
+        self._board = best_state.board
+        self._end = best_state.end
         if not self._end:
             self.switch_player()
             self.make_color_active()
             self._sub_turn = 'select'
-        return True            
-        
-    def __str__(self):
-        return_val = 'score: ' + str(self.evaluate_board()) + ' \n'
-        for y in range(5):
-            if y == 0: 
-                return_val += "    x0 x1 x2 x3 x4\n"
-                return_val += "    --------------\n"
-            for x in range(5):
-                if x == 0:
-                    return_val += 'y' + str(y) + '| '
-                return_val += (str(self._board[x][y]['level']) +
-                              str(self._board[x][y]['occupant']) +
-                              ' ')
-            return_val += '\n' 
-        return return_val
-    
-    ### HELPER FUNCTIONS
-    
-    def is_valid_num(self,num):
-        return num > -1 and num < 5
-    
+
+    # HELPER FUNCTIONS
+
+    def is_valid_num(self, num):
+        """
+        Check if x or y falls on board.
+
+        Parameters
+        ----------
+        num : str
+            row or column value
+
+        Returns
+        -------
+        bool
+            true if its a valid number [0,4]
+            false otherwise
+        """
+        return -1 < num < 5
+
     def undo(self):
+        """Undo select action."""
         self._sub_turn = 'select'
         self.make_color_active()
-    
-    def is_valid_move_space(self, x, y):
-        height = self._board[x][y]['level']
-        spaceList = self.get_adjacent(x, y)
-        for i,j in spaceList:
+
+    def is_valid_move_space(self, x_coor, y_coor):
+        """
+        Check if user made valid movement.
+
+        Parameters
+        ----------
+        x_coor : int
+            x coordinate of space
+        y_coor : int
+            y coordinate of space
+
+        Returns
+        -------
+        bool
+            true if move is valid, false if move is invalid
+            for a move to be valid, it must be to an unoccupied space and
+            no more than one level increase
+        """
+        height = self._board[x_coor][y_coor]['level']
+        spaceList = self.get_adjacent(x_coor, y_coor)
+        for i, j in spaceList:
             if (
-            self.is_valid_num(i) and self.is_valid_num(j) and
-            self._board[i][j]['occupant'] == 'O'
-            and self._board[i][j]['level'] - height <= 1
+                    self.is_valid_num(i) and self.is_valid_num(j) and
+                    self._board[i][j]['occupant'] == 'O'
+                    and self._board[i][j]['level'] - height <= 1
             ):
                 return True
         return False
-    
-    def is_valid_build_space(self, x, y):
-        spaceList = self.get_adjacent(x, y)
-        for i,j in spaceList:
-            if (
-            self.is_valid_num(i) and self.is_valid_num(j) and
-            self._board[i][j]['occupant'] == 'O'):
+
+    def is_valid_build_space(self, x_coor, y_coor):
+        """
+        Check is user can build on chosen space.
+
+        Parameters
+        ----------
+        x_coor : int
+            x coordinate of space
+        y_coor : int
+            y coordinate of space
+
+        Returns
+        -------
+        bool
+            true if player can build there, false otherwise
+            player can build on any unoccupied adjacent space
+            not that spaces with a dome are considered occupied, with
+            an occpant of X
+        """
+        spaceList = self.get_adjacent(x_coor, y_coor)
+        for i, j in spaceList:
+            if (self.is_valid_num(i) and self.is_valid_num(j) and
+                    self._board[i][j]['occupant'] == 'O'):
                 return True
-        return False    
-    
-    def end_game(self, switchColor = False): 
+        return False
+
+    def end_game(self, switchColor=False):
+        """
+        End game and prevent further moves.
+
+        Declare the games winner and makes all spaces inactive
+
+        Parameters
+        ----------
+        switchColor : bool, optional
+            switches to opponent before declaring winner
+            relevant for secondary win condition (winning through
+            opponent having no valid turns). The default is False.
+        """
         self._end = True
         if switchColor:
             self.switch_player()
-        
+
+        # make all space inactive
         for i in range(5):
             for j in range(5):
                 self._board[i][j]['active'] = False
-        print(self._color , " WINS!")
         self._sub_turn = 'end'
-   
+
     def switch_player(self):
+        """Change to opponent's color."""
         if self._color == 'G':
             self._color = 'W'
         else:
             self._color = 'G'
-    
-    #RED BOXES THAT HIGHLIGHT ACTIVE TURNS
-    
+
     def make_color_active(self):
-        for y in range(5):
-            for x in range(5):
-                if self._board[x][y]['occupant'] == self._color:
-                    self._board[x][y]['active'] = True
+        """
+        Mark pieces as active.
+
+        For a given player color, mark all the spaces with that
+        player color as active
+
+        """
+        for j in range(5):
+            for i in range(5):
+                if self._board[i][j]['occupant'] == self._color:
+                    self._board[i][j]['active'] = True
                 else:
-                    self._board[x][y]['active'] = False
-    
-    def make_choice_active(self, x , y):
+                    self._board[i][j]['active'] = False
+
+    def make_choice_active(self, x_coor, y_coor):
+        """
+        Mark the piece a player has chosen as active.
+
+        Parameters
+        ----------
+        x : int
+            x coordinate of chosen piece
+        y : int
+            y coordinate of chosen piece
+
+        """
         for j in range(5):
             for i in range(5):
                 self._board[i][j]['active'] = \
-                    i == x and j == y
-                    
+                    i == x_coor and j == y_coor
+
     def make_exterior_active(self):
+        """
+        Mark build-able spaces.
+
+        after a player moves, marks the surrounding pieces
+        where they can build as active
+        """
         # Check if each space represents a valid place to build
         for j in range(5):
             for i in range(5):
@@ -211,179 +403,221 @@ class Game():
                     abs(j - self._row) <= 1 and \
                     not(i == self._col and j == self._row) and \
                     self._board[i][j]['occupant'] == 'O'
-    
-    #CHECK IF USER HAS AVAILABLE MOVES
-    
+
+    # CHECK IF USER HAS AVAILABLE MOVES
+
     def check_move_available(self):
+        """End game if player has no available moves."""
         for j in range(5):
             for i in range(5):
                 if (
-                self._board[i][j]['occupant'] == self._color and
-                self.is_valid_move_space(i,j)):
-                    return # end function if we have a valid space
+                        self._board[i][j]['occupant'] == self._color and
+                        self.is_valid_move_space(i, j)):
+                    return  # end function if we have a valid space
         self.end_game(True)
-        
+
     def check_build_available(self):
+        """End game if player has no available builds."""
         for j in range(5):
             for i in range(5):
                 if (
-                self._board[i][j]['occupant'] == self._color and
-                self.is_valid_build_space(i,j)):
-                    return # end function if we have a valid space
+                        self._board[i][j]['occupant'] == self._color and
+                        self.is_valid_build_space(i, j)):
+                    return  # end function if we have a valid space
         self.end_game(True)
-        
+
     # SUB-TURN PIECES
-        
-    def place(self, char): # Only runs at beginning of game
-        y = self._row
-        x = self._col
-        if(self._board[x][y]['occupant'] != 'O'):
+
+    def place(self, color):  # Only runs at beginning of game
+        """
+        Place two pieces of given color on the board.
+
+        Parameters
+        ----------
+        color : str
+            player color that will be placed on the board
+        """
+        y_coor = self._row
+        x_coor = self._col
+        if self._board[x_coor][y_coor]['occupant'] != 'O':
             self._message = "Occupied Space"
         else:
-            self._board[x][y]['occupant'] = char
+            self._board[x_coor][y_coor]['occupant'] = color
             self._turn += 1
 
-    def select(self, color,x,y):
-        if self._board[x][y]['occupant'] != color:
+    def select(self, color, x_coor, y_coor):
+        """
+        Choose piece to move.
+
+        Parameters
+        ----------
+        color : str
+            Color of current player
+        x_coor : int
+            x coordinate of spot on board
+        y_coor : int
+            y coordinate of spont on board
+
+        Returns
+        -------
+        bool
+            True/false if move is valid
+
+        """
+        if self._board[x_coor][y_coor]['occupant'] != color:
             self._message = "You don't own that piece"
-            return False
         else:
-            self._col = x
-            self._row = y
+            self._col = x_coor
+            self._row = y_coor
             self.make_choice_active(self._col, self._row)
             self._sub_turn = 'move'
             return True
-    
-    def move(self, x, y):
-        prev_row = self._row # y
-        prev_col = self._col # x
-        if abs(y - prev_row) > 1 or \
-           abs(x - prev_col) > 1:
+        return False
+
+    def move(self, x_coor, y_coor):
+        """
+        Move piece to new spot on board.
+
+        Parameters
+        ----------
+        x_coor : int
+            x-coordinate
+        y_coor : int
+            y-coordinate
+
+        Returns
+        -------
+        bool
+            True if move is valid
+        """
+        prev_col = self._col  # x
+        prev_row = self._row  # y
+        if abs(y_coor - prev_row) > 1 or \
+           abs(x_coor - prev_col) > 1:
             self._message = "That space is too far away"
-        elif y == prev_row and x == prev_col:
+        elif y_coor == prev_row and x_coor == prev_col:
             self._message = "You must move"
-        elif self._board[x][y]['occupant'] != 'O':
+        elif self._board[x_coor][y_coor]['occupant'] != 'O':
             self._message = "That spot is taken. Please choose another"
-        elif self._board[x][y]['level']  - \
-             self._board[prev_col][prev_row]['level']> 1:
+        elif self._board[x_coor][y_coor]['level'] - \
+                self._board[prev_col][prev_row]['level'] > 1:
             self._message = "That spot is too high, please choose another"
         else:
-            self._board[x][y]['occupant'] = self._color
+            self._board[x_coor][y_coor]['occupant'] = self._color
             self._board[prev_col][prev_row]['occupant'] = 'O'
-            if self._board[x][y]['level'] == 3:
+            if self._board[x_coor][y_coor]['level'] == 3:
                 self.end_game()
-            self._col = x
-            self._row = y
+            self._col = x_coor
+            self._row = y_coor
             self._sub_turn = 'build'
             self.make_exterior_active()
-            '''
-            self.switch_player()
-            self.make_color_active()
-            self._sub_turn = 'select'
-            '''
             return True
         return False
-    
-    def build(self, x, y):
-        if abs(y - self._row) > 1 or \
-           abs(x - self._col) > 1:
-               self._message = "That space is too far away"
-        elif y == self._row and x == self._col:
+
+    def build(self, x_coor, y_coor):
+        """
+        Build on a space.
+
+        Parameters
+        ----------
+        x_coor : int
+            x coordinate
+        y_coor : int
+            y coordinate
+
+        Returns
+        -------
+        bool
+            True if move is valid
+        """
+        if abs(y_coor - self._row) > 1 or \
+           abs(x_coor - self._col) > 1:
+            self._message = "That space is too far away"
+        elif y_coor == self._row and x_coor == self._col:
             self._message = "Can't build on your own space"
-        elif self._board[x][y]['occupant'] != 'O':
+        elif self._board[x_coor][y_coor]['occupant'] != 'O':
             self._message = "That spot is taken. Please choose another\n"
-            self._row = y
-            self._col = x
+            self._row = y_coor
+            self._col = x_coor
         else:
-            self._board[x][y]['level'] += 1
-            if(self._board[x][y]['level'] == 4):
-                self._board[x][y]['occupant'] = 'X'
+            self._board[x_coor][y_coor]['level'] += 1
+            if self._board[x_coor][y_coor]['level'] == 4:
+                self._board[x_coor][y_coor]['occupant'] = 'X'
             self._sub_turn = 'switch'
             return True
         return False
-    # THE PRIMARY FUNCTION THAT PLAYS THE ACTUAL GAME
-    
-    def play_turn(self, x , y):
+
+    def play_turn(self, x_coor, y_coor):
+        """
+        Run through a turn.
+
+        For turns 1-4, just places piece. After that, goes through
+        each part of turn: select, move, build, switch
+
+        Parameters
+        ----------
+        x_coor : int
+            x coordinate
+        y_coor : int
+            y coordinate
+        """
         # Gray Places
-        if self._turn in [1,2]:
-            #self.change_square(x, y)
-            #self.place('G')
+        if self._turn in [1, 2]:
+            #self.change_square(x_coor, y_coor)
+            # self.place('G')
             self.randomize_placement()
         # White Places
-        elif self._turn in [3,4]:
-            self.change_square(x,y)
+        elif self._turn in [3, 4]:
+            self.change_square(x_coor, y_coor)
             self.place('W')
-            
+
         # Playing the regular game
         elif self._turn > 4 and not self._end:
-            if self._sub_turn == 'select': #Selecting which piece to move
+            if self._sub_turn == 'select':  # Selecting which piece to move
                 self.make_color_active()
-                self.select(self._color, x, y)
-            elif self._sub_turn == 'move': #Moving that piece
+                self.select(self._color, x_coor, y_coor)
+            elif self._sub_turn == 'move':  # Moving that piece
                 self.check_move_available()
-                self.move(x,y)
+                self.move(x_coor, y_coor)
             elif self._sub_turn == 'build':
-                self.build(x,y)
+                self.build(x_coor, y_coor)
                 if self._sub_turn == 'switch':
                     self.switch_player()
                     self.make_color_active()
                     self._sub_turn = 'select'
-                    
+
     @property
     def sub_turn(self):
         return self._sub_turn
-    
+
     @property
     def turn(self):
         return self._turn
-    
+
     @property
     def end(self):
         return self._end
-    
+
     @property
     def col(self):
         return self._col
-    
+
     @property
     def row(self):
         return self._row
-    
+
     @property
     def color(self):
         return self._color
-    
+
     @property
     def board(self):
         return self._board
-    
+
     @board.setter
     def board(self, board):
         self._board = board
-    
-    @color.setter
-    def board(self, color):
-        self._color = color
-    
-    def change_square(self, x, y):
-        self._row = y
-        self._col = x
-    
-    #ACCESSORS
-    
 
-    
-    def get_board(self):
-        return self._board
-    
-    def get_color(self) : 
-        return self._color
-    
-    def get_turn(self):
-        return self._turn
-    
-    def get_sub_turn(self):
-        return self._sub_turn
-    
-    def get_end(self): 
-        return self._end
+    @color.setter
+    def color(self, color):
+        self._color = color
