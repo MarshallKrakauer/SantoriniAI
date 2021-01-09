@@ -588,36 +588,45 @@ class Game():
 
     @property
     def sub_turn(self):
+        """Return sub_turn."""
         return self._sub_turn
 
     @property
     def turn(self):
+        """Return turn."""
         return self._turn
 
     @property
     def end(self):
+        """Return end variable."""
         return self._end
 
     @property
     def col(self):
+        """Return col(umn) variable."""
         return self._col
 
     @property
     def row(self):
+        """Return row variable."""
         return self._row
 
     @property
     def color(self):
+        """Return color variable."""
         return self._color
 
     @property
     def board(self):
+        """Return board in its current state."""
         return self._board
 
     @board.setter
     def board(self, board):
+        """Change board, used for AI's moves."""
         self._board = board
 
     @color.setter
     def color(self, color):
+        """Set color of game."""
         self._color = color
