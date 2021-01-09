@@ -1,3 +1,4 @@
+# pylint: disable=E1101
 """pygame interaction with Santorini game."""
 
 import pygame
