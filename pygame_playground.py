@@ -29,7 +29,8 @@ font = pygame.font.SysFont('Calibri', 16, True, False)
 
 class Button(pygame.sprite.Sprite):
     # Curtosy of https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html
-    def __init__(self, center_position, text, font_size, bg_rgb, text_rgb):
+    def __init__(self, center_position, text, font_size, bg_rgb, text_rgb,
+                 multiplier = 1.2):
         self.mouse_over = False  # indicates if the mouse is over the element
          # default image
         default_image = create_surface_with_text(
@@ -38,7 +39,7 @@ class Button(pygame.sprite.Sprite):
         # image when hovering over
         highlighted_image = create_surface_with_text(
             text=text,
-            font_size=font_size * 1.2, text_rgb=text_rgb, bg_rgb=bg_rgb)
+            font_size=font_size * multiplier, text_rgb=text_rgb, bg_rgb=bg_rgb)
 
         self.images = [default_image, highlighted_image]
 
@@ -99,11 +100,6 @@ def check_valid(num):
     """Return true if valid board spot."""
     return -1 < num < 5
 
-def check_undo(x_coor, y_coor):
-    """Return true if undo button was selected."""
-    return (BOARD_LEFT_EDGE + 75 <= x_coor <= BOARD_LEFT_EDGE + 190
-            and BOARD_TOP_EDGE + 350 <= y_coor <= BOARD_TOP_EDGE + 400)
-
 
 def end_fanfare(color):
     """Produce visual showing who won the game."""
@@ -112,23 +108,17 @@ def end_fanfare(color):
     text = font.render("WINNER: " + color, True, BLACK)
     SCREEN.blit(text, (175 + 20, 450 + 20))
 
-def undo_button():
-    """Show undo button when player can select piece."""
-    x, y = pygame.mouse.get_pos()
-    if check_undo(x,y):
-        undo_font = pygame.font.SysFont('Calibri', 24, True, False)
-        #pygame.draw.rect(SCREEN, (50, 50, 50),
-        #             BUTTON_MEASURES, 0)
-        text = undo_font.render("UNDO", True, BLACK)
-        SCREEN.blit(text, (BUTTON_MEASURES[0] + 45/2, BUTTON_MEASURES[1] + 20))
-    else:
-        undo_font = pygame.font.SysFont('Calibri', 12, True, False)
-        #pygame.draw.rect(SCREEN, (50, 50, 150),
-        #             BUTTON_MEASURES, 0)
-        text = undo_font.render("UNDO", True, BLACK)
-        SCREEN.blit(text, (BUTTON_MEASURES[0] + 45, BUTTON_MEASURES[1] + 20))
-    
-    #pygame.draw.rect(SCREEN, RED,BUTTON_MEASURES, 3)
+def check_undo(x_coor, y_coor):
+    """Return true if undo button was selected."""
+    return (BOARD_LEFT_EDGE + 75 <= x_coor <= BOARD_LEFT_EDGE + 180
+            and BOARD_TOP_EDGE + 350 <= y_coor <= BOARD_TOP_EDGE + 375)
+
+def make_undo_button():
+    """Show undo button and allow user to choose it."""
+    undo_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
+                         "UNDO", 30, TEST_COLOR, BLACK, 1.5)
+    undo_button.update(pygame.mouse.get_pos())
+    undo_button.draw()
 
 def show_thinking(dot=3):
     """Show a "THINKING..." box when AI plays turn."""
@@ -175,33 +165,28 @@ def draw_board(board):
 
 def title_screen():
     """Show title screen before playing."""
+    counter = 0
     
     start_button = Button(
-        center_position=(200,200),
-        font_size=20,
+        center_position=(400, 600/3),
+        font_size=75,
         bg_rgb=BLUE,
-        text_rgb=WHITE,
-        text="Hello World",
+        text_rgb=BLACK,
+        text="Start",
+        multiplier = 1
     )
     
-    end_it = False
-    myname = "Santorini"
-    while end_it==False:
+    end_loop = False
+    while not end_loop:
         SCREEN.fill(WHITE)
-        myfont=pygame.font.SysFont("Britannic Bold", 40)
-        nlabel=myfont.render("Welcome "+myname+" Start Screen", 1, (255, 0, 0))
-        start_button.update(pygame.mouse.get_pos())
-        start_button.draw()
-        
-        for event in pygame.event.get():
-            if event.type== pygame.MOUSEBUTTONDOWN:
-                end_it=True
-        SCREEN.blit(nlabel,(800/2,400/2))
+        if counter % 3000 < 1800:
+            start_button.update(pygame.mouse.get_pos())
+            start_button.draw()        
+            for event in pygame.event.get():
+                if event.type== pygame.MOUSEBUTTONDOWN:
+                    end_loop = True
+        counter += 1
         pygame.display.flip()
-
-def title_alt():
-    pass
-    
 
 def play_game(game):
     """
@@ -244,7 +229,7 @@ def play_game(game):
                 show_board = True
         # Allow undo during a select action
         elif game.sub_turn == 'move':
-            undo_button()
+            make_undo_button()
 
         # Allow player to select actions
         if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
