@@ -33,16 +33,22 @@ class Game():
         not currently in action on on the pygame board
     """
 
-    def __init__(self):
+    def __init__(self, start_player):
         self._board = [[{'level': 0, 'occupant': 'O', 'active': False}
                         for i in range(5)] for j in range(5)]
         self._row = 0
         self._col = 0
         self._end = False
-        self._color = 'G'
         self._turn = 1
         self._sub_turn = 'select'
         self._message = ''
+        
+        if start_player != 'W':
+            self._color = 'G'
+        else:
+            self._color = 'W'
+            
+        self._player_list = {'G' : 'human', 'W' : 'alphabeta'}
 
     def __str__(self):
         """
@@ -85,12 +91,11 @@ class Game():
     def randomize_placement(self):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
-
         all_spaces = [(i, j) for i in range(5) for j in range(5)]
 
         # For all spaces, get the adjacent space
         for i, j in all_spaces:
-            adjacent = self.get_adjacent(i, j)
+            adjacent = get_adjacent(i, j)
             for space in adjacent:
                 potential_li.append(((i, j), space))
 
@@ -103,8 +108,8 @@ class Game():
             x_1, y_1 = space2
             if (self._board[x_0][y_0]['occupant'] == 'O' and
                     self._board[x_1][y_1]['occupant'] == 'O'):
-                self._board[x_0][y_0]['occupant'] = 'G'
-                self._board[x_1][y_1]['occupant'] = 'G'
+                self._board[x_0][y_0]['occupant'] = self._color
+                self._board[x_1][y_1]['occupant'] = self._color
                 self._turn = 3
                 chose_spaces = True
 
@@ -125,7 +130,7 @@ class Game():
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self._board[i][j]
-            adjacent_spaces = self.get_adjacent(i, j)
+            adjacent_spaces = get_adjacent(i, j)
 
             # 3^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
@@ -140,38 +145,6 @@ class Game():
                 elif space['occupant'] == 'W':
                     score -= 2 ** (space['level'] % 4)
         return score
-
-    def get_adjacent(self, x_coor, y_coor):
-        """
-        Get spaces surrounding the passed one.
-
-        Parameters
-        ----------
-        x_coor : int
-            x_coor-coordinate ie column value
-        y_coor : int
-            y_coor-coordinate ie row value
-
-        Returns
-        -------
-        spaceLi : li
-            list of spaces adjacent to the one provided through
-            x_coor and y_coor
-        """
-        space_list = [(x_coor - 1, y_coor + 1),
-                      (x_coor, y_coor + 1),
-                      (x_coor + 1, y_coor + 1),
-                      (x_coor - 1, y_coor),
-                      (x_coor + 1, y_coor),
-                      (x_coor - 1, y_coor - 1),
-                      (x_coor, y_coor - 1),
-                      (x_coor + 1, y_coor - 1)]
-        space_list = list(filter(
-            lambda t: t[0] >= 0 and t[0] <= 4
-            and t[1] >= 0 and t[1] <= 4,
-            space_list))
-
-        return space_list
 
     def create_children(self, color='G', level=0):
         """
@@ -201,12 +174,12 @@ class Game():
             i, j = spot
 
             # check each possible move
-            for m in self.get_adjacent(i, j):
+            for m in get_adjacent(i, j):
                 new_game = copy.deepcopy(self)
                 new_game.color = color
                 new_game.select(new_game.color, i, j)
                 if new_game.move(m[0], m[1]):
-                    build_list = self.get_adjacent(new_game.col,
+                    build_list = get_adjacent(new_game.col,
                                                    new_game.row)
                 # given a legal move, check for each possible build
                     for b in build_list:
@@ -221,22 +194,26 @@ class Game():
                             return_li.append(currentNode)
         return return_li
 
-    def future_moves(self):
+    def make_automatic_move(self):
         """
         Make automatic turn.
 
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
         """
+        if self._color == 'G':
+            other_color = 'W'
+        else:
+            other_color = 'G'
         gameCopy = copy.deepcopy(self)
         rootNode = Node(value=gameCopy.evaluate_board(),
                         state=gameCopy,
                         children=[],
                         level=0)
-        rootNode.children = gameCopy.create_children('G', 0)
+        rootNode.children = gameCopy.create_children(self._color, 0)
         for child in rootNode.children:
             childCopy = copy.deepcopy(child.state)
-            child.children = childCopy.create_children('W', 1)
+            child.children = childCopy.create_children(other_color, 1)
             print(child.children)
 
         best_state = rootNode.alpha_beta_search()
@@ -246,25 +223,6 @@ class Game():
             self.switch_player()
             self.make_color_active()
             self._sub_turn = 'select'
-
-    # HELPER FUNCTIONS
-
-    def is_valid_num(self, num):
-        """
-        Check if x or y falls on board.
-
-        Parameters
-        ----------
-        num : str
-            row or column value
-
-        Returns
-        -------
-        bool
-            true if its a valid number [0,4]
-            false otherwise
-        """
-        return -1 < num < 5
 
     def undo(self):
         """Undo select action."""
@@ -290,10 +248,10 @@ class Game():
             no more than one level increase
         """
         height = self._board[x_coor][y_coor]['level']
-        spaceList = self.get_adjacent(x_coor, y_coor)
+        spaceList = get_adjacent(x_coor, y_coor)
         for i, j in spaceList:
             if (
-                    self.is_valid_num(i) and self.is_valid_num(j) and
+                    is_valid_num(i) and is_valid_num(j) and
                     self._board[i][j]['occupant'] == 'O'
                     and self._board[i][j]['level'] - height <= 1
             ):
@@ -319,9 +277,9 @@ class Game():
             not that spaces with a dome are considered occupied, with
             an occpant of X
         """
-        spaceList = self.get_adjacent(x_coor, y_coor)
+        spaceList = get_adjacent(x_coor, y_coor)
         for i, j in spaceList:
-            if (self.is_valid_num(i) and self.is_valid_num(j) and
+            if (is_valid_num(i) and is_valid_num(j) and
                     self._board[i][j]['occupant'] == 'O'):
                 return True
         return False
@@ -377,9 +335,9 @@ class Game():
 
         Parameters
         ----------
-        x : int
+        x_coor : int
             x coordinate of chosen piece
-        y : int
+        y_coor : int
             y coordinate of chosen piece
 
         """
@@ -404,14 +362,11 @@ class Game():
                     not(i == self._col and j == self._row) and \
                     self._board[i][j]['occupant'] == 'O'
 
-    # CHECK IF USER HAS AVAILABLE MOVES
-
     def check_move_available(self):
         """End game if player has no available moves."""
         for j in range(5):
             for i in range(5):
-                if (
-                        self._board[i][j]['occupant'] == self._color and
+                if (self._board[i][j]['occupant'] == self._color and
                         self.is_valid_move_space(i, j)):
                     return  # end function if we have a valid space
         self.end_game(True)
@@ -425,8 +380,6 @@ class Game():
                         self.is_valid_build_space(i, j)):
                     return  # end function if we have a valid space
         self.end_game(True)
-
-    # SUB-TURN PIECES
 
     def place(self, color):  # Only runs at beginning of game
         """
@@ -561,16 +514,17 @@ class Game():
         y_coor : int
             y coordinate
         """
-        # Gray Places
+        # First Player Places
         if self._turn in [1, 2]:
-            #self.change_square(x_coor, y_coor)
-            # self.place('G')
             self.randomize_placement()
-        # White Places
+            self.switch_player()
+        # Second Places
         elif self._turn in [3, 4]:
             self.change_square(x_coor, y_coor)
-            self.place('W')
-
+            self.place(self._color)
+            if self._turn == 5:
+                self.switch_player()
+            
         # Playing the regular game
         elif self._turn > 4 and not self._end:
             if self._sub_turn == 'select':  # Selecting which piece to move
@@ -630,3 +584,52 @@ class Game():
     def color(self, color):
         """Set color of game."""
         self._color = color
+
+def is_valid_num(num):
+    """
+    Check if x or y falls on board.
+
+    Parameters
+    ----------
+    num : str
+        row or column value
+
+    Returns
+    -------
+    bool
+        true if its a valid number [0,4]
+        false otherwise
+    """
+    return -1 < num < 5
+
+def get_adjacent(x_coor, y_coor):
+    """
+    Get spaces surrounding the passed one.
+
+    Parameters
+    ----------
+    x_coor : int
+        x_coor-coordinate ie column value
+    y_coor : int
+        y_coor-coordinate ie row value
+
+    Returns
+    -------
+    spaceLi : li
+        list of spaces adjacent to the one provided through
+        x_coor and y_coor
+    """
+    space_list = [(x_coor - 1, y_coor + 1),
+                  (x_coor, y_coor + 1),
+                  (x_coor + 1, y_coor + 1),
+                  (x_coor - 1, y_coor),
+                  (x_coor + 1, y_coor),
+                  (x_coor - 1, y_coor - 1),
+                  (x_coor, y_coor - 1),
+                  (x_coor + 1, y_coor - 1)]
+    space_list = list(filter(
+        lambda t: t[0] >= 0 and t[0] <= 4
+        and t[1] >= 0 and t[1] <= 4,
+        space_list))
+
+    return space_list

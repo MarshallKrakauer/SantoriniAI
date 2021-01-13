@@ -10,15 +10,15 @@ BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 RED = (255, 0, 0)
-TEST_COLOR = (100, 100, 100)
+GRAY = (100, 100, 100)
 GOLD = (100, 84.3, 0)
-BLUE = (30, 250, 150)
+LIGHT_GREEN = (30, 250, 150)
 
 # Horizontal and vertical start of board
 BOARD_TOP_EDGE = 100 # SIZE = (800, 600) #(width <-->, height)
 BOARD_LEFT_EDGE = 275
 BUTTON_MEASURES = [BOARD_LEFT_EDGE + 75, BOARD_TOP_EDGE + 350, 120, 60]
-# Left_edge, top_edge, width, height
+                # Left_edge,             top_edge,             width, height
 
 # Set up the pygame environment
 pygame.init()
@@ -64,6 +64,12 @@ class Button(pygame.sprite.Sprite):
             self.mouse_over = True
         else:
             self.mouse_over = False
+    
+    def check_press(self, mouse_pos):
+        """Check if user pressed the button."""
+        return self.rect.collidepoint(mouse_pos)
+    
+    
     
     def draw(self):
         """ Draws element onto a surface."""
@@ -116,7 +122,7 @@ def check_undo(x_coor, y_coor):
 def make_undo_button():
     """Show undo button and allow user to choose it."""
     undo_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
-                         "UNDO", 30, TEST_COLOR, BLACK, 1.5)
+                         "UNDO", 30, GRAY, BLACK, 1.5)
     undo_button.update(pygame.mouse.get_pos())
     undo_button.draw()
 
@@ -143,7 +149,7 @@ def draw_board(board):
                 pygame.draw.rect(SCREEN, BLACK,
                                  [V, H, 50, 50], 0)
             elif board[i][j]['occupant'] == 'G':
-                pygame.draw.circle(SCREEN, TEST_COLOR,
+                pygame.draw.circle(SCREEN, GRAY,
                                    [V + 25, H + 25], 50 / 3)
             elif board[i][j]['occupant'] == 'W':
                 pygame.draw.circle(SCREEN, WHITE,
@@ -162,41 +168,67 @@ def draw_board(board):
             text = font.render(str(board[i][j]['level']), True, BLACK)
             SCREEN.blit(text, (V + 20, H + 20))
 
+def draw_arrow(x_coor = 0, y_coor = 0):
+    """Draw arrow onto start screen."""
+    pygame.draw.polygon(SCREEN, 
+                    RED,
+                    # Locations to draw
+                    ((12.5 + x_coor, 112.5 + y_coor), 
+                     (12.5 + x_coor, 137.5 + y_coor), 
+                     (62.5 + x_coor, 137.5 + y_coor), 
+                     (62.5 + x_coor, 162.5 + y_coor), 
+                     (87.5 + x_coor, 125   + y_coor), 
+                     (62.5 + x_coor, 87.5  + y_coor), 
+                     (62.5 + x_coor, 112.5 + y_coor)
+                     )
+                    )
 
 def title_screen():
     """Show title screen before playing."""
     counter = 0
     
     start_button = Button(
-        center_position=(400, 600/3),
+        center_position=(400, 200), #left,top
         font_size=75,
-        bg_rgb=BLUE,
+        bg_rgb=GREEN,
         text_rgb=BLACK,
-        text="Start",
+        text="CLICK TO START",
         multiplier = 1
     )
     
+    choice_button = Button(
+        center_position= (300,300),
+        font_size = 50,
+        bg_rgb = BLACK,
+        text_rgb = WHITE,
+        text = 'Grey Player',
+        multiplier = 1.2)
+
     end_loop = False
     while not end_loop:
-        SCREEN.fill(WHITE)
-        if counter % 3000 < 1800:
-            start_button.update(pygame.mouse.get_pos())
-            start_button.draw()        
+        SCREEN.fill(LIGHT_GREEN)
+        if True: #counter % 3000 < 1800:
+            draw_arrow(40,170)
+            choice_button.draw()
+            start_button.draw()
             for event in pygame.event.get():
-                if event.type== pygame.MOUSEBUTTONDOWN:
-                    end_loop = True
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    pos = pygame.mouse.get_pos()
+                    if choice_button.check_press(pos):
+                        print("testing")
+                    if start_button.check_press(pos):
+                        end_loop = True
         counter += 1
         pygame.display.flip()
 
 def play_game(game):
     """
     Create and run UI to play Santorini.
-
+    
     Parameters
     ----------
     game : Game
         Game object where moves/builds will be game
-
     """
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
@@ -207,7 +239,7 @@ def play_game(game):
     pygame.event.clear()
     while not done:
         # --- Main event loop
-        SCREEN.fill(BLUE)
+        SCREEN.fill(LIGHT_GREEN)
 
         event = pygame.event.wait()  # event queue
         for event in pygame.event.get():  # check for end of game
@@ -223,7 +255,7 @@ def play_game(game):
         elif game.turn > 4 and game.color == 'G':
             show_thinking()
             if show_board:
-                game.future_moves()
+                game.make_automatic_move()
                 show_board = False
             else:
                 show_board = True
@@ -263,7 +295,7 @@ pygame.display.set_caption("Santorini")
 def main():
     """Play game including title screen."""
     # Get game board
-    game1 = Game()
+    game1 = Game('W')
     title_screen()
     play_game(game1)
 
