@@ -9,9 +9,10 @@ from auto_santorini import Game
 BLACK = (0, 0, 0)
 WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
-RED = (255, 0, 0)
-GRAY = (100, 100, 100)
-GOLD = (100, 84.3, 0)
+BLUE  = (0, 0, 255)
+RED   = (255, 0, 0)
+GRAY  = (100, 100, 100)
+GOLD  = (100, 84.3, 0)
 LIGHT_GREEN = (30, 250, 150)
 
 # Horizontal and vertical start of board
@@ -69,10 +70,8 @@ class Button(pygame.sprite.Sprite):
         """Check if user pressed the button."""
         return self.rect.collidepoint(mouse_pos)
     
-    
-    
     def draw(self):
-        """ Draws element onto a surface."""
+        """Draws element onto a surface."""
         SCREEN.blit(self.image, self.rect)
 
 def create_surface_with_text(text, font_size, text_rgb, bg_rgb):
@@ -105,7 +104,6 @@ def map_numbers(x_coor, y_coor):
 def check_valid(num):
     """Return true if valid board spot."""
     return -1 < num < 5
-
 
 def end_fanfare(color):
     """Produce visual showing who won the game."""
@@ -173,13 +171,13 @@ def draw_arrow(x_coor = 0, y_coor = 0):
     pygame.draw.polygon(SCREEN, 
                     RED,
                     # Locations to draw
-                    ((12.5 + x_coor, 112.5 + y_coor), 
-                     (12.5 + x_coor, 137.5 + y_coor), 
-                     (62.5 + x_coor, 137.5 + y_coor), 
-                     (62.5 + x_coor, 162.5 + y_coor), 
-                     (87.5 + x_coor, 125   + y_coor), 
-                     (62.5 + x_coor, 87.5  + y_coor), 
-                     (62.5 + x_coor, 112.5 + y_coor)
+                    ((12 + x_coor, 112 + y_coor), 
+                     (12 + x_coor, 137 + y_coor), 
+                     (62 + x_coor, 137 + y_coor), 
+                     (62 + x_coor, 162 + y_coor), 
+                     (87 + x_coor, 125   + y_coor), 
+                     (62 + x_coor, 87  + y_coor), 
+                     (62 + x_coor, 112 + y_coor)
                      )
                     )
 
@@ -188,35 +186,129 @@ def title_screen():
     counter = 0
     
     start_button = Button(
-        center_position=(400, 200), #left,top
+        center_position=(400, 450), #left,top
         font_size=75,
         bg_rgb=GREEN,
         text_rgb=BLACK,
         text="CLICK TO START",
-        multiplier = 1
-    )
+        multiplier = 1.2)
+
+    white_header = Button(
+        center_position= (200,100),
+        font_size = 72,
+        bg_rgb = BLUE,
+        text_rgb = WHITE,
+        text = 'WHITE',
+        multiplier = 1)
     
-    choice_button = Button(
-        center_position= (300,300),
+    ai_button_white = Button(
+        center_position= (200,200),
         font_size = 50,
         bg_rgb = BLACK,
         text_rgb = WHITE,
-        text = 'Grey Player',
+        text = 'AI',
+        multiplier = 1.2)
+    
+    ai_button_gray = Button(
+        center_position= (600,200),
+        font_size = 50,
+        bg_rgb = BLACK,
+        text_rgb = WHITE,
+        text = 'AI',
+        multiplier = 1.2)
+    
+    human_button_white = Button(
+        center_position= (200,300),
+        font_size = 50,
+        bg_rgb = BLACK,
+        text_rgb = WHITE,
+        text = 'Human',
+        multiplier = 1.2)
+    
+    human_button_gray = Button(
+        center_position= (600,300),
+        font_size = 50,
+        bg_rgb = BLACK,
+        text_rgb = WHITE,
+        text = 'Human',
+        multiplier = 1.2)
+    
+    grey_header = Button(
+        center_position= (600,100),
+        font_size = 72,
+        bg_rgb = BLUE,
+        text_rgb = GRAY,
+        text = 'GRAY',
         multiplier = 1.2)
 
-    end_loop = False
+    (show_white_human_arrow, show_white_ai_arrow, show_gray_human_arrow, 
+    show_gray_ai_arrow, end_loop) = [False] * 5
     while not end_loop:
         SCREEN.fill(LIGHT_GREEN)
+        #draw_arrow(30,200 - 24)
         if True: #counter % 3000 < 1800:
-            draw_arrow(40,170)
-            choice_button.draw()
-            start_button.draw()
+        
+            # Choose where to show red arrow for white piece
+            if show_white_human_arrow:
+                draw_arrow(30,200 - 24)
+            elif show_white_ai_arrow:
+                draw_arrow(30,100 - 24)
+            
+            # Choose where to show red arrow for gray piece
+            if show_gray_human_arrow:
+                draw_arrow(410,200 - 24)
+            elif show_gray_ai_arrow:
+                draw_arrow(410,100 - 24)
+            
+            if ((show_gray_human_arrow | show_gray_ai_arrow ) and
+                    (show_white_human_arrow | show_white_ai_arrow )):
+                start_button.draw()
+                
+            # Draw all four buttons
+            ai_button_white.draw()
+            human_button_white.draw()            
+            ai_button_gray.draw()
+            human_button_gray.draw()
+            
+            # Draw the two headers
+            white_header.draw()
+            grey_header.draw()
+
             for event in pygame.event.get():
+                pos = pygame.mouse.get_pos()
+                
+                # Check if mouse is hovering over any of the buttons
+                ai_button_white.update(pos)
+                human_button_white.update(pos)
+                ai_button_gray.update(pos)
+                human_button_gray.update(pos)
+                
+                # Move red arrow based on selection for white
+                if (human_button_white.check_press(pos) and
+                    event.type == pygame.MOUSEBUTTONDOWN):
+                    show_white_human_arrow = True
+                    show_white_ai_arrow = False
+                elif (ai_button_white.check_press(pos) and
+                    event.type == pygame.MOUSEBUTTONDOWN):
+                    show_white_human_arrow = False
+                    show_white_ai_arrow = True
+                
+                # Move red arrow based on selection for gray
+                if (human_button_gray.check_press(pos) and
+                    event.type == pygame.MOUSEBUTTONDOWN):
+                    show_gray_human_arrow = True
+                    show_gray_ai_arrow = False
+                elif (ai_button_gray.check_press(pos) and
+                    event.type == pygame.MOUSEBUTTONDOWN):
+                    show_gray_human_arrow = False
+                    show_gray_ai_arrow = True
+                
+                if ((show_gray_human_arrow | show_gray_ai_arrow ) and
+                    (show_white_human_arrow | show_white_ai_arrow )):
+                    start_button.update(pos)
+                
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    pos = pygame.mouse.get_pos()
-                    if choice_button.check_press(pos):
-                        print("testing")
-                    if start_button.check_press(pos):
+                    if grey_header.check_press(pos):
                         end_loop = True
         counter += 1
         pygame.display.flip()
