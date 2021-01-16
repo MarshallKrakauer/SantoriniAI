@@ -308,7 +308,7 @@ def title_screen():
                     start_button.update(pos)
                 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    if grey_header.check_press(pos):
+                    if start_button.check_press(pos):
                         end_loop = True
         counter += 1
         pygame.display.flip()
