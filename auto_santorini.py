@@ -88,7 +88,7 @@ class Game():
         self._col = x_coor
         self._row = y_coor
 
-    def randomize_placement(self):
+    def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
         all_spaces = [(i, j) for i in range(5) for j in range(5)]
@@ -108,12 +108,12 @@ class Game():
             x_1, y_1 = space2
             if (self._board[x_0][y_0]['occupant'] == 'O' and
                     self._board[x_1][y_1]['occupant'] == 'O'):
-                self._board[x_0][y_0]['occupant'] = self._color
-                self._board[x_1][y_1]['occupant'] = self._color
-                self._turn = 3
+                self._board[x_0][y_0]['occupant'] = color
+                self._board[x_1][y_1]['occupant'] = color
+                self._turn += 2
                 chose_spaces = True
 
-    def evaluate_board(self):
+    def evaluate_board(self, color):
         """
         Give numeric score to game.
 
@@ -126,6 +126,11 @@ class Game():
             score of the board needed for alpha-beta pruning
             higher score is better
         """
+        if color == 'W':
+            other_color = 'G'
+        else:
+            other_color = 'W'
+        
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
@@ -134,15 +139,15 @@ class Game():
 
             # 3^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
-            if space['occupant'] == 'G':
+            if space['occupant'] == color:
                 score += 3 ** space['level']
-            elif space['occupant'] == 'W':
+            elif space['occupant'] == color:
                 score -= 3 ** space['level']
             for k, l in adjacent_spaces:
                 space = self._board[k][l]
-                if space['occupant'] == 'G':
+                if space['occupant'] == other_color:
                     score += 2 ** (space['level'] % 4)
-                elif space['occupant'] == 'W':
+                elif space['occupant'] == other_color:
                     score -= 2 ** (space['level'] % 4)
         return score
 
@@ -194,14 +199,14 @@ class Game():
                             return_li.append(currentNode)
         return return_li
 
-    def make_automatic_move(self):
+    def make_automatic_move(self, color):
         """
         Make automatic turn.
 
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
         """
-        if self._color == 'G':
+        if color == 'G':
             other_color = 'W'
         else:
             other_color = 'G'
@@ -210,7 +215,7 @@ class Game():
                         state=gameCopy,
                         children=[],
                         level=0)
-        rootNode.children = gameCopy.create_children(self._color, 0)
+        rootNode.children = gameCopy.create_children(color, 0)
         for child in rootNode.children:
             childCopy = copy.deepcopy(child.state)
             child.children = childCopy.create_children(other_color, 1)
@@ -584,6 +589,13 @@ class Game():
     def color(self, color):
         """Set color of game."""
         self._color = color
+
+class Player():
+    
+    
+    def __init__(self, game):
+        self._game = game
+    
 
 def is_valid_num(num):
     """

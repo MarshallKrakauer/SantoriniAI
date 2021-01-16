@@ -29,9 +29,27 @@ pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
 
 class Button(pygame.sprite.Sprite):
-    # Curtosy of https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html
+    """
+    Button that grows in size when hovered over.
+
+    Helps from: https://programmingpixels.com/handling-a-title-
+                screen-game-flow-and-buttons-in-pygame.html
+    Attributes
+
+    mouse_over : bool
+        Ture if a mouse is hovering over. used to make button larger
+    images : list
+        list of words that button will show
+    rectangles : list
+        list of background rectangles for words    
+    multiplier: float
+        how much image increases when its moused over.
+        multipler of 1 makes a static image
+    """
+    
     def __init__(self, center_position, text, font_size, bg_rgb, text_rgb,
                  multiplier = 1.2):
+
         self.mouse_over = False  # indicates if the mouse is over the element
          # default image
         default_image = create_surface_with_text(
@@ -54,13 +72,39 @@ class Button(pygame.sprite.Sprite):
 
     @property
     def image(self):
+        """
+        Change between small and large button.
+
+        Returns
+        -------
+        pygame image
+            larger or smaller version of button
+        """
         return self.images[1] if self.mouse_over else self.images[0]
 
     @property
     def rect(self):
+        """
+        Change between small and large button.
+        
+        Sister function of image
+
+        Returns
+        -------
+        pygame image
+            larger or smaller version of button
+        """
         return self.rectangles[1] if self.mouse_over else self.rectangles[0]
 
     def update(self, mouse_pos):
+        """
+        Change value of mouse_over, which is used for draw and check_press.
+
+        Parameters
+        ----------
+        mouse_pos : tuple
+            (x,y) coordinates of position
+        """
         if self.rect.collidepoint(mouse_pos):
             self.mouse_over = True
         else:
@@ -75,7 +119,7 @@ class Button(pygame.sprite.Sprite):
         SCREEN.blit(self.image, self.rect)
 
 def create_surface_with_text(text, font_size, text_rgb, bg_rgb):
-    """ Returns surface with text written on """
+    """Return surface with text written on."""
     font = pygame.freetype.SysFont("Courier", font_size, bold=True)
     surface, _ = font.render(text=text, fgcolor=text_rgb, bgcolor=bg_rgb)
     return surface.convert_alpha()
@@ -245,73 +289,93 @@ def title_screen():
     show_gray_ai_arrow, end_loop) = [False] * 5
     while not end_loop:
         SCREEN.fill(LIGHT_GREEN)
-        #draw_arrow(30,200 - 24)
-        if True: #counter % 3000 < 1800:
         
-            # Choose where to show red arrow for white piece
-            if show_white_human_arrow:
-                draw_arrow(30,200 - 24)
-            elif show_white_ai_arrow:
-                draw_arrow(30,100 - 24)
+        # Choose where to show red arrow for white piece
+        if show_white_human_arrow:
+            draw_arrow(30,200 - 24)
+        elif show_white_ai_arrow:
+            draw_arrow(30,100 - 24)
+        
+        # Choose where to show red arrow for gray piece
+        if show_gray_human_arrow:
+            draw_arrow(410,200 - 24)
+        elif show_gray_ai_arrow:
+            draw_arrow(410,100 - 24)
+        
+        if ((show_gray_human_arrow | show_gray_ai_arrow ) and
+                (show_white_human_arrow | show_white_ai_arrow ) and
+                counter % 3000 < 2000):
+            start_button.draw()
             
-            # Choose where to show red arrow for gray piece
-            if show_gray_human_arrow:
-                draw_arrow(410,200 - 24)
-            elif show_gray_ai_arrow:
-                draw_arrow(410,100 - 24)
-            
-            if ((show_gray_human_arrow | show_gray_ai_arrow ) and
-                    (show_white_human_arrow | show_white_ai_arrow )):
-                start_button.draw()
-                
-            # Draw all four buttons
-            ai_button_white.draw()
-            human_button_white.draw()            
-            ai_button_gray.draw()
-            human_button_gray.draw()
-            
-            # Draw the two headers
-            white_header.draw()
-            grey_header.draw()
+        # Draw all four buttons
+        ai_button_white.draw()
+        human_button_white.draw()            
+        ai_button_gray.draw()
+        human_button_gray.draw()
+        
+        # Draw the two headers
+        white_header.draw()
+        grey_header.draw()
 
-            for event in pygame.event.get():
-                pos = pygame.mouse.get_pos()
-                
-                # Check if mouse is hovering over any of the buttons
-                ai_button_white.update(pos)
-                human_button_white.update(pos)
-                ai_button_gray.update(pos)
-                human_button_gray.update(pos)
-                
-                # Move red arrow based on selection for white
-                if (human_button_white.check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                    show_white_human_arrow = True
-                    show_white_ai_arrow = False
-                elif (ai_button_white.check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                    show_white_human_arrow = False
-                    show_white_ai_arrow = True
-                
-                # Move red arrow based on selection for gray
-                if (human_button_gray.check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                    show_gray_human_arrow = True
-                    show_gray_ai_arrow = False
-                elif (ai_button_gray.check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                    show_gray_human_arrow = False
-                    show_gray_ai_arrow = True
-                
-                if ((show_gray_human_arrow | show_gray_ai_arrow ) and
-                    (show_white_human_arrow | show_white_ai_arrow )):
-                    start_button.update(pos)
-                
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if start_button.check_press(pos):
-                        end_loop = True
+        for event in pygame.event.get():
+            pos = pygame.mouse.get_pos()
+            
+            # Check if mouse is hovering over any of the buttons
+            ai_button_white.update(pos)
+            human_button_white.update(pos)
+            ai_button_gray.update(pos)
+            human_button_gray.update(pos)
+            
+            # Move red arrow based on selection for white
+            if (human_button_white.check_press(pos) and
+                event.type == pygame.MOUSEBUTTONDOWN):
+                show_white_human_arrow = True
+                show_white_ai_arrow = False
+            elif (ai_button_white.check_press(pos) and
+                event.type == pygame.MOUSEBUTTONDOWN):
+                show_white_human_arrow = False
+                show_white_ai_arrow = True
+            
+            # Move red arrow based on selection for gray
+            if (human_button_gray.check_press(pos) and
+                event.type == pygame.MOUSEBUTTONDOWN):
+                show_gray_human_arrow = True
+                show_gray_ai_arrow = False
+            elif (ai_button_gray.check_press(pos) and
+                event.type == pygame.MOUSEBUTTONDOWN):
+                show_gray_human_arrow = False
+                show_gray_ai_arrow = True
+            
+            # If both choices have been made, show the start button
+            if ((show_gray_human_arrow | show_gray_ai_arrow ) and
+                (show_white_human_arrow | show_white_ai_arrow )):
+                start_button.update(pos)
+            
+            # If person clicks start, star the game!
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if start_button.check_press(pos):
+                    end_loop = True
+            
+            # Allow user to quit the game
+            if event.type == pygame.QUIT:
+                end_loop = True
+
         counter += 1
         pygame.display.flip()
+    
+    # Choose what to return
+    if show_white_human_arrow:
+        white_player = 'human'
+    else:
+        white_player = 'alphabeta'
+    
+    if show_gray_human_arrow:
+        gray_player = 'human'
+    else:
+        gray_player = 'alphabeta'
+    
+    return {'W' : white_player, 'G': gray_player}
+        
 
 def play_game(game):
     """
@@ -387,8 +451,10 @@ pygame.display.set_caption("Santorini")
 def main():
     """Play game including title screen."""
     # Get game board
+    player_dict = title_screen()
+    
     game1 = Game('W')
-    title_screen()
+    
     play_game(game1)
 
 main()
