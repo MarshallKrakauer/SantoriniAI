@@ -35,7 +35,7 @@ class Player():
             self.game.sub_turn = 'switch'
 
     def play_turn(self, x_coor = -1, y_coor = -1):
-        """Test."""
+        """Place or play depending on turn."""
         if self.placements >= 2:
             self.play_regular_turn(x_coor, y_coor)
 
@@ -43,5 +43,4 @@ class Player():
             self.place_piece(x_coor, y_coor)
 
         if self.placements == 2 and self.game.sub_turn == 'place':
-            print('test')
             self.game.sub_turn = 'switch'

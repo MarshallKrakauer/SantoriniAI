@@ -155,7 +155,7 @@ def end_fanfare(color):
     pygame.draw.rect(SCREEN, GREEN,
                      BUTTON_MEASURES, 0)
     text = font.render("WINNER: " + color, True, BLACK)
-    SCREEN.blit(text, (175 + 20, 450 + 20))
+    SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
 
 def check_undo(x_coor, y_coor):
     """Return true if undo button was selected."""
@@ -305,7 +305,7 @@ def title_screen():
 
         if ((show_gray_human_arrow | show_gray_ai_arrow ) and
                 (show_white_human_arrow | show_white_ai_arrow ) and
-                counter % 3000 < 2000):
+                counter % 3000 < 10000):
             start_button.draw()
 
         # Draw all four buttons
@@ -410,9 +410,10 @@ def play_game(white_player, gray_player):
         # Special conditions
         # Check for end of game
         if game.end:
-            game.end_game()
+            game.end_game(True)
             end_fanfare(current_player.color)  # do something for endgame
-        # Show that AI is "thinking"
+
+        # AI player plays game
         elif current_player.player_type == 'alphabeta':
             game.make_all_spaces_inactive()
             show_thinking()
@@ -421,19 +422,26 @@ def play_game(white_player, gray_player):
                 show_board = False
             else:
                 show_board = True
-        if game.sub_turn == 'switch':
-            player_num = (player_num + 1) % 2
-            current_player = players[player_num]
-            current_player.game.color = current_player.color
+                
+            if game.sub_turn == 'switch':
 
-            if current_player.placements >= 2:
-                game.sub_turn = 'select'
-            else:
-                game.sub_turn = 'place'
+                player_num = (player_num + 1) % 2
+                current_player = players[player_num]
+                current_player.game.color = current_player.color
+    
+                if current_player.placements >= 2:
+                    game.sub_turn = 'select'
+                    if current_player.player_type == 'human':
+                                game.make_color_active()
+                else:
+                    game.sub_turn = 'place'
+                
+        # Human player plays game
         elif current_player.player_type == 'human':
             if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
                 pos = pygame.mouse.get_pos()
                 x, y = map_numbers(pos[0], pos[1])
+                
                 if check_valid(x) and check_valid(y):
                     current_player.play_turn(x, y)
                     if game.sub_turn == 'switch':
@@ -443,22 +451,18 @@ def play_game(white_player, gray_player):
 
                         if current_player.placements >= 2:
                             game.sub_turn = 'select'
+                            if current_player.player_type == 'human':
+                                game.make_color_active()
                         else:
                             game.sub_turn = 'place'
  
-                        game.make_color_active()
-                        
                 if check_undo(pos[0], pos[1]) and game.sub_turn == 'move':
                     game.undo()
-
 
         # Allow undo during a select action
         if current_player.player_type == 'human' and game.sub_turn == 'move':
             make_undo_button()
         
-        if current_player.player_type == 'alphabeta':
-            game.make_all_spaces_inactive()
-
         draw_board(game.board)
         # --- Go ahead and update the screen with what we've drawn.
         pygame.display.flip()
