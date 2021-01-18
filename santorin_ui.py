@@ -455,7 +455,8 @@ def play_game(white_player, gray_player):
                                 game.make_color_active()
                         else:
                             game.sub_turn = 'place'
- 
+                
+                # Undo selection if chosen
                 if check_undo(pos[0], pos[1]) and game.sub_turn == 'move':
                     game.undo()
 
@@ -463,8 +464,8 @@ def play_game(white_player, gray_player):
         if current_player.player_type == 'human' and game.sub_turn == 'move':
             make_undo_button()
         
+        # Update the screen
         draw_board(game.board)
-        # --- Go ahead and update the screen with what we've drawn.
         pygame.display.flip()
 
         # --- Limit to 60 frames per second
@@ -482,7 +483,6 @@ def main():
 
     white_player = Player(this_game, player_dict['W'], 'W')
     gray_player = Player(this_game, player_dict['G'], 'G')
-
 
     play_game(white_player, gray_player)
 

@@ -1,4 +1,4 @@
-"""Santorini Game with AI"""
+"""Santorini Game with AI."""
 import copy
 import random
 from node import Node
