@@ -32,7 +32,7 @@ class Node:
          str
             board with its level and score
         """
-        return ('score: ' + str(self._state.evaluate_board()) + '\n'
+        return ('\nscore: ' + str(self._state.evaluate_board()) + '\n'
                 + 'level ' + str(self._level) + '\n'
                 + str(self._state)
                 )

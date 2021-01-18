@@ -1,7 +1,7 @@
 """Santorini Game with AI"""
 import copy
 import random
-from tree_traversal import Node
+from node import Node
 
 SYS_RANDOM = random.SystemRandom()
 
@@ -12,7 +12,7 @@ class Game():
     White player chooses actions, while gray turns are automated.
 
     Attributes
-
+    ----------
     board : list
         5 x 5 board, each space contains level, occupant, and active bool
         active meaning it can be chosen as a space
@@ -33,22 +33,16 @@ class Game():
         not currently in action on on the pygame board
     """
 
-    def __init__(self, start_player):
+    def __init__(self):
         self._board = [[{'level': 0, 'occupant': 'O', 'active': False}
                         for i in range(5)] for j in range(5)]
         self._row = 0
         self._col = 0
         self._end = False
         self._turn = 1
-        self._sub_turn = 'select'
+        self._sub_turn = 'place'
         self._message = ''
-        
-        if start_player != 'W':
-            self._color = 'G'
-        else:
-            self._color = 'W'
-            
-        self._player_list = {'G' : 'human', 'W' : 'alphabeta'}
+        self._color = 'W'
 
     def __str__(self):
         """
@@ -58,18 +52,16 @@ class Game():
         -------
         return_val : str
             ASCII represntation of the board
-
         """
         return_val = 'score: ' + str(self.evaluate_board()) + ' \n'
+        return_val += "    x0 x1 x2 x3 x4\n"
+        return_val += "    --------------\n"
         for i in range(5):
-            if i == 0:
-                return_val += "    x0 x1 x2 x3 x4\n"
-                return_val += "    --------------\n"
             for j in range(5):
                 if j == 0:
-                    return_val += 'y' + str(j) + '| '
-                return_val += (str(self._board[i][j]['level']) +
-                               str(self._board[i][j]['occupant']) +
+                    return_val += 'y' + str(i) + '| '
+                return_val += (str(self._board[j][i]['level']) +
+                               str(self._board[j][i]['occupant']) +
                                ' ')
             return_val += '\n'
         return return_val
@@ -113,7 +105,7 @@ class Game():
                 self._turn += 2
                 chose_spaces = True
 
-    def evaluate_board(self, color):
+    def evaluate_board(self):
         """
         Give numeric score to game.
 
@@ -126,7 +118,7 @@ class Game():
             score of the board needed for alpha-beta pruning
             higher score is better
         """
-        if color == 'W':
+        if self.color == 'W':
             other_color = 'G'
         else:
             other_color = 'W'
@@ -139,9 +131,9 @@ class Game():
 
             # 3^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
-            if space['occupant'] == color:
+            if space['occupant'] == self._color:
                 score += 3 ** space['level']
-            elif space['occupant'] == color:
+            elif space['occupant'] == self._color:
                 score -= 3 ** space['level']
             for k, l in adjacent_spaces:
                 space = self._board[k][l]
@@ -173,11 +165,9 @@ class Game():
         build_list = []
         spot_list = [(i, j) for i in range(5) for j in range(5) if
                      self._board[i][j]['occupant'] == color]
-
         # Check both of the spaces occupied by the player
         for spot in spot_list:
             i, j = spot
-
             # check each possible move
             for m in get_adjacent(i, j):
                 new_game = copy.deepcopy(self)
@@ -197,9 +187,10 @@ class Game():
                                 state=nodeGame,
                                 level=level + 1)
                             return_li.append(currentNode)
+        #print(return_li)
         return return_li
 
-    def make_automatic_move(self, color):
+    def auto_play_turn(self, color):
         """
         Make automatic turn.
 
@@ -219,15 +210,13 @@ class Game():
         for child in rootNode.children:
             childCopy = copy.deepcopy(child.state)
             child.children = childCopy.create_children(other_color, 1)
-            print(child.children)
+            #print(child.children)
 
         best_state = rootNode.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
         if not self._end:
-            self.switch_player()
-            self.make_color_active()
-            self._sub_turn = 'select'
+            self._sub_turn = 'switch'
 
     def undo(self):
         """Undo select action."""
@@ -386,7 +375,7 @@ class Game():
                     return  # end function if we have a valid space
         self.end_game(True)
 
-    def place(self, color):  # Only runs at beginning of game
+    def place(self, color, x_coor, y_coor):  # Only runs at beginning of game
         """
         Place two pieces of given color on the board.
 
@@ -395,13 +384,13 @@ class Game():
         color : str
             player color that will be placed on the board
         """
-        y_coor = self._row
-        x_coor = self._col
         if self._board[x_coor][y_coor]['occupant'] != 'O':
             self._message = "Occupied Space"
+            return False
         else:
             self._board[x_coor][y_coor]['occupant'] = color
             self._turn += 1
+            return True
 
     def select(self, color, x_coor, y_coor):
         """
@@ -427,7 +416,7 @@ class Game():
         else:
             self._col = x_coor
             self._row = y_coor
-            self.make_choice_active(self._col, self._row)
+            self.make_choice_active(x_coor, y_coor)
             self._sub_turn = 'move'
             return True
         return False
@@ -470,6 +459,7 @@ class Game():
             self._sub_turn = 'build'
             self.make_exterior_active()
             return True
+        print(self._message)
         return False
 
     def build(self, x_coor, y_coor):
@@ -505,7 +495,7 @@ class Game():
             return True
         return False
 
-    def play_turn(self, x_coor, y_coor):
+    def play_manual_turn(self, x_coor, y_coor):
         """
         Run through a turn.
 
@@ -520,18 +510,19 @@ class Game():
             y coordinate
         """
         # First Player Places
-        if self._turn in [1, 2]:
+        if False: #self._turn in [1, 2]:
             self.randomize_placement()
             self.switch_player()
         # Second Places
-        elif self._turn in [3, 4]:
+        elif False: #self._turn in [3, 4]:
             self.change_square(x_coor, y_coor)
             self.place(self._color)
-            if self._turn == 5:
-                self.switch_player()
-            
+        
+        #if self._sub_turn == 'switch':
+        #    self.sub_turn = 'select'
+        
         # Playing the regular game
-        elif self._turn > 4 and not self._end:
+        elif True: #self._turn > 4 and not self._end:
             if self._sub_turn == 'select':  # Selecting which piece to move
                 self.make_color_active()
                 self.select(self._color, x_coor, y_coor)
@@ -540,10 +531,6 @@ class Game():
                 self.move(x_coor, y_coor)
             elif self._sub_turn == 'build':
                 self.build(x_coor, y_coor)
-                if self._sub_turn == 'switch':
-                    self.switch_player()
-                    self.make_color_active()
-                    self._sub_turn = 'select'
 
     @property
     def sub_turn(self):
@@ -559,6 +546,7 @@ class Game():
     def end(self):
         """Return end variable."""
         return self._end
+
 
     @property
     def col(self):
@@ -584,18 +572,16 @@ class Game():
     def board(self, board):
         """Change board, used for AI's moves."""
         self._board = board
-
+    
+    @sub_turn.setter
+    def sub_turn(self, sub_turn):
+        """Change board, used for AI's moves."""
+        self._sub_turn = sub_turn
+    
     @color.setter
     def color(self, color):
         """Set color of game."""
         self._color = color
-
-class Player():
-    
-    
-    def __init__(self, game):
-        self._game = game
-    
 
 def is_valid_num(num):
     """

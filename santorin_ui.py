@@ -3,7 +3,8 @@
 
 import pygame
 import pygame.freetype
-from auto_santorini import Game
+from game import Game
+from player import Player
 
 # Define some colors
 BLACK = (0, 0, 0)
@@ -235,7 +236,7 @@ def title_screen():
         bg_rgb=GREEN,
         text_rgb=BLACK,
         text="CLICK TO START",
-        multiplier = 1.2)
+        multiplier = 1)
 
     white_header = Button(
         center_position= (200,100),
@@ -375,9 +376,8 @@ def title_screen():
         gray_player = 'alphabeta'
     
     return {'W' : white_player, 'G': gray_player}
-        
 
-def play_game(game):
+def play_game(white_player, gray_player):
     """
     Create and run UI to play Santorini.
     
@@ -391,48 +391,71 @@ def play_game(game):
     counter = 0  # not in use, holder if something shows every other frame
     done = False  # ends pygame when true
     show_board = False  # Used to show board when AI is playing
+    player_num = 0
+    players = [white_player, gray_player]
+    current_player = players[0]
+    game = current_player.game
     # -------- Main Program Loop -----------
     pygame.event.clear()
     while not done:
         # --- Main event loop
         SCREEN.fill(LIGHT_GREEN)
-
         event = pygame.event.wait()  # event queue
-        for event in pygame.event.get():  # check for end of game
+        
+        # Check if someone clicked x
+        for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 done = True
-
+    
         # Special conditions
         # Check for end of game
         if game.end:
             game.end_game()
-            end_fanfare(game.color)  # do something for endgame
+            end_fanfare(current_player.color)  # do something for endgame
         # Show that AI is "thinking"
-        elif game.turn > 4 and game.color == 'G':
+        elif current_player.player_type == 'alphabeta':
             show_thinking()
             if show_board:
-                game.make_automatic_move()
+                current_player.play_turn()
                 show_board = False
             else:
                 show_board = True
+        elif current_player.player_type == 'human':
+            if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
+                pos = pygame.mouse.get_pos()
+                x, y = map_numbers(pos[0], pos[1])
+                if check_valid(x) and check_valid(y):
+                    current_player.play_turn(x, y)                         
+                if check_undo(pos[0], pos[1]) and game.sub_turn == 'move':
+                    game.undo()
+        
+        if game.sub_turn == 'switch':
+            print('hello')
+            import time
+            time.sleep(3)
+            player_num = (player_num + 1) % 2
+            current_player = players[player_num]
+            current_player.game.color = current_player.color
+            print(player_num)
+            print(current_player)
+        
+            if current_player.placements >= 2:
+                game.sub_turn = 'select'
+            else:
+                game.sub_turn = 'place'
+        
+        
         # Allow undo during a select action
-        elif game.sub_turn == 'move':
+        if current_player.player_type == 'human' and game.sub_turn == 'move':
             make_undo_button()
-
-        # Allow player to select actions
-        if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
-            pos = pygame.mouse.get_pos()
-            print(pos)
-            x, y = map_numbers(pos[0], pos[1])
-            if check_valid(x) and check_valid(y):
-                game.play_turn(x, y)
-            elif check_undo(pos[0], pos[1]) and game.sub_turn == 'move':
-                game.undo()
-
+        '''
+        elif current_player.player_type == 'human' and game.sub_turn == 'move':
+            pass
+        '''
+        
         # Draw the board after changes have been made
-        board = game.board
-        draw_board(board)
-
+        #print(game)
+        draw_board(game.board)
         # --- Go ahead and update the screen with what we've drawn.
         pygame.display.flip()
 
@@ -443,18 +466,16 @@ def play_game(game):
     # Close the window and quit.
     pygame.quit()
 
-pygame.init()
-SIZE = (800, 600) #(width <-->, height)
-SCREEN = pygame.display.set_mode(SIZE)
-pygame.display.set_caption("Santorini")
-
 def main():
     """Play game including title screen."""
     # Get game board
     player_dict = title_screen()
+    this_game = Game()
     
-    game1 = Game('W')
+    white_player = Player(this_game, player_dict['W'], 'W')
+    gray_player = Player(this_game, player_dict['G'], 'G')
     
-    play_game(game1)
+    
+    play_game(white_player, gray_player)
 
 main()
