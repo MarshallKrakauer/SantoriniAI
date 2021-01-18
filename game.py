@@ -122,7 +122,7 @@ class Game():
             other_color = 'G'
         else:
             other_color = 'W'
-        
+
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
@@ -187,7 +187,6 @@ class Game():
                                 state=nodeGame,
                                 level=level + 1)
                             return_li.append(currentNode)
-        #print(return_li)
         return return_li
 
     def auto_play_turn(self, color):
@@ -222,6 +221,11 @@ class Game():
         """Undo select action."""
         self._sub_turn = 'select'
         self.make_color_active()
+
+    def make_all_spaces_inactive(self):
+        for i in range(5):
+            for j in range(5):
+                self.board[i][j]['active'] = False
 
     def is_valid_move_space(self, x_coor, y_coor):
         """
@@ -459,7 +463,7 @@ class Game():
             self._sub_turn = 'build'
             self.make_exterior_active()
             return True
-        print(self._message)
+        #print(self._message)
         return False
 
     def build(self, x_coor, y_coor):
@@ -509,20 +513,8 @@ class Game():
         y_coor : int
             y coordinate
         """
-        # First Player Places
-        if False: #self._turn in [1, 2]:
-            self.randomize_placement()
-            self.switch_player()
-        # Second Places
-        elif False: #self._turn in [3, 4]:
-            self.change_square(x_coor, y_coor)
-            self.place(self._color)
-        
-        #if self._sub_turn == 'switch':
-        #    self.sub_turn = 'select'
-        
         # Playing the regular game
-        elif True: #self._turn > 4 and not self._end:
+        if True: #self._turn > 4 and not self._end:
             if self._sub_turn == 'select':  # Selecting which piece to move
                 self.make_color_active()
                 self.select(self._color, x_coor, y_coor)
@@ -546,7 +538,6 @@ class Game():
     def end(self):
         """Return end variable."""
         return self._end
-
 
     @property
     def col(self):
@@ -572,12 +563,12 @@ class Game():
     def board(self, board):
         """Change board, used for AI's moves."""
         self._board = board
-    
+
     @sub_turn.setter
     def sub_turn(self, sub_turn):
         """Change board, used for AI's moves."""
         self._sub_turn = sub_turn
-    
+
     @color.setter
     def color(self, color):
         """Set color of game."""
