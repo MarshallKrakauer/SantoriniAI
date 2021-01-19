@@ -132,9 +132,9 @@ class Game():
             # 3^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
             if space['occupant'] == self._color:
-                score += 3 ** space['level']
+                score += 4 ** space['level']
             elif space['occupant'] == self._color:
-                score -= 3 ** space['level']
+                score -= 4 ** space['level']
             for k, l in adjacent_spaces:
                 space = self._board[k][l]
                 if space['occupant'] == other_color:

@@ -1,3 +1,5 @@
+"""Individual playing Santorini game. Needs a refactor to replace complexity."""
+
 class Player():
     """
     Player of the Game class.
@@ -10,7 +12,7 @@ class Player():
         self.color = color
         self.player_type = player_type
         self.placements = 0
-        #self.game.sub_turn = 'place'
+        self.active = True
 
     def __str__(self):
         """Show string representation of player."""
