@@ -18,17 +18,18 @@ GOLD = (100, 84.3, 0)
 LIGHT_GREEN = (30, 250, 150)
 
 # Horizontal and vertical start of board
-BOARD_TOP_EDGE = 100 # SIZE = (800, 600) #(width <-->, height)
+BOARD_TOP_EDGE = 100  # SIZE = (800, 600) #(width <-->, height)
 BOARD_LEFT_EDGE = 275
 BUTTON_MEASURES = [BOARD_LEFT_EDGE + 75, BOARD_TOP_EDGE + 350, 120, 60]
-                # Left_edge,             top_edge,             width, height
+# Left_edge,             top_edge,             width, height
 
 # Set up the pygame environment
 pygame.init()
-SIZE = (800, 600) #(width <-->, height)
+SIZE = (800, 600)  # (width <-->, height)
 SCREEN = pygame.display.set_mode(SIZE)
 pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
+
 
 def map_numbers(x_coor, y_coor):
     """
@@ -51,9 +52,11 @@ def map_numbers(x_coor, y_coor):
     y_1 = (y_coor - BOARD_TOP_EDGE) // 50
     return (x_1, y_1)
 
+
 def check_valid(num):
     """Return true if valid board spot."""
     return -1 < num < 5
+
 
 def end_fanfare(color):
     """Produce visual showing who won the game."""
@@ -62,10 +65,12 @@ def end_fanfare(color):
     text = font.render("WINNER: " + color, True, BLACK)
     SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
 
+
 def check_undo(x_coor, y_coor):
     """Return true if undo button was selected."""
     return (BOARD_LEFT_EDGE + 75 <= x_coor <= BOARD_LEFT_EDGE + 180
             and BOARD_TOP_EDGE + 350 <= y_coor <= BOARD_TOP_EDGE + 375)
+
 
 def make_undo_button():
     """Show undo button and allow user to choose it."""
@@ -74,6 +79,7 @@ def make_undo_button():
     undo_button.update(pygame.mouse.get_pos())
     undo_button.draw()
 
+
 def show_thinking(dot=3):
     """Show a "THINKING..." box when AI plays turn."""
     elipse = '.' * dot
@@ -81,6 +87,7 @@ def show_thinking(dot=3):
                      BUTTON_MEASURES, 0)
     text = font.render("THINKING" + elipse, True, BLACK)
     SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
+
 
 def draw_board(board):
     """Draw the 5x5 game board with player pieces."""
@@ -116,84 +123,143 @@ def draw_board(board):
             text = font.render(str(board[i][j]['level']), True, BLACK)
             SCREEN.blit(text, (V + 20, H + 20))
 
+
 def draw_arrow(x_coor=0, y_coor=0):
     """Draw arrow onto start screen."""
     pygame.draw.polygon(SCREEN,
                         RED,
                         # Locations to draw
                         ((12 + x_coor, 112 + y_coor),
-                     (12 + x_coor, 137 + y_coor),
-                     (62 + x_coor, 137 + y_coor),
-                     (62 + x_coor, 162 + y_coor),
-                     (87 + x_coor, 125   + y_coor),
-                     (62 + x_coor, 87  + y_coor),
-                     (62 + x_coor, 112 + y_coor)
-                     )
-                    )
+                         (12 + x_coor, 137 + y_coor),
+                            (62 + x_coor, 137 + y_coor),
+                            (62 + x_coor, 162 + y_coor),
+                            (87 + x_coor, 125 + y_coor),
+                            (62 + x_coor, 87 + y_coor),
+                            (62 + x_coor, 112 + y_coor)
+                         )
+                        )
+
 
 def get_title_screen_buttons():
     return_dict = {}
+    return_dict['start'] = Button(
+        center_position=(400, 450),  # left,top
+        font_size=75,
+        bg_rgb=GREEN,
+        text_rgb=BLACK,
+        text="CLICK TO START",
+        multiplier=1)
+
+    return_dict['white header'] = Button(
+        center_position=(400, 450),  # left,top
+        font_size=75,
+        bg_rgb=GREEN,
+        text_rgb=BLACK,
+        text="CLICK TO START",
+        multiplier=1)
+
+    return_dict['gray header'] = Button(
+        center_position=(600, 100),
+        font_size=72,
+        bg_rgb=BLUE,
+        text_rgb=GRAY,
+        text='GRAY',
+        multiplier=1.2)
+
+    return_dict['white alphabeta'] = Button(
+        center_position=(200, 200),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='AI',
+        multiplier=1.2)
+
+    return_dict['gray alphabeta'] = Button(
+        center_position=(600, 200),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='AI',
+        multiplier=1.2)
+
+    return_dict['white human'] = Button(
+        center_position=(200, 300),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Human',
+        multiplier=1.2)
+
+    return_dict['gray human'] = Button(
+        center_position=(600, 300),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Human',
+        multiplier=1.2)
+
     return return_dict
+
 
 def title_screen():
     """Show title screen before playing."""
     counter = 0
 
     start_button = Button(
-        center_position=(400, 450), #left,top
+        center_position=(400, 450),  # left,top
         font_size=75,
         bg_rgb=GREEN,
         text_rgb=BLACK,
         text="CLICK TO START",
-        multiplier = 1)
+        multiplier=1)
 
     white_header = Button(
-        center_position=(200,100),
-        font_size = 72,
-        bg_rgb = BLUE,
-        text_rgb = WHITE,
-        text = 'WHITE',
-        multiplier = 1)
+        center_position=(200, 100),
+        font_size=72,
+        bg_rgb=BLUE,
+        text_rgb=WHITE,
+        text='WHITE',
+        multiplier=1)
 
     ai_button_white = Button(
-        center_position= (200,200),
-        font_size = 50,
-        bg_rgb = BLACK,
-        text_rgb = WHITE,
-        text = 'AI',
-        multiplier = 1.2)
+        center_position=(200, 200),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='AI',
+        multiplier=1.2)
 
     ai_button_gray = Button(
-        center_position= (600,200),
-        font_size = 50,
-        bg_rgb = BLACK,
-        text_rgb = WHITE,
-        text = 'AI',
-        multiplier = 1.2)
+        center_position=(600, 200),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='AI',
+        multiplier=1.2)
 
     human_button_white = Button(
-        center_position= (200,300),
-        font_size = 50,
-        bg_rgb = BLACK,
-        text_rgb = WHITE,
-        text = 'Human',
-        multiplier = 1.2)
+        center_position=(200, 300),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Human',
+        multiplier=1.2)
 
     human_button_gray = Button(
-        center_position= (600,300),
-        font_size = 50,
-        bg_rgb = BLACK,
-        text_rgb = WHITE,
-        text = 'Human',
-        multiplier = 1.2)
+        center_position=(600, 300),
+        font_size=50,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Human',
+        multiplier=1.2)
 
     grey_header = Button(
-        center_position= (600,100),
-        font_size = 72,
-        bg_rgb = BLUE,
-        text_rgb = GRAY,
-        text = 'GRAY',
-        multiplier = 1.2)
+        center_position=(600, 100),
+        font_size=72,
+        bg_rgb=BLUE,
+        text_rgb=GRAY,
+        text='GRAY',
+        multiplier=1.2)
 
     (show_white_human_arrow, show_white_ai_arrow, show_gray_human_arrow,
      show_gray_ai_arrow, end_loop) = [False] * 5
@@ -212,8 +278,8 @@ def title_screen():
         elif show_gray_ai_arrow:
             draw_arrow(410, 100 - 24)
 
-        if ((show_gray_human_arrow | show_gray_ai_arrow ) and
-                (show_white_human_arrow | show_white_ai_arrow ) and
+        if ((show_gray_human_arrow | show_gray_ai_arrow) and
+                (show_white_human_arrow | show_white_ai_arrow) and
                 counter % 3000 < 10000):
             start_button.draw()
 
@@ -238,7 +304,7 @@ def title_screen():
 
             # Move red arrow based on selection for white
             if (human_button_white.check_press(pos) and
-                event.type == pygame.MOUSEBUTTONDOWN):
+                    event.type == pygame.MOUSEBUTTONDOWN):
                 show_white_human_arrow = True
                 show_white_ai_arrow = False
             elif (ai_button_white.check_press(pos) and
@@ -248,17 +314,17 @@ def title_screen():
 
             # Move red arrow based on selection for gray
             if (human_button_gray.check_press(pos) and
-                 event.type == pygame.MOUSEBUTTONDOWN):
+                    event.type == pygame.MOUSEBUTTONDOWN):
                 show_gray_human_arrow = True
                 show_gray_ai_arrow = False
             elif (ai_button_gray.check_press(pos) and
-                event.type == pygame.MOUSEBUTTONDOWN):
+                  event.type == pygame.MOUSEBUTTONDOWN):
                 show_gray_human_arrow = False
                 show_gray_ai_arrow = True
 
             # If both choices have been made, show the start button
-            if ((show_gray_human_arrow | show_gray_ai_arrow ) and
-                (show_white_human_arrow | show_white_ai_arrow )):
+            if ((show_gray_human_arrow | show_gray_ai_arrow) and
+                    (show_white_human_arrow | show_white_ai_arrow)):
                 start_button.update(pos)
 
             # If person clicks start, star the game!
@@ -284,7 +350,8 @@ def title_screen():
     else:
         gray_player = 'alphabeta'
 
-    return {'W' : white_player, 'G': gray_player}
+    return {'W': white_player, 'G': gray_player}
+
 
 def play_game(white_player, gray_player):
     """
@@ -384,6 +451,7 @@ def play_game(white_player, gray_player):
     # Close the window and quit.
     pygame.quit()
 
+
 def main():
     """Play game including title screen."""
     # Get game board
@@ -394,5 +462,6 @@ def main():
     gray_player = Player(this_game, player_dict['G'], 'G')
 
     play_game(white_player, gray_player)
+
 
 main()
