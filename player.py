@@ -38,6 +38,8 @@ class Player():
 
     def play_turn(self, x_coor = -1, y_coor = -1):
         """Place or play depending on turn."""
+        self.game.color = self.color
+        
         if self.placements >= 2:
             self.play_regular_turn(x_coor, y_coor)
 
@@ -46,3 +48,13 @@ class Player():
 
         if self.placements == 2 and self.game.sub_turn == 'place':
             self.game.sub_turn = 'switch'
+    
+    def update_game(self):
+        self.game.color = self.color
+        if self.player_type == 'human':
+            self.game.make_color_active()
+        else:
+            self.game.make_all_spaces_inactive
+    
+    def can_player_undo(self):
+        return self.player_type == 'human' and self.game.sub_turn == 'move'

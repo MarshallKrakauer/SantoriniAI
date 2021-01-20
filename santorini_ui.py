@@ -30,6 +30,16 @@ SCREEN = pygame.display.set_mode(SIZE)
 pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
 
+def main():
+    """Play game including title screen."""
+    # Get game board
+    player_dict = title_screen()
+    this_game = Game()
+
+    white_player = Player(this_game, player_dict['W'], 'W')
+    gray_player = Player(this_game, player_dict['G'], 'G')
+
+    play_game(white_player, gray_player)
 
 def map_numbers(x_coor, y_coor):
     """
@@ -51,7 +61,6 @@ def map_numbers(x_coor, y_coor):
     x_1 = (x_coor - BOARD_LEFT_EDGE) // 50
     y_1 = (y_coor - BOARD_TOP_EDGE) // 50
     return (x_1, y_1)
-
 
 def check_valid(num):
     """Return true if valid board spot."""
@@ -141,6 +150,7 @@ def draw_arrow(x_coor=0, y_coor=0):
 
 
 def get_title_screen_buttons():
+    """Create title screen buttons."""
     return_dict = {}
     return_dict['start'] = Button(
         center_position=(400, 450),  # left,top
@@ -151,12 +161,12 @@ def get_title_screen_buttons():
         multiplier=1)
 
     return_dict['white header'] = Button(
-        center_position=(400, 450),  # left,top
-        font_size=75,
-        bg_rgb=GREEN,
-        text_rgb=BLACK,
-        text="CLICK TO START",
-        multiplier=1)
+        center_position=(200,100),
+        font_size = 72,
+        bg_rgb = BLUE,
+        text_rgb = WHITE,
+        text = 'WHITE',
+        multiplier = 1)
 
     return_dict['gray header'] = Button(
         center_position=(600, 100),
@@ -205,61 +215,7 @@ def title_screen():
     """Show title screen before playing."""
     counter = 0
 
-    start_button = Button(
-        center_position=(400, 450),  # left,top
-        font_size=75,
-        bg_rgb=GREEN,
-        text_rgb=BLACK,
-        text="CLICK TO START",
-        multiplier=1)
-
-    white_header = Button(
-        center_position=(200, 100),
-        font_size=72,
-        bg_rgb=BLUE,
-        text_rgb=WHITE,
-        text='WHITE',
-        multiplier=1)
-
-    ai_button_white = Button(
-        center_position=(200, 200),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='AI',
-        multiplier=1.2)
-
-    ai_button_gray = Button(
-        center_position=(600, 200),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='AI',
-        multiplier=1.2)
-
-    human_button_white = Button(
-        center_position=(200, 300),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='Human',
-        multiplier=1.2)
-
-    human_button_gray = Button(
-        center_position=(600, 300),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='Human',
-        multiplier=1.2)
-
-    grey_header = Button(
-        center_position=(600, 100),
-        font_size=72,
-        bg_rgb=BLUE,
-        text_rgb=GRAY,
-        text='GRAY',
-        multiplier=1.2)
+    button_dict = get_title_screen_buttons()
 
     (show_white_human_arrow, show_white_ai_arrow, show_gray_human_arrow,
      show_gray_ai_arrow, end_loop) = [False] * 5
@@ -278,46 +234,41 @@ def title_screen():
         elif show_gray_ai_arrow:
             draw_arrow(410, 100 - 24)
 
+        # Show start button if all choices have been made
         if ((show_gray_human_arrow | show_gray_ai_arrow) and
                 (show_white_human_arrow | show_white_ai_arrow) and
                 counter % 3000 < 10000):
-            start_button.draw()
+            button_dict['start'].draw()
 
         # Draw all four buttons
-        ai_button_white.draw()
-        human_button_white.draw()
-        ai_button_gray.draw()
-        human_button_gray.draw()
-
-        # Draw the two headers
-        white_header.draw()
-        grey_header.draw()
+        for button in button_dict.keys():
+            if button != 'start':
+                button_dict[button].draw()
 
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
 
             # Check if mouse is hovering over any of the buttons
-            ai_button_white.update(pos)
-            human_button_white.update(pos)
-            ai_button_gray.update(pos)
-            human_button_gray.update(pos)
+            for button in button_dict:
+                if button not in ['start', 'white header', 'gray header']:
+                    button_dict[button].update(pos)
 
             # Move red arrow based on selection for white
-            if (human_button_white.check_press(pos) and
+            if (button_dict['white human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
                 show_white_human_arrow = True
                 show_white_ai_arrow = False
-            elif (ai_button_white.check_press(pos) and
+            elif (button_dict['white alphabeta'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
                 show_white_human_arrow = False
                 show_white_ai_arrow = True
 
             # Move red arrow based on selection for gray
-            if (human_button_gray.check_press(pos) and
+            if (button_dict['gray human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
                 show_gray_human_arrow = True
                 show_gray_ai_arrow = False
-            elif (ai_button_gray.check_press(pos) and
+            elif (button_dict['gray alphabeta'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
                 show_gray_human_arrow = False
                 show_gray_ai_arrow = True
@@ -325,11 +276,11 @@ def title_screen():
             # If both choices have been made, show the start button
             if ((show_gray_human_arrow | show_gray_ai_arrow) and
                     (show_white_human_arrow | show_white_ai_arrow)):
-                start_button.update(pos)
+                button_dict['start'].update(pos)
 
             # If person clicks start, star the game!
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if start_button.check_press(pos):
+                if button_dict['start'].check_press(pos):
                     end_loop = True
 
             # Allow user to quit the game
@@ -377,6 +328,7 @@ def play_game(white_player, gray_player):
         # --- Main event loop
         SCREEN.fill(LIGHT_GREEN)
         event = pygame.event.wait()  # event queue
+        print(current_player, counter)
 
         # Check if someone clicked x
         for event in pygame.event.get():
@@ -386,7 +338,7 @@ def play_game(white_player, gray_player):
         # Special conditions
         # Check for end of game
         if game.end:
-            game.end_game(True)
+            game.end_game(False)
             end_fanfare(current_player.color)  # do something for endgame
 
         # AI player plays game
@@ -403,12 +355,11 @@ def play_game(white_player, gray_player):
 
                 player_num = (player_num + 1) % 2
                 current_player = players[player_num]
-                current_player.game.color = current_player.color
 
                 if current_player.placements >= 2:
                     game.sub_turn = 'select'
                     if current_player.player_type == 'human':
-                        game.make_color_active()
+                        current_player.update_game()
                 else:
                     game.sub_turn = 'place'
 
@@ -423,21 +374,21 @@ def play_game(white_player, gray_player):
                     if game.sub_turn == 'switch':
                         player_num = (player_num + 1) % 2
                         current_player = players[player_num]
-                        game.color = current_player.color
 
                         if current_player.placements >= 2:
                             game.sub_turn = 'select'
                             if current_player.player_type == 'human':
-                                game.make_color_active()
+                                current_player.update_game()
                         else:
                             game.sub_turn = 'place'
 
                 # Undo selection if chosen
-                if check_undo(pos[0], pos[1]) and game.sub_turn == 'move':
+                if check_undo(pos[0], pos[1]) and \
+                    current_player.can_player_undo():
                     game.undo()
 
         # Allow undo during a select action
-        if current_player.player_type == 'human' and game.sub_turn == 'move':
+        if current_player.can_player_undo():
             make_undo_button()
 
         # Update the screen
@@ -451,17 +402,6 @@ def play_game(white_player, gray_player):
     # Close the window and quit.
     pygame.quit()
 
-
-def main():
-    """Play game including title screen."""
-    # Get game board
-    player_dict = title_screen()
-    this_game = Game()
-
-    white_player = Player(this_game, player_dict['W'], 'W')
-    gray_player = Player(this_game, player_dict['G'], 'G')
-
-    play_game(white_player, gray_player)
 
 
 main()
