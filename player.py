@@ -50,11 +50,19 @@ class Player():
             self.game.sub_turn = 'switch'
     
     def update_game(self):
+        """Set up next player after turn switches."""
         self.game.color = self.color
-        if self.player_type == 'human':
-            self.game.make_color_active()
+        if self.placements >= 2:
+            self.game.sub_turn = 'select'
+            if self.player_type == 'human':
+                self.game.make_color_active()
+            else:
+                self.game.make_all_spaces_inactive()
         else:
-            self.game.make_all_spaces_inactive
+            self.game.sub_turn = 'place'
+    
+    def should_switch_turns(self):
+        return self.game.sub_turn == 'switch'
     
     def can_player_undo(self):
         return self.player_type == 'human' and self.game.sub_turn == 'move'

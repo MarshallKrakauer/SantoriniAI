@@ -81,22 +81,26 @@ def check_undo(x_coor, y_coor):
             and BOARD_TOP_EDGE + 350 <= y_coor <= BOARD_TOP_EDGE + 375)
 
 
-def make_undo_button():
-    """Show undo button and allow user to choose it."""
+def make_undo_button(player):
+    """Show undo button in player color."""
+    if player.color == 'W':
+        button_color = WHITE
+    else:
+        button_color = GRAY
     undo_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
-                         "UNDO", 40, GRAY, BLACK, 1.5)
+                         "UNDO", 40, button_color, BLUE, 1.5)
     undo_button.update(pygame.mouse.get_pos())
     undo_button.draw()
 
-
-def show_thinking(dot=3):
+def show_thinking(player):
     """Show a "THINKING..." box when AI plays turn."""
-    elipse = '.' * dot
-    pygame.draw.rect(SCREEN, (50, 50, 50),
-                     BUTTON_MEASURES, 0)
-    text = font.render("THINKING" + elipse, True, BLACK)
-    SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
-
+    if player.color == 'W':
+        button_color = WHITE
+    else:
+        button_color = GRAY
+    undo_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
+                         "THINKING...", 40, button_color, BLUE, 1)
+    undo_button.draw()
 
 def draw_board(board):
     """Draw the 5x5 game board with player pieces."""
@@ -161,12 +165,12 @@ def get_title_screen_buttons():
         multiplier=1)
 
     return_dict['white header'] = Button(
-        center_position=(200,100),
-        font_size = 72,
-        bg_rgb = BLUE,
-        text_rgb = WHITE,
-        text = 'WHITE',
-        multiplier = 1)
+        center_position=(200, 100),
+        font_size=72,
+        bg_rgb=BLUE,
+        text_rgb=WHITE,
+        text='WHITE',
+        multiplier=1)
 
     return_dict['gray header'] = Button(
         center_position=(600, 100),
@@ -328,7 +332,6 @@ def play_game(white_player, gray_player):
         # --- Main event loop
         SCREEN.fill(LIGHT_GREEN)
         event = pygame.event.wait()  # event queue
-        print(current_player, counter)
 
         # Check if someone clicked x
         for event in pygame.event.get():
@@ -343,25 +346,17 @@ def play_game(white_player, gray_player):
 
         # AI player plays game
         elif current_player.player_type == 'alphabeta':
-            game.make_all_spaces_inactive()
-            show_thinking()
+            show_thinking(current_player)
             if show_board:
                 current_player.play_turn()
                 show_board = False
             else:
                 show_board = True
 
-            if game.sub_turn == 'switch':
-
+            if current_player.should_switch_turns():
                 player_num = (player_num + 1) % 2
                 current_player = players[player_num]
-
-                if current_player.placements >= 2:
-                    game.sub_turn = 'select'
-                    if current_player.player_type == 'human':
-                        current_player.update_game()
-                else:
-                    game.sub_turn = 'place'
+                current_player.update_game()
 
         # Human player plays game
         elif current_player.player_type == 'human':
@@ -371,16 +366,10 @@ def play_game(white_player, gray_player):
 
                 if check_valid(x) and check_valid(y):
                     current_player.play_turn(x, y)
-                    if game.sub_turn == 'switch':
+                    if current_player.should_switch_turns():
                         player_num = (player_num + 1) % 2
                         current_player = players[player_num]
-
-                        if current_player.placements >= 2:
-                            game.sub_turn = 'select'
-                            if current_player.player_type == 'human':
-                                current_player.update_game()
-                        else:
-                            game.sub_turn = 'place'
+                        current_player.update_game()
 
                 # Undo selection if chosen
                 if check_undo(pos[0], pos[1]) and \
@@ -389,7 +378,7 @@ def play_game(white_player, gray_player):
 
         # Allow undo during a select action
         if current_player.can_player_undo():
-            make_undo_button()
+            make_undo_button(current_player)
 
         # Update the screen
         draw_board(game.board)
@@ -401,7 +390,5 @@ def play_game(white_player, gray_player):
 
     # Close the window and quit.
     pygame.quit()
-
-
 
 main()
