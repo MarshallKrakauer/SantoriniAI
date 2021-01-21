@@ -1,3 +1,4 @@
+# pylint: disable=E0633
 """Santorini Game with AI."""
 import copy
 import random
@@ -169,27 +170,27 @@ class Game():
         for spot in spot_list:
             i, j = spot
             # check each possible move
-            for m in get_adjacent(i, j):
+            for space in get_adjacent(i, j):
                 new_game = copy.deepcopy(self)
                 new_game.color = color
                 new_game.select(new_game.color, i, j)
-                if new_game.move(m[0], m[1]):
+                if new_game.move(space[0], space[1]):
                     build_list = get_adjacent(new_game.col,
-                                                   new_game.row)
+                                              new_game.row)
                 # given a legal move, check for each possible build
-                    for b in build_list:
-                        buildGame = copy.deepcopy(new_game)
-                        if buildGame.build(b[0], b[1]):
-                            nodeGame = copy.deepcopy(buildGame)
-                            currentNode = Node(
-                                value=nodeGame.evaluate_board(),
+                    for building in build_list:
+                        build_game = copy.deepcopy(new_game)
+                        if build_game.build(building[0], building[1]):
+                            node_game = copy.deepcopy(build_game)
+                            current_node = Node(
+                                value=node_game.evaluate_board(),
                                 children=[],
-                                state=nodeGame,
+                                state=node_game,
                                 level=level + 1)
-                            return_li.append(currentNode)
+                            return_li.append(current_node)
         return return_li
 
-    def auto_play_turn(self, color):
+    def auto_play_turn(self, color, tree_depth = 2):
         """
         Make automatic turn.
 
@@ -200,18 +201,28 @@ class Game():
             other_color = 'W'
         else:
             other_color = 'G'
-        gameCopy = copy.deepcopy(self)
-        rootNode = Node(value=gameCopy.evaluate_board(),
-                        state=gameCopy,
-                        children=[],
-                        level=0)
-        rootNode.children = gameCopy.create_children(color, 0)
-        for child in rootNode.children:
-            childCopy = copy.deepcopy(child.state)
-            child.children = childCopy.create_children(other_color, 1)
-            #print(child.children)
+        
+        if tree_depth <= 2:
+            tree_depth = 2
+        
+        tree_depth = int(tree_depth)
+        game_copy = copy.deepcopy(self)
+        root_node = Node(value=game_copy.evaluate_board(),
+                         state=game_copy,
+                         children=[],
+                         level=0)
+        
+        counter = 2 #start at depth 1
+        root_node.children = game_copy.create_children(color, 0)
+        
+        while counter <= tree_depth:
+            for child in root_node.children:
+                child_copy = copy.deepcopy(child.state)
+                child.children = child_copy.create_children(other_color, 1)
+            
+            counter += 1
 
-        best_state = rootNode.alpha_beta_search()
+        best_state = root_node.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
         if not self._end:
@@ -223,6 +234,7 @@ class Game():
         self.make_color_active()
 
     def make_all_spaces_inactive(self):
+        """Get rid of red boxes for all spaces."""
         for i in range(5):
             for j in range(5):
                 self.board[i][j]['active'] = False
@@ -246,8 +258,8 @@ class Game():
             no more than one level increase
         """
         height = self._board[x_coor][y_coor]['level']
-        spaceList = get_adjacent(x_coor, y_coor)
-        for i, j in spaceList:
+        space_list = get_adjacent(x_coor, y_coor)
+        for i, j in space_list:
             if (
                     is_valid_num(i) and is_valid_num(j) and
                     self._board[i][j]['occupant'] == 'O'
@@ -275,14 +287,14 @@ class Game():
             not that spaces with a dome are considered occupied, with
             an occpant of X
         """
-        spaceList = get_adjacent(x_coor, y_coor)
-        for i, j in spaceList:
+        space_list = get_adjacent(x_coor, y_coor)
+        for i, j in space_list:
             if (is_valid_num(i) and is_valid_num(j) and
                     self._board[i][j]['occupant'] == 'O'):
                 return True
         return False
 
-    def end_game(self, switchColor=False):
+    def end_game(self, switch_color=False):
         """
         End game and prevent further moves.
 
@@ -290,27 +302,21 @@ class Game():
 
         Parameters
         ----------
-        switchColor : bool, optional
+        switch_color : bool, optional
             switches to opponent before declaring winner
             relevant for secondary win condition (winning through
             opponent having no valid turns). The default is False.
         """
         self._end = True
-        if switchColor:
-            self.switch_player()
+        if switch_color:
+            if self._color == 'W':
+                self._color = 'G'
+            else: 
+                self._color = 'W'
 
         # make all space inactive
-        for i in range(5):
-            for j in range(5):
-                self._board[i][j]['active'] = False
+        self.make_all_spaces_inactive()
         self._sub_turn = 'end'
-
-    def switch_player(self):
-        """Change to opponent's color."""
-        if self._color == 'G':
-            self._color = 'W'
-        else:
-            self._color = 'G'
 
     def make_color_active(self):
         """
@@ -390,11 +396,11 @@ class Game():
         """
         if self._board[x_coor][y_coor]['occupant'] != 'O':
             self._message = "Occupied Space"
-            return False
         else:
             self._board[x_coor][y_coor]['occupant'] = color
             self._turn += 1
             return True
+        return False
 
     def select(self, color, x_coor, y_coor):
         """
@@ -503,8 +509,8 @@ class Game():
         """
         Run through a turn.
 
-        For turns 1-4, just places piece. After that, goes through
-        each part of turn: select, move, build, switch
+        After the piece placement has taken place, goes through
+        motion of a normal turn.
 
         Parameters
         ----------
@@ -514,15 +520,14 @@ class Game():
             y coordinate
         """
         # Playing the regular game
-        if True: #self._turn > 4 and not self._end:
-            if self._sub_turn == 'select':  # Selecting which piece to move
-                self.make_color_active()
-                self.select(self._color, x_coor, y_coor)
-            elif self._sub_turn == 'move':  # Moving that piece
-                self.check_move_available()
-                self.move(x_coor, y_coor)
-            elif self._sub_turn == 'build':
-                self.build(x_coor, y_coor)
+        if self._sub_turn == 'select':  # Selecting which piece to move
+            self.make_color_active()
+            self.select(self._color, x_coor, y_coor)
+        elif self._sub_turn == 'move':  # Moving that piece
+            self.check_move_available()
+            self.move(x_coor, y_coor)
+        elif self._sub_turn == 'build':
+            self.build(x_coor, y_coor)
 
     @property
     def sub_turn(self):

@@ -322,6 +322,7 @@ def play_game(white_player, gray_player):
     counter = 0  # not in use, holder if something shows every other frame
     done = False  # ends pygame when true
     show_board = False  # Used to show board when AI is playing
+    stop_game = False
     player_num = 0
     players = [white_player, gray_player]
     current_player = players[0]
@@ -339,13 +340,9 @@ def play_game(white_player, gray_player):
                 done = True
 
         # Special conditions
-        # Check for end of game
-        if game.end:
-            game.end_game(False)
-            end_fanfare(current_player.color)  # do something for endgame
 
         # AI player plays game
-        elif current_player.player_type == 'alphabeta':
+        if not stop_game and current_player.player_type == 'alphabeta':
             show_thinking(current_player)
             if show_board:
                 current_player.play_turn()
@@ -359,7 +356,7 @@ def play_game(white_player, gray_player):
                 current_player.update_game()
 
         # Human player plays game
-        elif current_player.player_type == 'human':
+        elif not stop_game and current_player.player_type == 'human':
             if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
                 pos = pygame.mouse.get_pos()
                 x, y = map_numbers(pos[0], pos[1])
@@ -379,7 +376,13 @@ def play_game(white_player, gray_player):
         # Allow undo during a select action
         if current_player.can_player_undo():
             make_undo_button(current_player)
-
+        
+        # Check for end of game
+        if game.end:
+            game.end_game(False)
+            end_fanfare(current_player.color)
+            stop_game = True
+ 
         # Update the screen
         draw_board(game.board)
         pygame.display.flip()

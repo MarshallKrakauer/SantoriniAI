@@ -62,7 +62,9 @@ class Player():
             self.game.sub_turn = 'place'
     
     def should_switch_turns(self):
+        """Check if player is done with their turn."""
         return self.game.sub_turn == 'switch'
     
     def can_player_undo(self):
+        """Check if player can undo selection."""
         return self.player_type == 'human' and self.game.sub_turn == 'move'
