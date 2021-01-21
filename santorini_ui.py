@@ -384,7 +384,7 @@ def play_game(white_player, gray_player):
         draw_board(game.board)
         pygame.display.flip()
 
-        # --- Limit to 60 frames per second
+        # Run at 30 frames per second
         counter += 1
         clock.tick(30)
 
