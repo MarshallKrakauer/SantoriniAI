@@ -33,7 +33,7 @@ class Player():
         if self.player_type == 'human':
             self.game.play_manual_turn(x_coor, y_coor)
         elif self.player_type == 'alphabeta':
-            self.game.auto_play_turn(self.color)
+            self.game.play_automatic_turn(self.color)
             self.game.sub_turn = 'switch'
 
     def play_turn(self, x_coor = -1, y_coor = -1):

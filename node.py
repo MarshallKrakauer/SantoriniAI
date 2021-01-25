@@ -17,11 +17,11 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, value=None, children=None, state=None, level=0):
-        self._value = value
-        self._children = children
-        self._state = state
-        self._level = level
+    def __init__(self, value= 0, children=None, game=None, level=0):
+        self.game = game
+        self.value = self.game.evaluate_board()
+        self.children = children
+        self.level = level
 
     def __repr__(self):
         """
@@ -32,9 +32,9 @@ class Node:
          str
             board with its level and score
         """
-        return ('\nscore: ' + str(self._state.evaluate_board()) + '\n'
-                + 'level ' + str(self._level) + '\n'
-                + str(self._state)
+        return ('\n'
+                + 'level ' + str(self.level) + '\n'
+                + str(self.game)
                 )
 
     def min_value(self, node, alpha, beta):
@@ -59,7 +59,6 @@ class Node:
         if is_terminal(node):
             return node.value
         value = float('inf')
-
         for elem in node.children:
             value = min(value, self.max_value(elem, alpha, beta))
             if value <= alpha:
@@ -111,51 +110,18 @@ class Node:
         best_val = -float('inf')
         beta = float('inf')
 
-        best_state = None
+        best_move = None
         for elem in self.children:
             value = self.min_value(elem, best_val, beta)
-            # time.sleep(1)
-            # print(dt.datetime.now())
-            # print(self)
             if value > best_val:
                 best_val = value
-                best_state = elem.state
+                best_move = elem.game
 
-        return best_state
-
-    @property
-    def children(self):
+        return best_move
         """Return children of Node."""
         return self._children
-
-    @property
-    def value(self):
         """Return value (score) of Node's game."""
         return self._value
-
-    @property
-    def state(self):
-        """Return the Game class."""
-        return self._state
-
-    @property
-    def level(self):
-        """Return the level (ie layer parent nodes)."""
-        return self._level
-
-    @children.setter
-    def children(self, children):
-        """Return node's children in the tree."""
-        self._children = children
-
-    @state.setter
-    def state(self, state):
-        """Set Node's Game to another Game."""
-        self._state = state
-
-    @value.setter
-    def value(self, value):
-        """Set score of Game's board."""
 
 def is_terminal(node):
     """
@@ -221,3 +187,4 @@ def print_breadth_first(root, level=0):
                 level += 1
             q.put(n)
     return q
+

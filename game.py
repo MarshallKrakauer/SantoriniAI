@@ -67,20 +67,6 @@ class Game():
             return_val += '\n'
         return return_val
 
-    def change_square(self, x_coor, y_coor):
-        """
-        Change space.
-
-        Parameters
-        ----------
-        x_coor : int
-            x-coordinate ie column value
-        y_coor : int
-            y-coordinate ie row value
-        """
-        self._col = x_coor
-        self._row = y_coor
-
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
@@ -143,90 +129,6 @@ class Game():
                 elif space['occupant'] == other_color:
                     score -= 2 ** (space['level'] % 4)
         return score
-
-    def create_children(self, color='G', level=0):
-        """
-        Add list of possible moves to game state.
-
-        Parameters
-        ----------
-        color : char, optional
-            Player color, G(ray) or W(hite). The default is 'G'.
-        level : char, optional
-            what level of the tree board takes place on
-            Root node is level 0, its children are level 1,
-            children of those children are level 2 etc. The default is 0.
-
-        Returns
-        -------
-        return_li : list
-            Children of that node
-        """
-        return_li = []
-        build_list = []
-        spot_list = [(i, j) for i in range(5) for j in range(5) if
-                     self._board[i][j]['occupant'] == color]
-        # Check both of the spaces occupied by the player
-        for spot in spot_list:
-            i, j = spot
-            # check each possible move
-            for space in get_adjacent(i, j):
-                new_game = copy.deepcopy(self)
-                new_game.color = color
-                new_game.select(new_game.color, i, j)
-                if new_game.move(space[0], space[1]):
-                    build_list = get_adjacent(new_game.col,
-                                              new_game.row)
-                # given a legal move, check for each possible build
-                    for building in build_list:
-                        build_game = copy.deepcopy(new_game)
-                        if build_game.build(building[0], building[1]):
-                            node_game = copy.deepcopy(build_game)
-                            current_node = Node(
-                                value=node_game.evaluate_board(),
-                                children=[],
-                                state=node_game,
-                                level=level + 1)
-                            return_li.append(current_node)
-        return return_li
-
-    def auto_play_turn(self, color, tree_depth = 2):
-        """
-        Make automatic turn.
-
-        Uses alpha-beta pruning to selection best turn
-        and update game object to that ideal turn
-        """
-        if color == 'G':
-            other_color = 'W'
-        else:
-            other_color = 'G'
-        
-        if tree_depth <= 2:
-            tree_depth = 2
-        
-        tree_depth = int(tree_depth)
-        game_copy = copy.deepcopy(self)
-        root_node = Node(value=game_copy.evaluate_board(),
-                         state=game_copy,
-                         children=[],
-                         level=0)
-        
-        counter = 2 #start at depth 1
-        root_node.children = game_copy.create_children(color, 0)
-        
-        while counter <= tree_depth:
-            for child in root_node.children:
-                child_copy = copy.deepcopy(child.state)
-                child.children = child_copy.create_children(other_color, 1)
-            
-            counter += 1
-
-        best_state = root_node.alpha_beta_search()
-        self._board = best_state.board
-        self._end = best_state.end
-        if not self._end:
-            self._sub_turn = 'switch'
 
     def undo(self):
         """Undo select action."""
@@ -469,7 +371,6 @@ class Game():
             self._sub_turn = 'build'
             self.make_exterior_active()
             return True
-        #print(self._message)
         return False
 
     def build(self, x_coor, y_coor):
@@ -578,6 +479,45 @@ class Game():
     def color(self, color):
         """Set color of game."""
         self._color = color
+    
+    def play_automatic_turn(self, color, tree_depth = 2):
+        """
+        Make automatic turn.
+
+        Uses alpha-beta pruning to selection best turn
+        and update game object to that ideal turn
+        """
+        if color == 'G':
+            other_color = 'W'
+        else:
+            other_color = 'G'
+        
+        if tree_depth <= 2:
+            tree_depth = 2
+        tree_depth = int(tree_depth)
+        
+        game_copy = copy.deepcopy(self)
+        root_node = Node(value=game_copy.evaluate_board(),
+                         game=game_copy,
+                         children=[],
+                         level=0)
+        
+        counter = 2 # min depth is 2 (root, next move, opponents move)
+        root_node.children = create_children(root_node,
+                                             color,
+                                             0)
+        
+        while counter <= tree_depth:
+            for child in root_node.children:
+                child.children = create_children(copy.deepcopy(child),
+                    other_color, 1)
+            counter += 1
+        
+        best_state = root_node.alpha_beta_search()
+        self._board = best_state.board
+        self._end = best_state.end
+        if not self._end:
+            self._sub_turn = 'switch'
 
 def is_valid_num(num):
     """
@@ -627,3 +567,65 @@ def get_adjacent(x_coor, y_coor):
         space_list))
 
     return space_list
+
+def create_children(node, color='G', level=0):
+    """
+    Add list of possible moves to game state.
+
+    Parameters
+    ----------
+    game : Game
+        Game fomr which to attempt moves
+    color : char, optional
+        Player color, G(ray) or W(hite). The default is 'G'.
+    level : char, optional
+        what level of the tree board takes place on
+        Root node is level 0, its children are level 1,
+        children of those children are level 2 etc. The default is 0.
+
+    Returns
+    -------
+    return_li : list
+        Children of that node
+    """
+    return_li = []
+    build_list = []
+    # Check both of the spaces occupied by the player
+    for spot in [(i, j) for i in range(5) for j in range(5) if
+                 node.game._board[i][j]['occupant'] == color]:
+        i, j = spot
+        # check each possible move
+        for space in get_adjacent(i, j):
+            new_game = copy.deepcopy(node.game)
+            new_game.color = color
+            new_game.select(new_game.color, i, j)
+            if new_game.move(space[0], space[1]):
+                build_list = get_adjacent(new_game.col,
+                                          new_game.row)
+            
+            # given a legal move, check for each possible build
+                for building in build_list:
+                    build_game = copy.deepcopy(new_game)
+                    #print(level, '\n' ,build_game)
+                    if build_game.build(building[0], building[1]):
+                        node_game = copy.deepcopy(build_game)
+                        return_li.append(Node(
+                            value=node_game.evaluate_board(),
+                            children=[],
+                            game=node_game,
+                            level=level + 1))
+    return return_li
+
+def create_children_recursive(game, color='G', level=2):
+    pass
+"""
+    if current_node.level + 1 == level:
+        for child in current_node.children:
+            return create_children(child.game,
+                                   child.game.color,
+                                   current_node.level)
+    else:
+        return create_children_recursive(child.game,
+                                   child.game.color,
+                                   current_node.level)"""
+    
