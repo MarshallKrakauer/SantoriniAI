@@ -2,7 +2,7 @@
 """Santorini Game with AI."""
 import copy
 import random
-from node import Node, print_breadth_first
+from node import Node, print_breadth_first, print_depth_first
 
 SYS_RANDOM = random.SystemRandom()
 
@@ -513,7 +513,7 @@ class Game():
                     other_color, 1)
             counter += 1
         
-        #print_breadth_first(root_node)
+        print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board

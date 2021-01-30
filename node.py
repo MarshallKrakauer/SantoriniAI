@@ -158,7 +158,7 @@ def print_depth_first(root):
         print_depth_first(tree)
 
 
-def print_breadth_first(root, level=0):
+def print_breadth_first(root):
     """
     Print values breadth first (level by level).
 
@@ -175,14 +175,14 @@ def print_breadth_first(root, level=0):
         Nodes values in breadth first order
 
     """
-    q = Queue(maxsize=100)
+    q = Queue(maxsize=10000)
     q.put(root)
     while not q.empty():
         curr_node = q.get()
-        print(curr_node.value, curr_node.level)
-        for idx, n in enumerate(curr_node.children):
-            if idx == 0:
-                level += 1
-            q.put(n)
-    return q
+        #print(curr_node.value, curr_node.level)
+        for node in curr_node.children:
+            print(node)
+            q.put(node)
+
+
 
