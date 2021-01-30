@@ -2,7 +2,7 @@
 """Santorini Game with AI."""
 import copy
 import random
-from node import Node
+from node import Node, print_breadth_first
 
 SYS_RANDOM = random.SystemRandom()
 
@@ -497,10 +497,10 @@ class Game():
         tree_depth = int(tree_depth)
         
         game_copy = copy.deepcopy(self)
-        root_node = Node(value=game_copy.evaluate_board(),
-                         game=game_copy,
+        root_node = Node(game=game_copy,
                          children=[],
-                         level=0)
+                         level=0,
+                         max_level = 2)
         
         counter = 2 # min depth is 2 (root, next move, opponents move)
         root_node.children = create_children(root_node,
@@ -512,6 +512,8 @@ class Game():
                 child.children = create_children(copy.deepcopy(child),
                     other_color, 1)
             counter += 1
+        
+        #print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
@@ -610,16 +612,15 @@ def create_children(node, color='G', level=0):
                     if build_game.build(building[0], building[1]):
                         node_game = copy.deepcopy(build_game)
                         return_li.append(Node(
-                            value=node_game.evaluate_board(),
-                            children=[],
                             game=node_game,
+                            children=[],
                             level=level + 1))
     return return_li
 
-def create_children_recursive(game, color='G', level=2):
-    pass
-"""
-    if current_node.level + 1 == level:
+'''
+def create_children_recursive(node, color='G', level=2):
+
+    if node.level == node.max_level - 1 :
         for child in current_node.children:
             return create_children(child.game,
                                    child.game.color,
@@ -627,5 +628,5 @@ def create_children_recursive(game, color='G', level=2):
     else:
         return create_children_recursive(child.game,
                                    child.game.color,
-                                   current_node.level)"""
-    
+                                   current_node.level)
+  '''  

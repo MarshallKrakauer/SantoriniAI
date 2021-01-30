@@ -17,11 +17,12 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, value= 0, children=None, game=None, level=0):
+    def __init__(self, game, children= [], level=0, max_level = 2):
         self.game = game
         self.value = self.game.evaluate_board()
         self.children = children
         self.level = level
+        self.max_level = max_level
 
     def __repr__(self):
         """
@@ -118,10 +119,7 @@ class Node:
                 best_move = elem.game
 
         return best_move
-        """Return children of Node."""
-        return self._children
-        """Return value (score) of Node's game."""
-        return self._value
+
 
 def is_terminal(node):
     """
