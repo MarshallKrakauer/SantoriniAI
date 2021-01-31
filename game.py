@@ -5,6 +5,7 @@ import random
 from node import Node, print_breadth_first, print_depth_first
 
 SYS_RANDOM = random.SystemRandom()
+DEPTH = 3
 
 class Game():
     """
@@ -391,11 +392,14 @@ class Game():
         """
         if abs(y_coor - self._row) > 1 or \
            abs(x_coor - self._col) > 1:
-            self._message = "That space is too far away"
+               pass
+            #self._message = "That space is too far away"
         elif y_coor == self._row and x_coor == self._col:
-            self._message = "Can't build on your own space"
+            pass
+            #self._message = "Can't build on your own space"
         elif self._board[x_coor][y_coor]['occupant'] != 'O':
-            self._message = "That spot is taken. Please choose another\n"
+            pass
+            #self._message = "That spot is taken. Please choose another\n"
             self._row = y_coor
             self._col = x_coor
         else:
@@ -480,18 +484,13 @@ class Game():
         """Set color of game."""
         self._color = color
     
-    def play_automatic_turn(self, color, tree_depth = 2):
+    def play_automatic_turn(self, color, tree_depth = DEPTH):
         """
         Make automatic turn.
 
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
         """
-        if color == 'G':
-            other_color = 'W'
-        else:
-            other_color = 'G'
-        
         if tree_depth <= 2:
             tree_depth = 2
         tree_depth = int(tree_depth)
@@ -500,21 +499,14 @@ class Game():
         root_node = Node(game=game_copy,
                          children=[],
                          level=0,
-                         max_level = 2)
+                         max_level = tree_depth)
         
-        counter = 2 # min depth is 2 (root, next move, opponents move)
-        root_node.children = create_children(root_node,
-                                             color,
-                                             0)
+        print("Is the creation of the steps the issue?")
+        create_children_recursive(root_node)
         
-        while counter <= tree_depth:
-            for child in root_node.children:
-                child.children = create_children(copy.deepcopy(child),
-                    other_color, 1)
-            counter += 1
+        #print_breadth_first(root_node)
         
-        print_breadth_first(root_node)
-        
+        print("is alpha beta the issue???")
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
@@ -570,7 +562,7 @@ def get_adjacent(x_coor, y_coor):
 
     return space_list
 
-def create_children(node, color='G', level=0):
+def create_children(node, color='G'):
     """
     Add list of possible moves to game state.
 
@@ -606,27 +598,33 @@ def create_children(node, color='G', level=0):
                                           new_game.row)
             
             # given a legal move, check for each possible build
-                for building in build_list:
+                for build in build_list:
+                    #print("does this take forever")
                     build_game = copy.deepcopy(new_game)
-                    #print(level, '\n' ,build_game)
-                    if build_game.build(building[0], building[1]):
-                        node_game = copy.deepcopy(build_game)
+                    if build_game.build(build[0], build[1]):
                         return_li.append(Node(
-                            game=node_game,
-                            children=[],
-                            level=level + 1))
+                            game=copy.deepcopy(build_game),
+                            level=node.level + 1,
+                            max_level=node.max_level))
     return return_li
 
-'''
-def create_children_recursive(node, color='G', level=2):
-
-    if node.level == node.max_level - 1 :
-        for child in current_node.children:
-            return create_children(child.game,
-                                   child.game.color,
-                                   current_node.level)
+def create_children_recursive(node):
+    
+    # for even numbered levels, move the other color
+    if node.level % 2 == 0:
+        color = node.game.color
     else:
-        return create_children_recursive(child.game,
-                                   child.game.color,
-                                   current_node.level)
-  '''  
+        if node.game.color == 'G':
+            color = 'W'
+        else:
+            color = 'G'
+    
+    # Base case, sets the final level
+    if node.level == node.max_level:
+        node.children = []
+    
+    # recurring case, note that create_children increments the level
+    elif node.level < node.max_level:
+        node.children = create_children(node, color)
+        for child in node.children:
+            create_children_recursive(child)
