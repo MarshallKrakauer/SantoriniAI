@@ -501,12 +501,9 @@ class Game():
                          level=0,
                          max_level = tree_depth)
         
-        print("Is the creation of the steps the issue?")
         create_children_recursive(root_node)
         
         #print_breadth_first(root_node)
-        
-        print("is alpha beta the issue???")
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
@@ -530,7 +527,7 @@ def is_valid_num(num):
     """
     return -1 < num < 5
 
-def get_adjacent(x_coor, y_coor):
+def get_adjacent(x_coor, y_coor, when = 'general'):
     """
     Get spaces surrounding the passed one.
 
@@ -547,18 +544,19 @@ def get_adjacent(x_coor, y_coor):
         list of spaces adjacent to the one provided through
         x_coor and y_coor
     """
-    space_list = [(x_coor - 1, y_coor + 1),
-                  (x_coor, y_coor + 1),
-                  (x_coor + 1, y_coor + 1),
-                  (x_coor - 1, y_coor),
-                  (x_coor + 1, y_coor),
-                  (x_coor - 1, y_coor - 1),
-                  (x_coor, y_coor - 1),
-                  (x_coor + 1, y_coor - 1)]
-    space_list = list(filter(
-        lambda t: t[0] >= 0 and t[0] <= 4
-        and t[1] >= 0 and t[1] <= 4,
-        space_list))
+    if when == 'general':
+        space_list = [(x_coor - 1, y_coor + 1),
+                      (x_coor, y_coor + 1),
+                      (x_coor + 1, y_coor + 1),
+                      (x_coor - 1, y_coor),
+                      (x_coor + 1, y_coor),
+                      (x_coor - 1, y_coor - 1),
+                      (x_coor, y_coor - 1),
+                      (x_coor + 1, y_coor - 1)]
+        space_list = list(filter(
+            lambda t: t[0] >= 0 and t[0] <= 4
+            and t[1] >= 0 and t[1] <= 4,
+            space_list))
 
     return space_list
 
@@ -589,16 +587,25 @@ def create_children(node, color='G'):
                  node.game._board[i][j]['occupant'] == color]:
         i, j = spot
         # check each possible move
-        for space in get_adjacent(i, j):
+        
+        for space in iter(filter(lambda s: 
+                             node.game._board[s[0]][s[1]]['occupant']
+                             == 'O'
+                             ,get_adjacent(i, j))):
             new_game = copy.deepcopy(node.game)
             new_game.color = color
             new_game.select(new_game.color, i, j)
+            
             if new_game.move(space[0], space[1]):
                 build_list = get_adjacent(new_game.col,
                                           new_game.row)
             
             # given a legal move, check for each possible build
-                for build in build_list:
+                for build in iter(
+                        filter(lambda s: 
+                        new_game._board[s[0]][s[1]]['occupant'] == 'O'
+                             ,get_adjacent(new_game.col,
+                                          new_game.row))):
                     #print("does this take forever")
                     build_game = copy.deepcopy(new_game)
                     if build_game.build(build[0], build[1]):
