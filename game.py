@@ -3,6 +3,7 @@ from copy import deepcopy
 import random
 import datetime as dt
 from node import Node, print_breadth_first, print_depth_first
+import time
 
 SYS_RANDOM = random.SystemRandom()
 DEPTH = 3
@@ -501,12 +502,10 @@ class Game():
                          level=0,
                          max_level = tree_depth)
         
-        time_0 = dt.datetime.now()
         create_children_recursive(root_node)
         
-        print(dt.datetime.now() - time_0)
         #print_breadth_first(root_node)
-        
+        #print(root_node.alpha_beta_search())
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
@@ -617,13 +616,21 @@ def create_children(node, color='G'):
                     build_game._board = deepcopy(new_game._board)
                     build_game._end = new_game._end
                     build_game._color = new_game.color
-                    
-                    print(dt.datetime.now())
-                    if build_game.build(build[0], build[1]):
+                                        
+                    if build_game._end:
                         return_li.append(Node(
                             game=build_game,
                             level=node.level + 1,
                             max_level=node.max_level))
+                    
+                    elif build_game.build(build[0], build[1]):
+                        if build_game is None:
+                            time.sleep(3)
+                        else:
+                            return_li.append(Node(
+                                game=build_game,
+                                level=node.level + 1,
+                                max_level=node.max_level))
     return return_li
 
 def create_children_recursive(node):

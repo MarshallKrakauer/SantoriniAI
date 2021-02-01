@@ -66,8 +66,14 @@ def check_valid(num):
     """Return true if valid board spot."""
     return -1 < num < 5
 
-def end_fanfare(color):
+def end_fanfare(color,switch):
     """Produce visual showing who won the game."""
+    if switch:
+        if color == 'W':
+            color = 'G'
+        else:
+            color = 'W'
+    
     pygame.draw.rect(SCREEN, GREEN,
                      BUTTON_MEASURES, 0)
     text = font.render("WINNER: " + color, True, BLACK)
@@ -379,7 +385,7 @@ def play_game(white_player, gray_player):
         # Check for end of game
         if game.end:
             game.end_game(False)
-            end_fanfare(current_player.color)
+            end_fanfare(current_player.color, True)
             stop_game = True
  
         # Update the screen

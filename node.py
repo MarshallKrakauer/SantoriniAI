@@ -113,6 +113,7 @@ class Node:
 
         best_move = None
         for elem in self.children:
+            #print(elem)
             value = self.min_value(elem, best_val, beta)
             if value > best_val:
                 best_val = value
