@@ -1,7 +1,7 @@
 # pylint: disable=E0633
-"""Santorini Game with AI."""
-import copy
+from copy import deepcopy
 import random
+import datetime as dt
 from node import Node, print_breadth_first, print_depth_first
 
 SYS_RANDOM = random.SystemRandom()
@@ -495,15 +495,19 @@ class Game():
             tree_depth = 2
         tree_depth = int(tree_depth)
         
-        game_copy = copy.deepcopy(self)
+        game_copy = deepcopy(self)
         root_node = Node(game=game_copy,
                          children=[],
                          level=0,
                          max_level = tree_depth)
         
+        time_0 = dt.datetime.now()
         create_children_recursive(root_node)
         
+        print(dt.datetime.now() - time_0)
         #print_breadth_first(root_node)
+        
+        
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
@@ -581,7 +585,6 @@ def create_children(node, color='G'):
         Children of that node
     """
     return_li = []
-    build_list = []
     # Check both of the spaces occupied by the player
     for spot in [(i, j) for i in range(5) for j in range(5) if
                  node.game._board[i][j]['occupant'] == color]:
@@ -592,13 +595,15 @@ def create_children(node, color='G'):
                              node.game._board[s[0]][s[1]]['occupant']
                              == 'O'
                              ,get_adjacent(i, j))):
-            new_game = copy.deepcopy(node.game)
-            new_game.color = color
-            new_game.select(new_game.color, i, j)
+            
+            #new_game = deepcopy(node.game)            
+            new_game = Game()
+            new_game._board = deepcopy(node.game._board)
+            new_game._color = color
+            new_game._end = node.game._end
+            new_game.select(color, i, j)
             
             if new_game.move(space[0], space[1]):
-                build_list = get_adjacent(new_game.col,
-                                          new_game.row)
             
             # given a legal move, check for each possible build
                 for build in iter(
@@ -606,11 +611,17 @@ def create_children(node, color='G'):
                         new_game._board[s[0]][s[1]]['occupant'] == 'O'
                              ,get_adjacent(new_game.col,
                                           new_game.row))):
-                    #print("does this take forever")
-                    build_game = copy.deepcopy(new_game)
+                    #build_game = deepcopy(new_game)
+                    
+                    build_game = Game()
+                    build_game._board = deepcopy(new_game._board)
+                    build_game._end = new_game._end
+                    build_game._color = new_game.color
+                    
+                    print(dt.datetime.now())
                     if build_game.build(build[0], build[1]):
                         return_li.append(Node(
-                            game=copy.deepcopy(build_game),
+                            game=build_game,
                             level=node.level + 1,
                             max_level=node.max_level))
     return return_li

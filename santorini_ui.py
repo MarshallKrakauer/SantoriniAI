@@ -66,7 +66,6 @@ def check_valid(num):
     """Return true if valid board spot."""
     return -1 < num < 5
 
-
 def end_fanfare(color):
     """Produce visual showing who won the game."""
     pygame.draw.rect(SCREEN, GREEN,
