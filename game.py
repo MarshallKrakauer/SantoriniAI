@@ -504,8 +504,7 @@ class Game():
         
         create_children_recursive(root_node)
         
-        #print_breadth_first(root_node)
-        #print(root_node.alpha_beta_search())
+        print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
@@ -610,7 +609,6 @@ def create_children(node, color='G'):
                         new_game._board[s[0]][s[1]]['occupant'] == 'O'
                              ,get_adjacent(new_game.col,
                                           new_game.row))):
-                    #build_game = deepcopy(new_game)
                     
                     build_game = Game()
                     build_game._board = deepcopy(new_game._board)
@@ -623,18 +621,26 @@ def create_children(node, color='G'):
                             level=node.level + 1,
                             max_level=node.max_level))
                     
-                    elif build_game.build(build[0], build[1]):
-                        if build_game is None:
-                            time.sleep(3)
-                        else:
-                            return_li.append(Node(
-                                game=build_game,
-                                level=node.level + 1,
-                                max_level=node.max_level))
+                    elif (build_game is not None and 
+                          build_game.build(build[0], build[1])):
+                        return_li.append(Node(
+                            game=build_game,
+                            level=node.level + 1,
+                            max_level=node.max_level))
     return return_li
 
 def create_children_recursive(node):
+    """
+    Create future turns, plus future turns for those future turns.
     
+    Recursive function. root node will contain a "max level"
+    value, which will tell this function when to stop
+
+    Parameters
+    ----------
+    node : Node
+        Nodes with which to create child nodes (ie subsequent turns)
+    """
     # for even numbered levels, move the other color
     if node.level % 2 == 0:
         color = node.game.color
@@ -644,12 +650,8 @@ def create_children_recursive(node):
         else:
             color = 'G'
     
-    # Base case, sets the final level
-    if node.level == node.max_level:
-        node.children = []
-    
     # recurring case, note that create_children increments the level
-    elif node.level < node.max_level:
+    if node.level < node.max_level:
         node.children = create_children(node, color)
         for child in node.children:
             create_children_recursive(child)
