@@ -6,7 +6,7 @@ from node import Node, print_breadth_first, print_depth_first
 import time
 
 SYS_RANDOM = random.SystemRandom()
-DEPTH = 3
+DEPTH = 2
 
 class Game():
     """
@@ -84,7 +84,8 @@ class Game():
         # spots are open
         chose_spaces = False
         while not chose_spaces:
-            space1, space2 = SYS_RANDOM.sample(potential_li, k=1)[0]
+            #debugging
+            space1, space2 = (2,4) , (3,4) #SYS_RANDOM.sample(potential_li, k=1)[0]
             x_0, y_0 = space1
             x_1, y_1 = space2
             if (self._board[x_0][y_0]['occupant'] == 'O' and
@@ -597,12 +598,14 @@ def create_children(node, color='G'):
             #new_game = deepcopy(node.game)            
             new_game = Game()
             new_game._board = deepcopy(node.game._board)
-            new_game._color = color
+            #new_game._color = color
             new_game._end = node.game._end
+            new_game._col = node.game._col
+            new_game._row = node.game._row
             new_game.select(color, i, j)
             
             if new_game.move(space[0], space[1]):
-            
+                print(new_game)
             # given a legal move, check for each possible build
                 for build in iter(
                         filter(lambda s: 
@@ -613,7 +616,8 @@ def create_children(node, color='G'):
                     build_game = Game()
                     build_game._board = deepcopy(new_game._board)
                     build_game._end = new_game._end
-                    build_game._color = new_game.color
+                    build_game._col = new_game._col
+                    build_game._row = new_game._row
                                         
                     if build_game._end:
                         return_li.append(Node(

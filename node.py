@@ -1,10 +1,11 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
+import pickle 
 
 class Node:
     """
     Individual node of tree used for alpha beta pruning.
-
+    
     Attributes
     ----------
     value : int
@@ -27,7 +28,7 @@ class Node:
     def __repr__(self):
         """
         Representation of node when printed.
-
+        
         Returns
         -------
          str
@@ -41,7 +42,7 @@ class Node:
     def min_value(self, node, alpha, beta):
         """
         Min portion of alpha-beta pruning.
-
+        
         Parameters
         ----------
         node : Node
@@ -50,12 +51,10 @@ class Node:
             alpha value for alpha-beta pruning algorithm
         beta : TYPE
             beta value for alpha-beta pruning algorithm
-
         Returns
         -------
         int
             smallest value found among tree's children
-
         """
         if is_terminal(node):
             return node.value
@@ -71,7 +70,7 @@ class Node:
     def max_value(self, node, alpha, beta):
         """
         Max portion of alpha-beta pruning.
-
+        
         Parameters
         ----------
         node : Node
@@ -80,12 +79,10 @@ class Node:
             alpha value for alpha-beta pruning algorithm
         beta : TYPE
             beta value for alpha-beta pruning algorithm
-
         Returns
         -------
         int
             greatest value found among tree's children
-
         """
         if is_terminal(node):
             return node.value
@@ -102,7 +99,7 @@ class Node:
     def alpha_beta_search(self):
         """
         Conducts alpha-beta search on the root node for best move.
-
+        
         Returns
         -------
         best_state : Game
@@ -125,17 +122,15 @@ class Node:
 def is_terminal(node):
     """
     Find if node has children.
-
+    
     Parameters
     ----------
     Node : Node
         Node to check for children
-
     Returns
     -------
     bool
         True if node is leaf node (ie no children)
-
     """
     return len(node.children) == 0
 
@@ -143,16 +138,14 @@ def is_terminal(node):
 def print_depth_first(root):
     """
     Print value of nodes in depth first order.
-
+    
     Parameters
     ----------
     root : Node
         root node of tree to search
-
     Returns
     -------
     None.
-
     """
     print(root.value)
     for tree in root.children:
@@ -162,29 +155,30 @@ def print_depth_first(root):
 def print_breadth_first(root):
     """
     Print values breadth first (level by level).
-
+    
     Parameters
     ----------
     root : Node
         root node of tree to search
     level : int
         Level of tree, parent being 0 by default
-
     Returns
     -------
     q : Queue
         Nodes values in breadth first order
-
     """
     q = Queue(maxsize=10000)
+    li = []
+    li.append(root)
     q.put(root)
     while not q.empty():
         curr_node = q.get()
         #print(curr_node.value, curr_node.level)
         for node in curr_node.children:
             print(node)
+            li.append(node)
             q.put(node)
+    with open('alpha_queue.pkl', 'wb') as f:
+        pickle.dump(li, f)    
     return q
-
-
 

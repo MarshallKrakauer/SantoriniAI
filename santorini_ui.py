@@ -400,3 +400,4 @@ def play_game(white_player, gray_player):
     pygame.quit()
 
 main()
+

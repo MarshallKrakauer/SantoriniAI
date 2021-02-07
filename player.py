@@ -32,7 +32,10 @@ class Player():
         """Manual or auto play of turn, depending on player type."""
         if self.player_type == 'human':
             self.game.play_manual_turn(x_coor, y_coor)
+            
         elif self.player_type == 'alphabeta':
+            import time 
+            time.sleep(5)
             self.game.play_automatic_turn(self.color)
             self.game.sub_turn = 'switch'
 
