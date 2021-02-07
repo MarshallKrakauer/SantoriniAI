@@ -6,7 +6,8 @@ from node import Node, print_breadth_first, print_depth_first
 import time
 
 SYS_RANDOM = random.SystemRandom()
-DEPTH = 2
+SPACE_LIST =[(i,j) for i in range(5) for j in range(5)]
+DEPTH = 3
 
 class Game():
     """
@@ -250,10 +251,9 @@ class Game():
             y coordinate of chosen piece
 
         """
-        for j in range(5):
-            for i in range(5):
-                self._board[i][j]['active'] = \
-                    i == x_coor and j == y_coor
+        for (j, i) in SPACE_LIST:
+            self._board[i][j]['active'] = \
+                i == x_coor and j == y_coor
 
     def make_exterior_active(self):
         """
@@ -597,7 +597,7 @@ def create_children(node, color='G'):
             
             #new_game = deepcopy(node.game)            
             new_game = Game()
-            new_game._board = deepcopy(node.game._board)
+            new_game._board = board_deep_copy(node.game._board)
             #new_game._color = color
             new_game._end = node.game._end
             new_game._col = node.game._col
@@ -605,7 +605,6 @@ def create_children(node, color='G'):
             new_game.select(color, i, j)
             
             if new_game.move(space[0], space[1]):
-                print(new_game)
             # given a legal move, check for each possible build
                 for build in iter(
                         filter(lambda s: 
@@ -614,7 +613,7 @@ def create_children(node, color='G'):
                                           new_game.row))):
                     
                     build_game = Game()
-                    build_game._board = deepcopy(new_game._board)
+                    build_game._board = board_deep_copy(new_game._board)
                     build_game._end = new_game._end
                     build_game._col = new_game._col
                     build_game._row = new_game._row
@@ -659,3 +658,13 @@ def create_children_recursive(node):
         node.children = create_children(node, color)
         for child in node.children:
             create_children_recursive(child)
+            
+def board_deep_copy(other_board):
+    new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
+                        for i in range(5)] for j in range(5)]
+
+    for i, j in SPACE_LIST:
+        new_board[i][j]['occupant'] = other_board[i][j]['occupant']
+        new_board[i][j]['level'] = other_board[i][j]['level']
+    
+    return new_board

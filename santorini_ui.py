@@ -141,7 +141,6 @@ def draw_board(board):
             text = font.render(str(board[i][j]['level']), True, BLACK)
             SCREEN.blit(text, (V + 20, H + 20))
 
-
 def draw_arrow(x_coor=0, y_coor=0):
     """Draw arrow onto start screen."""
     pygame.draw.polygon(SCREEN,
