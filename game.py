@@ -6,7 +6,7 @@ from node import Node, print_breadth_first, print_depth_first
 import time
 
 SYS_RANDOM = random.SystemRandom()
-SPACE_LIST =[(i,j) for i in range(5) for j in range(5)]
+SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
 
 class Game():
@@ -85,7 +85,7 @@ class Game():
         # spots are open
         chose_spaces = False
         while not chose_spaces:
-            #debugging
+            # debugging
             space1, space2 = SYS_RANDOM.sample(potential_li, k=1)[0]
             x_0, y_0 = space1
             x_1, y_1 = space2
@@ -141,9 +141,8 @@ class Game():
 
     def make_all_spaces_inactive(self):
         """Get rid of red boxes for all spaces."""
-        for i in range(5):
-            for j in range(5):
-                self.board[i][j]['active'] = False
+        for i, j in SPACE_LIST:
+            self.board[i][j]['active'] = False
 
     def is_valid_move_space(self, x_coor, y_coor):
         """
@@ -217,7 +216,7 @@ class Game():
         if switch_color:
             if self._color == 'W':
                 self._color = 'G'
-            else: 
+            else:
                 self._color = 'W'
 
         # make all space inactive
@@ -232,12 +231,11 @@ class Game():
         player color as active
 
         """
-        for j in range(5):
-            for i in range(5):
-                if self._board[i][j]['occupant'] == self._color:
-                    self._board[i][j]['active'] = True
-                else:
-                    self._board[i][j]['active'] = False
+        for i, j in SPACE_LIST:
+            if self._board[i][j]['occupant'] == self._color:
+                self._board[i][j]['active'] = True
+            else:
+                self._board[i][j]['active'] = False
 
     def make_choice_active(self, x_coor, y_coor):
         """
@@ -251,7 +249,7 @@ class Game():
             y coordinate of chosen piece
 
         """
-        for (j, i) in SPACE_LIST:
+        for j, i in SPACE_LIST:
             self._board[i][j]['active'] = \
                 i == x_coor and j == y_coor
 
@@ -273,21 +271,19 @@ class Game():
 
     def check_move_available(self):
         """End game if player has no available moves."""
-        for j in range(5):
-            for i in range(5):
-                if (self._board[i][j]['occupant'] == self._color and
-                        self.is_valid_move_space(i, j)):
-                    return  # end function if we have a valid space
+        for j, i in SPACE_LIST:
+            if (self._board[i][j]['occupant'] == self._color and
+                    self.is_valid_move_space(i, j)):
+                return  # end function if we have a valid space
         self.end_game(True)
 
     def check_build_available(self):
         """End game if player has no available builds."""
-        for j in range(5):
-            for i in range(5):
-                if (
-                        self._board[i][j]['occupant'] == self._color and
-                        self.is_valid_build_space(i, j)):
-                    return  # end function if we have a valid space
+        for j, i in SPACE_LIST:
+            if (
+                    self._board[i][j]['occupant'] == self._color and
+                    self.is_valid_build_space(i, j)):
+                return  # end function if we have a valid space
         self.end_game(True)
 
     def place(self, color, x_coor, y_coor):  # Only runs at beginning of game
@@ -354,16 +350,13 @@ class Game():
         """
         prev_col = self._col  # x
         prev_row = self._row  # y
-        if abs(y_coor - prev_row) > 1 or \
-           abs(x_coor - prev_col) > 1:
-            self._message = "That space is too far away"
-        elif y_coor == prev_row and x_coor == prev_col:
-            self._message = "You must move"
-        elif self._board[x_coor][y_coor]['occupant'] != 'O':
-            self._message = "That spot is taken. Please choose another"
-        elif self._board[x_coor][y_coor]['level'] - \
-                self._board[prev_col][prev_row]['level'] > 1:
-            self._message = "That spot is too high, please choose another"
+        if (abs(y_coor - prev_row) > 1 or
+            abs(x_coor - prev_col) > 1) or \
+            y_coor == prev_row and x_coor == prev_col or \
+            self._board[x_coor][y_coor]['occupant'] != 'O' or \
+            (self._board[x_coor][y_coor]['level'] -
+                self._board[prev_col][prev_row]['level'] > 1):
+            return False
         else:
             self._board[x_coor][y_coor]['occupant'] = self._color
             self._board[prev_col][prev_row]['occupant'] = 'O'
@@ -392,25 +385,17 @@ class Game():
         bool
             True if move is valid
         """
-        if abs(y_coor - self._row) > 1 or \
-           abs(x_coor - self._col) > 1:
-               pass
-            #self._message = "That space is too far away"
-        elif y_coor == self._row and x_coor == self._col:
-            pass
-            #self._message = "Can't build on your own space"
-        elif self._board[x_coor][y_coor]['occupant'] != 'O':
-            pass
-            #self._message = "That spot is taken. Please choose another\n"
-            self._row = y_coor
-            self._col = x_coor
+        if (abs(y_coor - self._row) > 1 or
+                abs(x_coor - self._col) > 1) or \
+                y_coor == self._row and x_coor == self._col or \
+                self._board[x_coor][y_coor]['occupant'] != 'O':
+            return False
         else:
             self._board[x_coor][y_coor]['level'] += 1
             if self._board[x_coor][y_coor]['level'] == 4:
                 self._board[x_coor][y_coor]['occupant'] = 'X'
             self._sub_turn = 'switch'
             return True
-        return False
 
     def play_manual_turn(self, x_coor, y_coor):
         """
@@ -485,33 +470,34 @@ class Game():
     def color(self, color):
         """Set color of game."""
         self._color = color
-    
-    def play_automatic_turn(self, color, tree_depth = DEPTH):
+
+    def play_automatic_turn(self, color, tree_depth=DEPTH):
         """
         Make automatic turn.
 
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
         """
+        tree_depth = int(tree_depth)
         if tree_depth <= 2:
             tree_depth = 2
-        tree_depth = int(tree_depth)
-        
+
         game_copy = deepcopy(self)
         root_node = Node(game=game_copy,
                          children=[],
                          level=0,
-                         max_level = tree_depth)
-        
+                         max_level=tree_depth)
+        time1 = dt.datetime.now()
         create_children_recursive(root_node)
-        
-        #print_breadth_first(root_node)
+        print(dt.datetime.now() - time1)
+        # print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
         self._end = best_state.end
         if not self._end:
             self._sub_turn = 'switch'
+
 
 def is_valid_num(num):
     """
@@ -530,7 +516,8 @@ def is_valid_num(num):
     """
     return -1 < num < 5
 
-def get_adjacent(x_coor, y_coor, when = 'general'):
+
+def get_adjacent(x_coor, y_coor, when='general'):
     """
     Get spaces surrounding the passed one.
 
@@ -563,6 +550,7 @@ def get_adjacent(x_coor, y_coor, when = 'general'):
 
     return space_list
 
+
 def create_children(node, color='G'):
     """
     Add list of possible moves to game state.
@@ -589,13 +577,12 @@ def create_children(node, color='G'):
                  node.game._board[i][j]['occupant'] == color]:
         i, j = spot
         # check each possible move
-        
-        for space in iter(filter(lambda s: 
-                             node.game._board[s[0]][s[1]]['occupant']
-                             == 'O'
-                             ,get_adjacent(i, j))):
-            
-            #new_game = deepcopy(node.game)            
+
+        for space in iter(filter(lambda s:
+                                 node.game._board[s[0]][s[1]]['occupant']
+                                 == 'O', get_adjacent(i, j))):
+
+            #new_game = deepcopy(node.game)
             new_game = Game()
             new_game._board = board_deep_copy(node.game._board)
             #new_game._color = color
@@ -603,28 +590,27 @@ def create_children(node, color='G'):
             new_game._col = node.game._col
             new_game._row = node.game._row
             new_game.select(color, i, j)
-            
+
             if new_game.move(space[0], space[1]):
-            # given a legal move, check for each possible build
+                # given a legal move, check for each possible build
                 for build in iter(
-                        filter(lambda s: 
-                        new_game._board[s[0]][s[1]]['occupant'] == 'O'
-                             ,get_adjacent(new_game.col,
-                                          new_game.row))):
-                    
+                        filter(lambda s:
+                               new_game._board[s[0]][s[1]]['occupant'] == 'O', get_adjacent(new_game.col,
+                                                                                            new_game.row))):
+
                     build_game = Game()
                     build_game._board = board_deep_copy(new_game._board)
                     build_game._end = new_game._end
                     build_game._col = new_game._col
                     build_game._row = new_game._row
-                                        
+
                     if build_game._end:
                         return_li.append(Node(
                             game=build_game,
                             level=node.level + 1,
                             max_level=node.max_level))
-                    
-                    elif (build_game is not None and 
+
+                    elif (build_game is not None and
                           build_game.build(build[0], build[1])):
                         return_li.append(Node(
                             game=build_game,
@@ -632,10 +618,11 @@ def create_children(node, color='G'):
                             max_level=node.max_level))
     return return_li
 
+
 def create_children_recursive(node):
     """
     Create future turns, plus future turns for those future turns.
-    
+
     Recursive function. root node will contain a "max level"
     value, which will tell this function when to stop
 
@@ -652,19 +639,37 @@ def create_children_recursive(node):
             color = 'W'
         else:
             color = 'G'
-    
+
     # recurring case, note that create_children increments the level
     if node.level < node.max_level:
         node.children = create_children(node, color)
         for child in node.children:
             create_children_recursive(child)
-            
+
+
 def board_deep_copy(other_board):
+    """
+    Deep copies board from another game.
+
+    Used as part of the create children functions. Standard
+    Python copy.deepcopy was too slow.
+
+    Parameters
+    ----------
+    other_board : list
+        board from which to copy info
+
+    Returns
+    -------
+    new_board : list
+        new board with same info as other_board
+
+    """
     new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
-                        for i in range(5)] for j in range(5)]
+                  for i in range(5)] for j in range(5)]
 
     for i, j in SPACE_LIST:
         new_board[i][j]['occupant'] = other_board[i][j]['occupant']
         new_board[i][j]['level'] = other_board[i][j]['level']
-    
+
     return new_board

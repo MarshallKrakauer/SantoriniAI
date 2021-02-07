@@ -1,11 +1,12 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
-import pickle 
+import pickle
+
 
 class Node:
     """
     Individual node of tree used for alpha beta pruning.
-    
+
     Attributes
     ----------
     value : int
@@ -18,7 +19,7 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, game, children= [], level=0, max_level = 2):
+    def __init__(self, game, children=[], level=0, max_level=2):
         self.game = game
         self.value = self.game.evaluate_board()
         self.children = children
@@ -28,7 +29,7 @@ class Node:
     def __repr__(self):
         """
         Representation of node when printed.
-        
+
         Returns
         -------
          str
@@ -42,7 +43,7 @@ class Node:
     def min_value(self, node, alpha, beta):
         """
         Min portion of alpha-beta pruning.
-        
+
         Parameters
         ----------
         node : Node
@@ -70,7 +71,7 @@ class Node:
     def max_value(self, node, alpha, beta):
         """
         Max portion of alpha-beta pruning.
-        
+
         Parameters
         ----------
         node : Node
@@ -99,7 +100,7 @@ class Node:
     def alpha_beta_search(self):
         """
         Conducts alpha-beta search on the root node for best move.
-        
+
         Returns
         -------
         best_state : Game
@@ -110,7 +111,7 @@ class Node:
 
         best_move = None
         for elem in self.children:
-            #print(elem)
+            # print(elem)
             value = self.min_value(elem, best_val, beta)
             if value > best_val:
                 best_val = value
@@ -122,7 +123,7 @@ class Node:
 def is_terminal(node):
     """
     Find if node has children.
-    
+
     Parameters
     ----------
     Node : Node
@@ -138,7 +139,7 @@ def is_terminal(node):
 def print_depth_first(root):
     """
     Print value of nodes in depth first order.
-    
+
     Parameters
     ----------
     root : Node
@@ -155,7 +156,7 @@ def print_depth_first(root):
 def print_breadth_first(root):
     """
     Print values breadth first (level by level).
-    
+
     Parameters
     ----------
     root : Node
@@ -179,6 +180,5 @@ def print_breadth_first(root):
             li.append(node)
             q.put(node)
     with open('alpha_queue.pkl', 'wb') as f:
-        pickle.dump(li, f)    
+        pickle.dump(li, f)
     return q
-
