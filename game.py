@@ -85,7 +85,7 @@ class Game():
         chose_spaces = False
         while not chose_spaces:
             #debugging
-            space1, space2 = (2,4) , (3,4) #SYS_RANDOM.sample(potential_li, k=1)[0]
+            space1, space2 = SYS_RANDOM.sample(potential_li, k=1)[0]
             x_0, y_0 = space1
             x_1, y_1 = space2
             if (self._board[x_0][y_0]['occupant'] == 'O' and
@@ -505,7 +505,7 @@ class Game():
         
         create_children_recursive(root_node)
         
-        print_breadth_first(root_node)
+        #print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
