@@ -7,7 +7,7 @@ import time
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 3
+DEPTH = 2
 
 class Game():
     """
@@ -489,8 +489,10 @@ class Game():
                          max_level=tree_depth)
         time1 = dt.datetime.now()
         create_children_recursive(root_node)
+        
         print(dt.datetime.now() - time1)
-        # print_breadth_first(root_node)
+        
+        #print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
@@ -578,31 +580,27 @@ def create_children(node, color='G'):
         i, j = spot
         # check each possible move
 
-        for space in iter(filter(lambda s:
-                                 node.game._board[s[0]][s[1]]['occupant']
-                                 == 'O', get_adjacent(i, j))):
+        for space in get_adjacent(i, j):
 
-            #new_game = deepcopy(node.game)
             new_game = Game()
             new_game._board = board_deep_copy(node.game._board)
-            #new_game._color = color
             new_game._end = node.game._end
             new_game._col = node.game._col
             new_game._row = node.game._row
+            new_game._color = color
             new_game.select(color, i, j)
 
             if new_game.move(space[0], space[1]):
                 # given a legal move, check for each possible build
-                for build in iter(
-                        filter(lambda s:
-                               new_game._board[s[0]][s[1]]['occupant'] == 'O', get_adjacent(new_game.col,
-                                                                                            new_game.row))):
+                for build in get_adjacent(new_game.col, \
+                                                  new_game.row):
 
                     build_game = Game()
                     build_game._board = board_deep_copy(new_game._board)
                     build_game._end = new_game._end
                     build_game._col = new_game._col
                     build_game._row = new_game._row
+                    #build_game._color = new_game._color
 
                     if build_game._end:
                         return_li.append(Node(
@@ -610,8 +608,7 @@ def create_children(node, color='G'):
                             level=node.level + 1,
                             max_level=node.max_level))
 
-                    elif (build_game is not None and
-                          build_game.build(build[0], build[1])):
+                    elif build_game.build(build[0], build[1]):
                         return_li.append(Node(
                             game=build_game,
                             level=node.level + 1,
@@ -644,6 +641,8 @@ def create_children_recursive(node):
     if node.level < node.max_level:
         node.children = create_children(node, color)
         for child in node.children:
+            if child.level == 2:
+                print(child)
             create_children_recursive(child)
 
 
