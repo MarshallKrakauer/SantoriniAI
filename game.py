@@ -582,10 +582,8 @@ def create_children(node, color='G'):
                                  node.game._board[s[0]][s[1]]['occupant']
                                  == 'O', get_adjacent(i, j))):
 
-            #new_game = deepcopy(node.game)
             new_game = Game()
             new_game._board = board_deep_copy(node.game._board)
-            #new_game._color = color
             new_game._end = node.game._end
             new_game._col = node.game._col
             new_game._row = node.game._row
@@ -595,8 +593,9 @@ def create_children(node, color='G'):
                 # given a legal move, check for each possible build
                 for build in iter(
                         filter(lambda s:
-                               new_game._board[s[0]][s[1]]['occupant'] == 'O', get_adjacent(new_game.col,
-                                                                                            new_game.row))):
+                               new_game._board[s[0]][s[1]]['occupant'] == 'O' \
+                                   , get_adjacent(new_game.col, \
+                                                  new_game.row))):
 
                     build_game = Game()
                     build_game._board = board_deep_copy(new_game._board)
