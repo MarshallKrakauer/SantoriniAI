@@ -168,7 +168,7 @@ def print_breadth_first(root):
     q : Queue
         Nodes values in breadth first order
     """
-    q = Queue(maxsize=10000)
+    q = Queue(maxsize=100000)
     li = []
     li.append(root)
     q.put(root)
