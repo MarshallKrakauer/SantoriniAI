@@ -25,6 +25,7 @@ class Node:
         self.children = children
         self.level = level
         self.max_level = max_level
+        self.parent = None
 
     def __repr__(self):
         """

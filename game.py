@@ -7,7 +7,7 @@ import time
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 2
+DEPTH = 3
 
 class Game():
     """
@@ -582,12 +582,7 @@ def create_children(node, color='G'):
 
         for space in get_adjacent(i, j):
 
-            new_game = Game()
-            new_game._board = board_deep_copy(node.game._board)
-            new_game._end = node.game._end
-            new_game._col = node.game._col
-            new_game._row = node.game._row
-            new_game._color = color
+            new_game = game_deep_copy(node.game, color)
             new_game.select(color, i, j)
 
             if new_game.move(space[0], space[1]):
@@ -596,12 +591,8 @@ def create_children(node, color='G'):
                 for build in get_adjacent(new_game.col, \
                                                   new_game.row):
 
-                    build_game = Game()
-                    build_game._board = board_deep_copy(new_game._board)
-                    build_game._end = new_game._end
-                    build_game._col = new_game._col
-                    build_game._row = new_game._row
-                    #build_game._color = new_game._color
+                    build_game = game_deep_copy(new_game,
+                                                 new_game._color)
 
                     if build_game._end:
                         return_li.append(Node(
@@ -647,7 +638,7 @@ def create_children_recursive(node):
             create_children_recursive(child)
 
 
-def board_deep_copy(other_board):
+def game_deep_copy(game, color):
     """
     Deep copies board from another game.
 
@@ -665,11 +656,21 @@ def board_deep_copy(other_board):
         new board with same info as other_board
 
     """
+    new_game = Game()
+    
+    other_board = game.board
+    
     new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
                   for i in range(5)] for j in range(5)]
 
     for i, j in SPACE_LIST:
         new_board[i][j]['occupant'] = other_board[i][j]['occupant']
         new_board[i][j]['level'] = other_board[i][j]['level']
-
-    return new_board
+    
+    new_game._board = new_board
+    new_game._end = game._end
+    new_game._col = game._col
+    new_game._row = game._row
+    new_game._color = color
+    
+    return new_game
