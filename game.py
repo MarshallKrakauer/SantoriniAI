@@ -492,7 +492,7 @@ class Game():
         
         print(dt.datetime.now() - time1)
         
-        #print_breadth_first(root_node)
+        print_breadth_first(root_node)
         
         best_state = root_node.alpha_beta_search()
         self._board = best_state.board
@@ -604,7 +604,8 @@ def create_children(node, color='G'):
                         return_li.append(Node(
                             game=build_game,
                             level=node.level + 1,
-                            max_level=node.max_level))
+                            max_level=node.max_level,
+                            parent = node))
     return return_li
 
 
