@@ -19,13 +19,13 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, game, children=[], level=0, max_level=2):
+    def __init__(self, game, children=[], level=0, max_level=2, parent = None):
         self.game = game
         self.value = self.game.evaluate_board()
         self.children = children
         self.level = level
         self.max_level = max_level
-        self.parent = None
+        self.parent = parent
 
     def __repr__(self):
         """
@@ -112,7 +112,7 @@ class Node:
 
         best_move = None
         for elem in self.children:
-            # print(elem)
+
             value = self.min_value(elem, best_val, beta)
             if value > best_val:
                 best_val = value
@@ -154,7 +154,7 @@ def print_depth_first(root):
         print_depth_first(tree)
 
 
-def print_breadth_first(root):
+def print_breadth_first(root, create_pickle = True):
     """
     Print values breadth first (level by level).
 
@@ -175,11 +175,12 @@ def print_breadth_first(root):
     q.put(root)
     while not q.empty():
         curr_node = q.get()
-        #print(curr_node.value, curr_node.level)
         for node in curr_node.children:
             print(node)
             li.append(node)
             q.put(node)
-    with open('alpha_queue.pkl', 'wb') as f:
-        pickle.dump(li, f)
+            
+    if create_pickle:
+        with open('alpha_queue.pkl', 'wb') as f:
+            pickle.dump(li, f)
     return q
