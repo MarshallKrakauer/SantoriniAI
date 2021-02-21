@@ -1,5 +1,6 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
+#from game import Game, get_adjacent, game_deep_copy
 import pickle
 
 
@@ -19,13 +20,14 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, game, children=[], level=0, max_level=2, parent = None):
+    def __init__(self, game, children=[], level=0, max_level=2, parent = None,
+                 score = 0):
         self.game = game
-        self.value = self.game.evaluate_board()
         self.children = children
         self.level = level
         self.max_level = max_level
         self.parent = parent
+        self.score = score
 
     def __repr__(self):
         """
@@ -37,7 +39,8 @@ class Node:
             board with its level and score
         """
         return ('\n'
-                + 'level ' + str(self.level) + '\n'
+                + 'level: ' + str(self.level) + '\n'
+                + 'score: ' + str(self.score) + '\n'
                 + str(self.game)
                 )
 
@@ -58,9 +61,13 @@ class Node:
         int
             smallest value found among tree's children
         """
+        print(node)
+        
         if is_terminal(node):
-            return node.value
+            return node.score
+        
         value = float('inf')
+        
         for elem in node.children:
             value = min(value, self.max_value(elem, alpha, beta))
             if value <= alpha:
@@ -87,7 +94,7 @@ class Node:
             greatest value found among tree's children
         """
         if is_terminal(node):
-            return node.value
+            return node.score
         value = -float('inf')
 
         for elem in node.children:
@@ -112,7 +119,6 @@ class Node:
 
         best_move = None
         for elem in self.children:
-
             value = self.min_value(elem, best_val, beta)
             if value > best_val:
                 best_val = value
@@ -154,7 +160,7 @@ def print_depth_first(root):
         print_depth_first(tree)
 
 
-def print_breadth_first(root, create_pickle = True):
+def store_breadth_first(root, print_nodes = False):
     """
     Print values breadth first (level by level).
 
@@ -169,18 +175,18 @@ def print_breadth_first(root, create_pickle = True):
     q : Queue
         Nodes values in breadth first order
     """
-    q = Queue(maxsize=100000)
+    q = Queue(maxsize=1000000)
     li = []
     li.append(root)
     q.put(root)
     while not q.empty():
         curr_node = q.get()
         for node in curr_node.children:
-            print(node)
+            if print_nodes:
+                print(node)
             li.append(node)
             q.put(node)
             
-    if create_pickle:
-        with open('alpha_queue.pkl', 'wb') as f:
-            pickle.dump(li, f)
+    with open('alpha_queue.pkl', 'wb') as f:
+        pickle.dump(li, f)
     return q
