@@ -7,7 +7,7 @@ import time
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 2
+DEPTH = 3
 
 class Game():
     """
@@ -539,7 +539,6 @@ def create_potential_moves(node, color='G'):
 
             if new_game.move(space[0], space[1]):
                 if new_game.end:
-                    print("hit end game")
                     return_li.append(Node(
                         game=new_game,
                         level=node.level + 1,
