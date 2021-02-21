@@ -61,7 +61,6 @@ class Node:
         int
             smallest value found among tree's children
         """
-        print(node)
         
         if is_terminal(node):
             return node.score
