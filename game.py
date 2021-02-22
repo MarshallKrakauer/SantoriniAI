@@ -586,8 +586,20 @@ def create_game_tree(node):
             color = 'G'
 
     # recurring case, note that create_children increments the level
+        '''
+        if node.level < node.max_level:
+            node.children = create_potential_moves(node, color)
+            for child in node.children:
+                create_game_tree(child)
+            '''
     if node.level < node.max_level:
-        node.children = create_potential_moves(node, color)
+        if node.game.end:
+            node_copy = deepcopy(node)
+            node_copy.level += 1
+            node_copy.score *= -1
+            node.children = [node_copy]
+        else:
+            node.children = create_potential_moves(node, color)
         for child in node.children:
             create_game_tree(child)
 
