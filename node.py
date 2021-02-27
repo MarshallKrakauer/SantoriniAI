@@ -1,6 +1,6 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
-#from game import Game, get_adjacent, game_deep_copy
+# from game import Game, get_adjacent, game_deep_copy
 import pickle
 
 
@@ -20,8 +20,8 @@ class Node:
         Number of parent nodes. Root node has level 0
     """
 
-    def __init__(self, game, children=[], level=0, max_level=2, parent = None,
-                 score = 0):
+    def __init__(self, game, children=[], level=0, max_level=2, parent=None,
+                 score=0):
         self.game = game
         self.children = children
         self.level = level
@@ -61,12 +61,12 @@ class Node:
         int
             smallest value found among tree's children
         """
-        
+
         if is_terminal(node):
             return node.score
-        
+
         value = float('inf')
-        
+
         for elem in node.children:
             value = min(value, self.max_value(elem, alpha, beta))
             if value <= alpha:
@@ -132,7 +132,7 @@ def is_terminal(node):
 
     Parameters
     ----------
-    Node : Node
+    node : Node
         Node to check for children
     Returns
     -------
@@ -159,7 +159,7 @@ def print_depth_first(root):
         print_depth_first(tree)
 
 
-def store_breadth_first(root, print_nodes = False):
+def store_breadth_first(root, print_nodes=False):
     """
     Print values breadth first (level by level).
 
@@ -167,16 +167,15 @@ def store_breadth_first(root, print_nodes = False):
     ----------
     root : Node
         root node of tree to search
-    level : int
-        Level of tree, parent being 0 by default
+    print_nodes: bool
+        if true, prints boards while storing pkl file
     Returns
     -------
     q : Queue
         Nodes values in breadth first order
     """
     q = Queue(maxsize=1000000)
-    li = []
-    li.append(root)
+    li = [root]
     q.put(root)
     while not q.empty():
         curr_node = q.get()
@@ -185,7 +184,7 @@ def store_breadth_first(root, print_nodes = False):
                 print(node)
             li.append(node)
             q.put(node)
-            
+
     with open('alpha_queue.pkl', 'wb') as f:
         pickle.dump(li, f)
     return q

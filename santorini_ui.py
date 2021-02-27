@@ -62,7 +62,7 @@ def map_numbers(x_coor, y_coor):
     """
     x_1 = (x_coor - BOARD_LEFT_EDGE) // 50
     y_1 = (y_coor - BOARD_TOP_EDGE) // 50
-    return (x_1, y_1)
+    return x_1, y_1
 
 
 def check_valid(num):
@@ -117,35 +117,36 @@ def draw_board(board):
     """Draw the 5x5 game board with player pieces."""
     for i in range(5):
         for j in range(5):
-            V = BOARD_LEFT_EDGE + 50 * i
-            H = BOARD_TOP_EDGE + 50 * j
+            vertical = BOARD_LEFT_EDGE + 50 * i
+            horizontal = BOARD_TOP_EDGE + 50 * j
             pygame.draw.rect(SCREEN, WHITE,
-                             [V, H, 50, 50], 2)
+                             [vertical, horizontal, 50, 50], 2)
             # Draw piece or dome
 
             # Draw occupant
             if board[i][j]['occupant'] == 'X':
                 pygame.draw.rect(SCREEN, BLACK,
-                                 [V, H, 50, 50], 0)
+                                 [vertical, horizontal, 50, 50], 0)
             elif board[i][j]['occupant'] == 'G':
                 pygame.draw.circle(SCREEN, GRAY,
-                                   [V + 25, H + 25], 50 / 3)
+                                   [vertical + 25, horizontal + 25], 50 / 3)
             elif board[i][j]['occupant'] == 'W':
                 pygame.draw.circle(SCREEN, WHITE,
-                                   [V + 25, H + 25], 50 / 3)
+                                   [vertical + 25, horizontal + 25], 50 / 3)
             # Draw Active space
             if board[i][j]['active']:
                 pygame.draw.rect(SCREEN, RED,
-                                 [V, H, 50, 50], 3)
+                                 [vertical, horizontal, 50, 50], 3)
             # Draw Winning Space
             if (board[i][j]['level'] == 3
                     and board[i][j]['occupant'] != 'O'):
+                # noinspection PyTypeChecker
                 pygame.draw.rect(SCREEN, GOLD,
-                                 [V, H, 50, 50], 5)
+                                 [vertical, horizontal, 50, 50], 5)
 
             # Draw height
             text = font.render(str(board[i][j]['level']), True, BLACK)
-            SCREEN.blit(text, (V + 20, H + 20))
+            SCREEN.blit(text, (vertical + 20, horizontal + 20))
 
 
 def draw_arrow(x_coor=0, y_coor=0):
@@ -155,11 +156,11 @@ def draw_arrow(x_coor=0, y_coor=0):
                         # Locations to draw
                         ((12 + x_coor, 112 + y_coor),
                          (12 + x_coor, 137 + y_coor),
-                            (62 + x_coor, 137 + y_coor),
-                            (62 + x_coor, 162 + y_coor),
-                            (87 + x_coor, 125 + y_coor),
-                            (62 + x_coor, 87 + y_coor),
-                            (62 + x_coor, 112 + y_coor)
+                         (62 + x_coor, 137 + y_coor),
+                         (62 + x_coor, 162 + y_coor),
+                         (87 + x_coor, 125 + y_coor),
+                         (62 + x_coor, 87 + y_coor),
+                         (62 + x_coor, 112 + y_coor)
                          )
                         )
 
@@ -404,5 +405,6 @@ def play_game(white_player, gray_player):
 
     # Close the window and quit.
     pygame.quit()
+
 
 main()

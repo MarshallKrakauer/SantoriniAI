@@ -1,15 +1,16 @@
 # pylint: disable=E0633
-from copy import deepcopy
-import random
 import datetime as dt
+import random
+from copy import deepcopy
+
 from node import Node, store_breadth_first
-import time
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
 
-class Game():
+
+class Game:
     """
     Implentation of the board game Santorini using Pygame.
 
@@ -39,7 +40,7 @@ class Game():
 
     def __init__(self):
         self.board = [[{'level': 0, 'occupant': 'O', 'active': False}
-                        for i in range(5)] for j in range(5)]
+                       for i in range(5)] for j in range(5)]
         self.row = 0
         self.col = 0
         self.end = False
@@ -57,7 +58,7 @@ class Game():
         return_val : str
             ASCII represntation of the board
         """
-        return_val = '' #'score: ' + str(self.evaluate_board()) + ' \n'
+        return_val = ''  # 'score: ' + str(self.evaluate_board()) + ' \n'
         return_val += "    x0 x1 x2 x3 x4\n"
         return_val += "    --------------\n"
         for i in range(5):
@@ -96,7 +97,7 @@ class Game():
                 self.turn += 2
                 chose_spaces = True
 
-    def evaluate_board(self, color = 'W'):
+    def evaluate_board(self, color='W'):
         """
         Give numeric score to game.
 
@@ -190,7 +191,7 @@ class Game():
             true if player can build there, false otherwise
             player can build on any unoccupied adjacent space
             not that spaces with a dome are considered occupied, with
-            an occpant of X
+            an occupant of X
         """
         space_list = get_adjacent(x_coor, y_coor)
         for i, j in space_list:
@@ -266,7 +267,7 @@ class Game():
                 self.board[i][j]['active'] = \
                     abs(i - self.col) <= 1 and \
                     abs(j - self.row) <= 1 and \
-                    not(i == self.col and j == self.row) and \
+                    not (i == self.col and j == self.row) and \
                     self.board[i][j]['occupant'] == 'O'
 
     def check_move_available(self):
@@ -352,11 +353,11 @@ class Game():
         prev_row = self.row  # y
         if (abs(y_coor - prev_row) > 1 or
             abs(x_coor - prev_col) > 1) or \
-            y_coor == prev_row and x_coor == prev_col or \
-            self.board[x_coor][y_coor]['occupant'] != 'O' or \
-            (self.board[x_coor][y_coor]['level'] -
-                self.board[prev_col][prev_row]['level'] > 1):
-                return False
+                y_coor == prev_row and x_coor == prev_col or \
+                self.board[x_coor][y_coor]['occupant'] != 'O' or \
+                (self.board[x_coor][y_coor]['level'] -
+                 self.board[prev_col][prev_row]['level'] > 1):
+            return False
         else:
             self.board[x_coor][y_coor]['occupant'] = self.color
             self.board[prev_col][prev_row]['occupant'] = 'O'
@@ -385,7 +386,7 @@ class Game():
             True if move is valid
         """
         if (abs(y_coor - self.row) > 1 or
-                abs(x_coor - self.col) > 1) or \
+            abs(x_coor - self.col) > 1) or \
                 y_coor == self.row and x_coor == self.col or \
                 self.board[x_coor][y_coor]['occupant'] != 'O':
             return False
@@ -436,14 +437,14 @@ class Game():
                          children=[],
                          level=0,
                          max_level=tree_depth)
-        
+
         time1 = dt.datetime.now()
         create_game_tree(root_node)
         print("Tree creation time:", dt.datetime.now() - time1)
-        
+
         if DEPTH <= 3:
             store_breadth_first(root_node)
-        
+
         time1 = dt.datetime.now()
         best_state = root_node.alpha_beta_search()
         print("Alpha Beta Time:", dt.datetime.now() - time1)
@@ -499,7 +500,7 @@ def get_adjacent(x_coor, y_coor, when='general'):
                       (x_coor + 1, y_coor - 1)]
         space_list = list(filter(
             lambda t: t[0] >= 0 and t[0] <= 4
-            and t[1] >= 0 and t[1] <= 4,
+                      and t[1] >= 0 and t[1] <= 4,
             space_list))
 
     return space_list
@@ -534,6 +535,7 @@ def create_potential_moves(node, color='G'):
 
         for space in get_adjacent(i, j):
 
+            new_game = Game()
             new_game = game_deep_copy(node.game, color)
             new_game.select(color, i, j)
 
@@ -543,22 +545,22 @@ def create_potential_moves(node, color='G'):
                         game=new_game,
                         level=node.level + 1,
                         max_level=node.max_level,
-                        score  = new_game.evaluate_board(color),
-                        parent = node))
+                        score=new_game.evaluate_board(color),
+                        parent=node))
                 else:
-                # given a legal move, check for each possible build
-                    for build in get_adjacent(new_game.col, \
-                                                      new_game.row):
+                    # given a legal move, check for each possible build
+                    for build in get_adjacent(new_game.col,
+                                              new_game.row):
                         build_game = game_deep_copy(new_game,
-                                                     new_game.color)
-    
+                                                    new_game.color)
+
                         if build_game.build(build[0], build[1]):
                             return_li.append(Node(
-                                    game=build_game,
-                                    level=node.level + 1,
-                                    max_level=node.max_level,
-                                    score = build_game.evaluate_board(color),
-                                    parent = node))
+                                game=build_game,
+                                level=node.level + 1,
+                                max_level=node.max_level,
+                                score=build_game.evaluate_board(color),
+                                parent=node))
         return_li = sorted(return_li, key=lambda x: x.score)
 
     return return_li
@@ -576,8 +578,8 @@ def create_game_tree(node):
     node : Node
         Nodes with which to create child nodes (ie subsequent turns)
     """
-    #for even numbered levels, move the other color
-    
+    # for even numbered levels, move the other color
+
     if node.level % 2 == 0:
         color = node.game.color
     else:
@@ -587,18 +589,13 @@ def create_game_tree(node):
             color = 'G'
 
     # recurring case, note that create_children increments the level
-        '''
-        if node.level < node.max_level:
-            node.children = create_potential_moves(node, color)
-            for child in node.children:
-                create_game_tree(child)
-            '''
     if node.level < node.max_level:
         if node.game.end:
-            node_copy = deepcopy(node)
-            node_copy.level += 1
-            node_copy.score *= -1
-            node.children = [node_copy]
+            end_game_node = deepcopy(node)
+            end_game_node.level += 1
+            end_game_node.score = end_game_node.game.evaluate_board(color) * -1
+            node.children = [end_game_node]
+            end_game_node.parent = node
         else:
             node.children = create_potential_moves(node, color)
         for child in node.children:
@@ -624,20 +621,20 @@ def game_deep_copy(game, color):
 
     """
     new_game = Game()
-    
+
     other_board = game.board
-    
+
     new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
                   for i in range(5)] for j in range(5)]
 
     for i, j in SPACE_LIST:
         new_board[i][j]['occupant'] = other_board[i][j]['occupant']
         new_board[i][j]['level'] = other_board[i][j]['level']
-    
+
     new_game.board = new_board
     new_game.end = game.end
     new_game.col = game.col
     new_game.row = game.row
     new_game.color = color
-    
+
     return new_game
