@@ -97,7 +97,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def evaluate_board(self, color='W'):
+    def get_board_score(self, color='W'):
         """
         Give numeric score to game.
 
@@ -112,8 +112,8 @@ class Game:
         """
         other_color = get_opponent_color(color)
 
-        color = 'W'
-        other_color = 'G'
+        #color = 'W'
+        #other_color = 'G'
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
@@ -450,7 +450,7 @@ class Game:
                          max_level=tree_depth)
 
         time1 = dt.datetime.now()
-        create_game_tree(root_node)
+        create_game_tree(root_node, eval_color)
         print("Tree creation time:", dt.datetime.now() - time1)
 
         if PICKLE:
@@ -465,129 +465,7 @@ class Game:
             self.subturn = 'switch'
 
 
-def is_valid_num(num):
-    """
-    Check if x or y falls on board.
-
-    Parameters
-    ----------
-    num : str
-        row or column value
-
-    Returns
-    -------
-    bool
-        true if its a valid number [0,4]
-        false otherwise
-    """
-    return -1 < num < 5
-
-
-def get_adjacent(x_val, y_val, when='general'):
-    """
-    Get spaces surrounding the passed one.
-
-    Parameters
-    ----------
-    x_val : int
-        x_coordinate ie column value
-    y_val : int
-        y_coordinate ie row value
-
-    when : string
-        Not currently used. Idea is to use function to get adjacent
-        values base on phase of the game. eg account for height during build
-        phase
-
-    Returns
-    -------
-    space_li : li
-        list of spaces adjacent to the one provided through
-        x_val and y_val
-    """
-    if when == 'general':
-        space_list = [(x_val - 1, y_val + 1),
-                      (x_val, y_val + 1),
-                      (x_val + 1, y_val + 1),
-                      (x_val - 1, y_val),
-                      (x_val + 1, y_val),
-                      (x_val - 1, y_val - 1),
-                      (x_val, y_val - 1),
-                      (x_val + 1, y_val - 1)]
-        space_list = list(filter(
-            lambda t: t[0] >= 0 and t[0] <= 4
-                      and t[1] >= 0 and t[1] <= 4,
-            space_list))
-
-    return space_list
-
-
-def create_potential_moves(node, color='G'):
-    """
-    Add list of possible moves to game state.
-
-    Parameters
-    ----------
-    game : Game
-        Game fomr which to attempt moves
-    color : char, optional
-        Player color, G(ray) or W(hite). The default is 'G'.
-    level : char, optional
-        what level of the tree board takes place on
-        Root node is level 0, its children are level 1,
-        children of those children are level 2 etc. The default is 0.
-
-    Returns
-    -------
-    return_li : list
-        Children of that node
-    """
-    return_li = []
-    # Check both of the spaces occupied by the player
-    for spot in [(i, j) for i in range(5) for j in range(5) if
-                 node.game.board[i][j]['occupant'] == color]:
-        i, j = spot
-        # check each possible move
-
-        for space in get_adjacent(i, j):
-
-            new_game = Game()
-            new_game = game_deep_copy(node.game, color)
-            new_game.select(color, i, j)
-
-            if new_game.move(space[0], space[1]):
-                if new_game.end:
-                    return_li.append(Node(
-                        game=new_game,
-                        level=node.level + 1,
-                        max_level=node.max_level,
-                        score=new_game.evaluate_board(color),
-                        parent=node))
-                else:
-                    # given a legal move, check for each possible build
-                    for build in get_adjacent(new_game.col,
-                                              new_game.row):
-                        build_game = game_deep_copy(new_game,
-                                                    new_game.color)
-
-                        if build_game.build(build[0], build[1]):
-                            return_li.append(Node(
-                                game=build_game,
-                                level=node.level + 1,
-                                max_level=node.max_level,
-                                score=build_game.evaluate_board(color),
-                                parent=node))
-
-        # Sort by highest score for your moves, lowest for opponent moves
-        if node.level % 2 == 1:
-            return_li = sorted(return_li, key=lambda x: x.score)
-        else:
-            return_li = sorted(return_li, key=lambda x: x.score * -1)
-
-    return return_li
-
-
-def create_game_tree(node):
+def create_game_tree(node, eval_color):
     """
     Create future turns, plus future turns for those future turns.
 
@@ -620,14 +498,79 @@ def create_game_tree(node):
                                   max_level = node.max_level,
                                   parent = node
                                   )
-        finished_game_node.score = finished_game_node.game.evaluate_board(other_color)
+        finished_game_node.score = finished_game_node.game.get_board_score(eval_color)
         node.children = [finished_game_node]
     else:
-        node.children = create_potential_moves(node, color)
+        node.children = create_potential_moves(node, move_color = color, eval_color=eval_color)
 
     if node.level + 1 < node.max_level:
         for child in node.children:
-            create_game_tree(child)
+            create_game_tree(child, eval_color)
+
+
+def create_potential_moves(node, move_color='G', eval_color ='G'):
+    """
+    Add list of possible moves to game state.
+
+    Parameters
+    ----------
+    game : Game
+        Game fomr which to attempt moves
+    move_color : char, optional
+        Player color, G(ray) or W(hite). The default is 'G'.
+    level : char, optional
+        what level of the tree board takes place on
+        Root node is level 0, its children are level 1,
+        children of those children are level 2 etc. The default is 0.
+
+    Returns
+    -------
+    return_li : list
+        Children of that node
+    """
+    return_li = []
+    # Check both of the spaces occupied by the player
+    for spot in [(i, j) for i in range(5) for j in range(5) if
+                 node.game.board[i][j]['occupant'] == move_color]:
+        i, j = spot
+        # check each possible move
+
+        for space in get_adjacent(i, j):
+
+            new_game = Game()
+            new_game = game_deep_copy(node.game, move_color)
+            new_game.select(move_color, i, j)
+
+            if new_game.move(space[0], space[1]):
+                if new_game.end:
+                    return_li.append(Node(
+                        game=new_game,
+                        level=node.level + 1,
+                        max_level=node.max_level,
+                        score=new_game.get_board_score(move_color),
+                        parent=node))
+                else:
+                    # given a legal move, check for each possible build
+                    for build in get_adjacent(new_game.col,
+                                              new_game.row):
+                        build_game = game_deep_copy(new_game,
+                                                    new_game.color)
+
+                        if build_game.build(build[0], build[1]):
+                            return_li.append(Node(
+                                game=build_game,
+                                level=node.level + 1,
+                                max_level=node.max_level,
+                                score=build_game.get_board_score(eval_color),
+                                parent=node))
+
+        # Sort by highest score for your moves, lowest for opponent moves
+        if node.level % 2 == 1:
+            return_li = sorted(return_li, key=lambda x: x.score)
+        else:
+            return_li = sorted(return_li, key=lambda x: x.score * -1)
+
+    return return_li
 
 
 def game_deep_copy(game, color):
@@ -669,6 +612,7 @@ def game_deep_copy(game, color):
 
     return new_game
 
+
 def get_opponent_color(color):
     if color == 'W':
         other_color = 'G'
@@ -676,3 +620,60 @@ def get_opponent_color(color):
         other_color = 'W'
 
     return other_color
+
+
+def get_adjacent(x_val, y_val, when='general'):
+    """
+    Get spaces surrounding the passed one.
+
+    Parameters
+    ----------
+    x_val : int
+        x_coordinate ie column value
+    y_val : int
+        y_coordinate ie row value
+
+    when : string
+        Not currently used. Idea is to use function to get adjacent
+        values base on phase of the game. eg account for height during build
+        phase
+
+    Returns
+    -------
+    space_li : li
+        list of spaces adjacent to the one provided through
+        x_val and y_val
+    """
+    if when == 'general':
+        space_list = [(x_val - 1, y_val + 1),
+                      (x_val, y_val + 1),
+                      (x_val + 1, y_val + 1),
+                      (x_val - 1, y_val),
+                      (x_val + 1, y_val),
+                      (x_val - 1, y_val - 1),
+                      (x_val, y_val - 1),
+                      (x_val + 1, y_val - 1)]
+        space_list = list(filter(
+            lambda t: t[0] >= 0 and t[0] <= 4
+                      and t[1] >= 0 and t[1] <= 4,
+            space_list))
+
+    return space_list
+
+
+def is_valid_num(num):
+    """
+    Check if x or y falls on board.
+
+    Parameters
+    ----------
+    num : str
+        row or column value
+
+    Returns
+    -------
+    bool
+        true if its a valid number [0,4]
+        false otherwise
+    """
+    return -1 < num < 5

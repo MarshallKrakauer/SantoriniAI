@@ -41,13 +41,13 @@ class Player():
             self.game.randomize_placement(self.color)
             self.placements = 2
 
-    def play_regular_turn(self, x_coor= -1, y_coor= -1):
+    def play_regular_turn(self, x_val= -1, y_val= -1):
         """Manual or auto play of turn, depending on player type."""
         if self.player_type == 'human':
-            self.game.play_manual_turn(x_coor, y_coor)
+            self.game.play_manual_turn(x_val, y_val)
 
         elif self.player_type == 'alphabeta':
-            self.game.play_automatic_turn(self.color)
+            self.game.play_automatic_turn(move_color=self.color, eval_color=self.color)
             self.game.subturn = 'switch'
     
     def update_game(self):
