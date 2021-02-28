@@ -8,6 +8,7 @@ from node import Node, store_breadth_first
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
+PICKLE = False
 
 
 class Game:
@@ -419,12 +420,24 @@ class Game:
         elif self.subturn == 'build':
             self.build(x_coor, y_coor)
 
-    def play_automatic_turn(self, color, tree_depth=DEPTH):
+    def play_automatic_turn(self, move_color, eval_color = None, tree_depth=DEPTH):
         """
-        Make automatic turn.
+        Select turn for AI player
 
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
+
+        Parameters
+        ----------
+        move_color : char
+            Whose turn is it is. This will be the color moved
+
+        eval_color : char
+            Color to use for the eval function. Which perpective to score from
+
+        tree_depth : int
+            Depth of the tree. How far to look ahead for creating potential moves
+
         """
         tree_depth = int(tree_depth)
         if tree_depth <= 2:
@@ -440,7 +453,7 @@ class Game:
         create_game_tree(root_node)
         print("Tree creation time:", dt.datetime.now() - time1)
 
-        if DEPTH <= 3:
+        if PICKLE:
             time1 = dt.datetime.now()
             store_breadth_first(root_node)
             print("Pickle time: ", dt.datetime.now() - time1)
@@ -470,32 +483,37 @@ def is_valid_num(num):
     return -1 < num < 5
 
 
-def get_adjacent(x_coor, y_coor, when='general'):
+def get_adjacent(x_val, y_val, when='general'):
     """
     Get spaces surrounding the passed one.
 
     Parameters
     ----------
-    x_coor : int
-        x_coor-coordinate ie column value
-    y_coor : int
-        y_coor-coordinate ie row value
+    x_val : int
+        x_coordinate ie column value
+    y_val : int
+        y_coordinate ie row value
+
+    when : string
+        Not currently used. Idea is to use function to get adjacent
+        values base on phase of the game. eg account for height during build
+        phase
 
     Returns
     -------
-    spaceLi : li
+    space_li : li
         list of spaces adjacent to the one provided through
-        x_coor and y_coor
+        x_val and y_val
     """
     if when == 'general':
-        space_list = [(x_coor - 1, y_coor + 1),
-                      (x_coor, y_coor + 1),
-                      (x_coor + 1, y_coor + 1),
-                      (x_coor - 1, y_coor),
-                      (x_coor + 1, y_coor),
-                      (x_coor - 1, y_coor - 1),
-                      (x_coor, y_coor - 1),
-                      (x_coor + 1, y_coor - 1)]
+        space_list = [(x_val - 1, y_val + 1),
+                      (x_val, y_val + 1),
+                      (x_val + 1, y_val + 1),
+                      (x_val - 1, y_val),
+                      (x_val + 1, y_val),
+                      (x_val - 1, y_val - 1),
+                      (x_val, y_val - 1),
+                      (x_val + 1, y_val - 1)]
         space_list = list(filter(
             lambda t: t[0] >= 0 and t[0] <= 4
                       and t[1] >= 0 and t[1] <= 4,
@@ -559,7 +577,12 @@ def create_potential_moves(node, color='G'):
                                 max_level=node.max_level,
                                 score=build_game.evaluate_board(color),
                                 parent=node))
-        return_li = sorted(return_li, key=lambda x: x.score)
+
+        # Sort by highest score for your moves, lowest for opponent moves
+        if node.level % 2 == 1:
+            return_li = sorted(return_li, key=lambda x: x.score)
+        else:
+            return_li = sorted(return_li, key=lambda x: x.score * -1)
 
     return return_li
 
@@ -576,12 +599,11 @@ def create_game_tree(node):
     node : Node
         Nodes with which to create child nodes (ie subsequent turns)
     """
-    # for even numbered levels, move the other color
 
-    # recurring case, note that create_children increments the level
 
     #Set which color will be moved on the board
     if node.level % 2 == 0:
+        # for even numbered levels, move the other color
         color = node.game.color
     else:
         if node.game.color == 'G':
@@ -617,13 +639,15 @@ def game_deep_copy(game, color):
 
     Parameters
     ----------
-    otherboard : list
-        board from which to copy info
+    game : Game
+        game from which to copy info
+    color :
+        color to set as the player of that game
 
     Returns
     -------
-    newboard : list
-        new board with same info as otherboard
+    new_game : Game
+        new game with same info as others and a new color
 
     """
     new_game = Game()

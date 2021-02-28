@@ -19,6 +19,19 @@ class Player():
         return (self.color + '-' + self.player_type + '-'
                 + str(self.placements))
 
+    def play_turn(self, x_coor = -1, y_coor = -1):
+        """Place or play depending on turn."""
+        self.game.color = self.color
+
+        if self.placements >= 2:
+            self.play_regular_turn(x_coor, y_coor)
+
+        elif self.placements < 2:
+            self.place_piece(x_coor, y_coor)
+
+        if self.placements == 2 and self.game.subturn == 'place':
+            self.game.subturn = 'switch'
+
     def place_piece(self, x_coor = -1, y_coor = -1):
         """Manual or automatic palcement of piece on board."""
         if self.player_type == 'human':
@@ -32,22 +45,9 @@ class Player():
         """Manual or auto play of turn, depending on player type."""
         if self.player_type == 'human':
             self.game.play_manual_turn(x_coor, y_coor)
-            
+
         elif self.player_type == 'alphabeta':
             self.game.play_automatic_turn(self.color)
-            self.game.subturn = 'switch'
-
-    def play_turn(self, x_coor = -1, y_coor = -1):
-        """Place or play depending on turn."""
-        self.game.color = self.color
-        
-        if self.placements >= 2:
-            self.play_regular_turn(x_coor, y_coor)
-
-        elif self.placements < 2:
-            self.place_piece(x_coor, y_coor)
-
-        if self.placements == 2 and self.game.subturn == 'place':
             self.game.subturn = 'switch'
     
     def update_game(self):
