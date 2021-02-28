@@ -445,11 +445,11 @@ class Game:
         print("Tree creation time:", dt.datetime.now() - time1)
 
         if DEPTH <= 3:
+            time1 = dt.datetime.now()
             store_breadth_first(root_node)
+            print("Pickle time: ", dt.datetime.now() - time1)
 
-        time1 = dt.datetime.now()
         best_state = root_node.alpha_beta_search()
-        print("Alpha Beta Time:", dt.datetime.now() - time1)
         self.board = best_state.board
         self.end = best_state.end
         if not self.end:
@@ -582,32 +582,38 @@ def create_game_tree(node):
     """
     # for even numbered levels, move the other color
 
-    if node.level % 2 == 0:
-        color = node.game.color
-    else:
-        if node.game.color == 'G':
-            color = 'W'
-        else:
-            color = 'G'
-
-    if color == 'W':
-        other_color = 'G'
-    else:
-        other_color = 'W'
-
     # recurring case, note that create_children increments the level
     if node.level < node.max_level:
+
+        #Set which color will be moved on the board
+        if node.level % 2 == 0:
+            color = node.game.color
+        else:
+            if node.game.color == 'G':
+                color = 'W'
+            else:
+                color = 'G'
+
+        if color == 'W':
+            other_color = 'G'
+        else:
+            other_color = 'W'
+
+        # For finished games, print self as the child
         if node.game.end:
-            finished_game_node = deepcopy(node)
-            finished_game_node.level += 1
-            finished_game_node.game.color = other_color
-            finished_game_node.score = finished_game_node.game.evaluate_board(color)
+            finished_game_node = Node(game = game_deep_copy(node.game, other_color),
+                                      level = node.level + 1,
+                                      max_level = node.max_level,
+                                      parent = node
+                                      )
+            finished_game_node.score = finished_game_node.game.evaluate_board(other_color)
             node.children = [finished_game_node]
-            finished_game_node.parent = node
         else:
             node.children = create_potential_moves(node, color)
-        for child in node.children:
-            create_game_tree(child)
+
+        if node.level + 1 < node.max_level:
+            for child in node.children:
+                create_game_tree(child)
 
 
 def game_deep_copy(game, color):
