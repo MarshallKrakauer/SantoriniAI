@@ -1,4 +1,4 @@
-# Project Title
+# Santorini AI
 
 This code seeks to implement the abstract board game Santorini with Python. The interfact of the game is implemented with Pygame, and the AI uses the minimax algorithm, optimized with alpha-beta pruning.
 
@@ -22,7 +22,7 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 
 ## Versioning
 
-Currently in beta testing, no versions yet
+Currently in beta testing. Version control using Git.
 
 ## Authors
 
