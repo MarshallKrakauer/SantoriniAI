@@ -23,6 +23,9 @@ Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c6
 ## Versioning
 
 Currently in beta testing. Version control using Git.
+In the current version, the Game AI includes lots of blank space one each side. I plan to add further information, such as a turn history and AI decision-making visuals
+in this space.
+
 
 ## Authors
 
