@@ -35,7 +35,7 @@ This project is licensed under Creative Commons.
 
 ## Acknowledgments
 
-* [Programming Pixls](https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html) - Used this code to create button
+* [Programming Pixels](https://programmingpixels.com/handling-a-title-screen-game-flow-and-buttons-in-pygame.html) - Used this code to create button
 * [My Great Learning](https://www.mygreatlearning.com/blog/alpha-beta-pruning-in-ai/) - Used to build minimax algorith with alpha-beta pruning
 * [Gord](https://boardgamegeek.com/boardgamedesigner/3302/gord) - Created Santorini
 * [Tech with Tim](https://www.youtube.com/channel/UC4JX40jDee_tINbkjycV4Sg) - Pygame tutorial, pycharm tutorial, github tutorial, checkers AI tutorial, OOP tutorial...
