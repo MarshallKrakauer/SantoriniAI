@@ -26,7 +26,7 @@ Currently in beta testing, no versions yet
 
 ## Authors
 
-* **Marshall Krakauer** - *marshallkrakauer@gmail.com* - [Github](https://github.com/MarshallKrakauer)
+* **Marshall Krakauer** - *marshallkrakauer (at) gmail.com* - [Github](https://github.com/MarshallKrakauer)
 
 
 ## License
@@ -39,4 +39,4 @@ This project is licensed under Creative Commons.
 * [My Great Learning](https://www.mygreatlearning.com/blog/alpha-beta-pruning-in-ai/) - Used to build minimax algorith with alpha-beta pruning
 * [Gord](https://boardgamegeek.com/boardgamedesigner/3302/gord) - Created Santorini
 * [Tech with Tim](https://www.youtube.com/channel/UC4JX40jDee_tINbkjycV4Sg) - Pygame tutorial, pycharm tutorial, github tutorial, checkers AI tutorial, OOP tutorial...
-* [Kevin Mess](https://www.csn.edu/directory/kevin-mess) - The best CS lecturer.
+* [Kevin Mess](https://www.csn.edu/directory/kevin-mess) - The best CS lecturer
