@@ -104,6 +104,11 @@ class Game:
         Gives a score to the board based on position of the pices
         Used to for the alpha beta pruning algorith
 
+        Parameters
+        ----------
+        color : char
+            Player's perspective from which to evaluate board strenght.
+
         Returns
         -------
         score : int
@@ -112,26 +117,24 @@ class Game:
         """
         other_color = get_opponent_color(color)
 
-        #color = 'W'
-        #other_color = 'G'
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self.board[i][j]
             adjacent_spaces = get_adjacent(i, j)
 
-            # 3^level for occupied spaces, 2^level for adjacent spaces
+            # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
             if space['occupant'] == color:
                 score += 4 ** space['level']
             elif space['occupant'] == other_color:
                 score -= 4 ** space['level']
-            # for k, l in adjacent_spaces:
-            #     space = self.board[k][l]
-            #     if space['occupant'] == color:
-            #         score += 2 ** (space['level'] % 4)
-            #     elif space['occupant'] == other_color:
-            #         score -= 2 ** (space['level'] % 4)
+            for k, l in adjacent_spaces:
+                space = self.board[k][l]
+                if space['occupant'] == color and space['level'] != 4:
+                    score += 2 ** space['level']
+                elif space['occupant'] == other_color and space['level'] != 4:
+                    score -= 2 ** space['level']
         return score
 
     def undo(self):
@@ -557,11 +560,16 @@ def create_potential_moves(node, move_color='G', eval_color ='G'):
                                                     new_game.color)
 
                         if build_game.build(build[0], build[1]):
+                            if build_game.end or node.level + 1 == node.max_level:
+                                new_score = build_game.get_board_score(eval_color)
+                            else:
+                                new_score = 0
+
                             return_li.append(Node(
                                 game=build_game,
                                 level=node.level + 1,
                                 max_level=node.max_level,
-                                score=build_game.get_board_score(eval_color),
+                                score=new_score,
                                 parent=node))
 
         # Sort by highest score for your moves, lowest for opponent moves
