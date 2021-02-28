@@ -61,14 +61,13 @@ class Game:
         return_val = ''  # 'score: ' + str(self.evaluate_board()) + ' \n'
         return_val += "    x0 x1 x2 x3 x4\n"
         return_val += "    --------------\n"
-        for i in range(5):
-            for j in range(5):
-                if j == 0:
-                    return_val += 'y' + str(i) + '| '
-                return_val += (str(self.board[j][i]['level']) +
-                               str(self.board[j][i]['occupant']) +
-                               ' ')
-            return_val += '\n'
+        for i, j in SPACE_LIST:
+            if j == 0:
+                return_val += 'y' + str(i) + '| '
+            return_val += (str(self.board[j][i]['level']) +
+                           str(self.board[j][i]['occupant']) +
+                           ' ')
+        return_val += '\n'
         return return_val
 
     def randomize_placement(self, color):
@@ -110,10 +109,7 @@ class Game:
             score of the board needed for alpha-beta pruning
             higher score is better
         """
-        if color == 'W':
-            other_color = 'G'
-        else:
-            other_color = 'W'
+        other_color = get_opponent_color(color)
 
         color = 'W'
         other_color = 'G'
@@ -135,7 +131,7 @@ class Game:
             #         score += 2 ** (space['level'] % 4)
             #     elif space['occupant'] == other_color:
             #         score -= 2 ** (space['level'] % 4)
-        return score #* -1
+        return score
 
     def undo(self):
         """Undo select action."""
@@ -583,37 +579,33 @@ def create_game_tree(node):
     # for even numbered levels, move the other color
 
     # recurring case, note that create_children increments the level
-    if node.level < node.max_level:
 
-        #Set which color will be moved on the board
-        if node.level % 2 == 0:
-            color = node.game.color
+    #Set which color will be moved on the board
+    if node.level % 2 == 0:
+        color = node.game.color
+    else:
+        if node.game.color == 'G':
+            color = 'W'
         else:
-            if node.game.color == 'G':
-                color = 'W'
-            else:
-                color = 'G'
+            color = 'G'
 
-        if color == 'W':
-            other_color = 'G'
-        else:
-            other_color = 'W'
+    other_color = get_opponent_color(color)
 
-        # For finished games, print self as the child
-        if node.game.end:
-            finished_game_node = Node(game = game_deep_copy(node.game, other_color),
-                                      level = node.level + 1,
-                                      max_level = node.max_level,
-                                      parent = node
-                                      )
-            finished_game_node.score = finished_game_node.game.evaluate_board(other_color)
-            node.children = [finished_game_node]
-        else:
-            node.children = create_potential_moves(node, color)
+    # For finished games, print self as the child
+    if node.game.end:
+        finished_game_node = Node(game = game_deep_copy(node.game, other_color),
+                                  level = node.level + 1,
+                                  max_level = node.max_level,
+                                  parent = node
+                                  )
+        finished_game_node.score = finished_game_node.game.evaluate_board(other_color)
+        node.children = [finished_game_node]
+    else:
+        node.children = create_potential_moves(node, color)
 
-        if node.level + 1 < node.max_level:
-            for child in node.children:
-                create_game_tree(child)
+    if node.level + 1 < node.max_level:
+        for child in node.children:
+            create_game_tree(child)
 
 
 def game_deep_copy(game, color):
@@ -652,3 +644,11 @@ def game_deep_copy(game, color):
     new_game.color = color
 
     return new_game
+
+def get_opponent_color(color):
+    if color == 'W':
+        other_color = 'G'
+    else:
+        other_color = 'W'
+
+    return other_color
