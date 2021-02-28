@@ -115,6 +115,8 @@ class Game:
         else:
             other_color = 'W'
 
+        color = 'W'
+        other_color = 'G'
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
@@ -123,9 +125,9 @@ class Game:
 
             # 3^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
-            if space['occupant'] == other_color:
+            if space['occupant'] == color:
                 score += 4 ** space['level']
-            elif space['occupant'] == color:
+            elif space['occupant'] == other_color:
                 score -= 4 ** space['level']
             # for k, l in adjacent_spaces:
             #     space = self.board[k][l]
@@ -133,7 +135,7 @@ class Game:
             #         score += 2 ** (space['level'] % 4)
             #     elif space['occupant'] == other_color:
             #         score -= 2 ** (space['level'] % 4)
-        return score
+        return score #* -1
 
     def undo(self):
         """Undo select action."""
@@ -588,14 +590,20 @@ def create_game_tree(node):
         else:
             color = 'G'
 
+    if color == 'W':
+        other_color = 'G'
+    else:
+        other_color = 'W'
+
     # recurring case, note that create_children increments the level
     if node.level < node.max_level:
         if node.game.end:
-            end_game_node = deepcopy(node)
-            end_game_node.level += 1
-            end_game_node.score = end_game_node.game.evaluate_board(color) * -1
-            node.children = [end_game_node]
-            end_game_node.parent = node
+            finished_game_node = deepcopy(node)
+            finished_game_node.level += 1
+            finished_game_node.game.color = other_color
+            finished_game_node.score = finished_game_node.game.evaluate_board(color)
+            node.children = [finished_game_node]
+            finished_game_node.parent = node
         else:
             node.children = create_potential_moves(node, color)
         for child in node.children:

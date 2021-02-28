@@ -43,15 +43,15 @@ def main():
     play_game(white_player, gray_player)
 
 
-def map_numbers(x_coor, y_coor):
+def map_numbers(x_val, y_val):
     """
     Convert coordinates to board spaces.
 
     Parameters
     ----------
-    x_coor : int
+    x_val : int
         x coordinate of area that was clicked
-    y_coor : int
+    y_val : int
         y coordinate of area that was clicked
 
     Returns
@@ -60,8 +60,8 @@ def map_numbers(x_coor, y_coor):
     area on board that was clicked
 
     """
-    x_1 = (x_coor - BOARD_LEFT_EDGE) // 50
-    y_1 = (y_coor - BOARD_TOP_EDGE) // 50
+    x_1 = (x_val - BOARD_LEFT_EDGE) // 50
+    y_1 = (y_val - BOARD_TOP_EDGE) // 50
     return x_1, y_1
 
 
@@ -84,10 +84,10 @@ def end_fanfare(color, switch):
     SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
 
 
-def check_undo(x_coor, y_coor):
+def check_undo(x_val, y_val):
     """Return true if undo button was selected."""
-    return (BOARD_LEFT_EDGE + 75 <= x_coor <= BOARD_LEFT_EDGE + 180
-            and BOARD_TOP_EDGE + 350 <= y_coor <= BOARD_TOP_EDGE + 375)
+    return (BOARD_LEFT_EDGE + 75 <= x_val <= BOARD_LEFT_EDGE + 180
+            and BOARD_TOP_EDGE + 350 <= y_val <= BOARD_TOP_EDGE + 375)
 
 
 def make_undo_button(player):
@@ -149,80 +149,67 @@ def draw_board(board):
             SCREEN.blit(text, (vertical + 20, horizontal + 20))
 
 
-def draw_arrow(x_coor=0, y_coor=0):
+def draw_arrow(x_val=0, y_val=0):
     """Draw arrow onto start screen."""
     pygame.draw.polygon(SCREEN,
                         RED,
                         # Locations to draw
-                        ((12 + x_coor, 112 + y_coor),
-                         (12 + x_coor, 137 + y_coor),
-                         (62 + x_coor, 137 + y_coor),
-                         (62 + x_coor, 162 + y_coor),
-                         (87 + x_coor, 125 + y_coor),
-                         (62 + x_coor, 87 + y_coor),
-                         (62 + x_coor, 112 + y_coor)
+                        ((12 + x_val, 112 + y_val),
+                         (12 + x_val, 137 + y_val),
+                         (62 + x_val, 137 + y_val),
+                         (62 + x_val, 162 + y_val),
+                         (87 + x_val, 125 + y_val),
+                         (62 + x_val, 87 +  y_val),
+                         (62 + x_val, 112 + y_val)
                          )
                         )
 
 
 def get_title_screen_buttons():
     """Create title screen buttons."""
-    return_dict = {}
-    return_dict['start'] = Button(
+    return_dict = {'start': Button(
         center_position=(400, 450),  # left,top
         font_size=75,
         bg_rgb=GREEN,
         text_rgb=BLACK,
         text="CLICK TO START",
-        multiplier=1)
-
-    return_dict['white header'] = Button(
+        multiplier=1), 'white header': Button(
         center_position=(200, 100),
         font_size=72,
         bg_rgb=BLUE,
         text_rgb=WHITE,
         text='WHITE',
-        multiplier=1)
-
-    return_dict['gray header'] = Button(
+        multiplier=1), 'gray header': Button(
         center_position=(600, 100),
         font_size=72,
         bg_rgb=BLUE,
         text_rgb=GRAY,
         text='GRAY',
-        multiplier=1.2)
-
-    return_dict['white alphabeta'] = Button(
+        multiplier=1.2), 'white alphabeta': Button(
         center_position=(200, 200),
         font_size=50,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='AI',
-        multiplier=1.2)
-
-    return_dict['gray alphabeta'] = Button(
+        multiplier=1.2), 'gray alphabeta': Button(
         center_position=(600, 200),
         font_size=50,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='AI',
-        multiplier=1.2)
-
-    return_dict['white human'] = Button(
+        multiplier=1.2), 'white human': Button(
         center_position=(200, 300),
         font_size=50,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
-        multiplier=1.2)
-
-    return_dict['gray human'] = Button(
+        multiplier=1.2), 'gray human': Button(
         center_position=(600, 300),
         font_size=50,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
-        multiplier=1.2)
+        multiplier=1.2)}
 
     return return_dict
 
@@ -326,8 +313,11 @@ def play_game(white_player, gray_player):
 
     Parameters
     ----------
-    game : Game
-        Game object where moves/builds will be game
+    white_player : Player
+        Player object moving the white piece
+
+    gray_player : Player
+        Player object moving the gray piece
     """
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()

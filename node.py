@@ -10,14 +10,18 @@ class Node:
 
     Attributes
     ----------
-    value : int
-        Score of the Santorini game. Used for alpha-beta pruning
+    game : Game
+        Santorini game scored inside the node
     children : list
-        list of child nodes
-    state : Game
-        Santorini game to produce store of
-    end : level
+        list of child nodes, ie potential moves
+    level : level
         Number of parent nodes. Root node has level 0
+    max_level : int
+        Level at bottom of the tree, ie how many moves ahead to look
+    parent : Node
+        parent node, ie what board looked like before this move
+    score:
+        How good or bad of a game it is for that player. Used for alpha-beta pruning & minimax
     """
 
     def __init__(self, game, children=[], level=0, max_level=2, parent=None,
@@ -154,7 +158,7 @@ def print_depth_first(root):
     -------
     None.
     """
-    print(root.value)
+    print(root.score)
     for tree in root.children:
         print_depth_first(tree)
 
