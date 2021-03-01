@@ -32,7 +32,7 @@ class Game:
         player color, G(ray) or W(hite)
     turn : int
         which turn the game is on
-    subturn : str
+    sub_turn : str
         action within a turn: place, select, move, or build
     message : str
         message given to player when they make an invalid choice
@@ -46,7 +46,7 @@ class Game:
         self.col = 0
         self.end = False
         self.turn = 1
-        self.subturn = 'place'
+        self.sub_turn = 'place'
         self.message = ''
         self.color = 'W'
 
@@ -120,23 +120,23 @@ class Game:
             space = self.board[i][j]
             adjacent_spaces = get_adjacent(i, j)
 
-            # 3^level for occupied spaces, 2^level for adjacent spaces
+            # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
             if space['occupant'] == color:
                 score += 4 ** space['level']
             elif space['occupant'] == other_color:
                 score -= 4 ** space['level']
-            # for k, l in adjacent_spaces:
-            #     space = self.board[k][l]
-            #     if space['occupant'] == color:
-            #         score += 2 ** (space['level'] % 4)
-            #     elif space['occupant'] == other_color:
-            #         score -= 2 ** (space['level'] % 4)
+            for k, l in adjacent_spaces:
+                space = self.board[k][l]
+                if space['occupant'] == color and space['level'] != 4:
+                    score += 2 ** space['level']
+                elif space['occupant'] == other_color and space['level'] != 4:
+                    score -= 2 ** space['level']
         return score
 
     def undo(self):
         """Undo select action."""
-        self.subturn = 'select'
+        self.sub_turn = 'select'
         self.make_color_active()
 
     def make_all_spaces_inactive(self):
@@ -144,15 +144,15 @@ class Game:
         for i, j in SPACE_LIST:
             self.board[i][j]['active'] = False
 
-    def is_valid_move_space(self, x_coor, y_coor):
+    def is_valid_move_space(self, x_val, y_val):
         """
         Check if user made valid movement.
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x coordinate of space
-        y_coor : int
+        y_val : int
             y coordinate of space
 
         Returns
@@ -162,8 +162,8 @@ class Game:
             for a move to be valid, it must be to an unoccupied space and
             no more than one level increase
         """
-        height = self.board[x_coor][y_coor]['level']
-        space_list = get_adjacent(x_coor, y_coor)
+        height = self.board[x_val][y_val]['level']
+        space_list = get_adjacent(x_val, y_val)
         for i, j in space_list:
             if (
                     is_valid_num(i) and is_valid_num(j) and
@@ -173,15 +173,15 @@ class Game:
                 return True
         return False
 
-    def is_valid_build_space(self, x_coor, y_coor):
+    def is_valid_build_space(self, x_val, y_val):
         """
         Check is user can build on chosen space.
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x coordinate of space
-        y_coor : int
+        y_val : int
             y coordinate of space
 
         Returns
@@ -192,7 +192,7 @@ class Game:
             not that spaces with a dome are considered occupied, with
             an occupant of X
         """
-        space_list = get_adjacent(x_coor, y_coor)
+        space_list = get_adjacent(x_val, y_val)
         for i, j in space_list:
             if (is_valid_num(i) and is_valid_num(j) and
                     self.board[i][j]['occupant'] == 'O'):
@@ -221,7 +221,7 @@ class Game:
 
         # make all space inactive
         self.make_all_spaces_inactive()
-        self.subturn = 'end'
+        self.sub_turn = 'end'
 
     def make_color_active(self):
         """
@@ -232,26 +232,23 @@ class Game:
 
         """
         for i, j in SPACE_LIST:
-            if self.board[i][j]['occupant'] == self.color:
-                self.board[i][j]['active'] = True
-            else:
-                self.board[i][j]['active'] = False
+            self.board[i][j]['active'] = self.board[i][j]['occupant'] == self.color
 
-    def make_choice_active(self, x_coor, y_coor):
+    def make_choice_active(self, x_val, y_val):
         """
         Mark the piece a player has chosen as active.
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x coordinate of chosen piece
-        y_coor : int
+        y_val : int
             y coordinate of chosen piece
 
         """
         for j, i in SPACE_LIST:
             self.board[i][j]['active'] = \
-                i == x_coor and j == y_coor
+                i == x_val and j == y_val
 
     def make_exterior_active(self):
         """
@@ -286,7 +283,7 @@ class Game:
                 return  # end function if we have a valid space
         self.end_game(True)
 
-    def place(self, color, x_coor, y_coor):  # Only runs at beginning of game
+    def place(self, color, x_val, y_val):  # Only runs at beginning of game
         """
         Place two pieces of given color on the board.
 
@@ -295,15 +292,15 @@ class Game:
         color : str
             player color that will be placed on the board
         """
-        if self.board[x_coor][y_coor]['occupant'] != 'O':
+        if self.board[x_val][y_val]['occupant'] != 'O':
             self.message = "Occupied Space"
         else:
-            self.board[x_coor][y_coor]['occupant'] = color
+            self.board[x_val][y_val]['occupant'] = color
             self.turn += 1
             return True
         return False
 
-    def select(self, color, x_coor, y_coor):
+    def select(self, color, x_val, y_val):
         """
         Choose piece to move.
 
@@ -311,9 +308,9 @@ class Game:
         ----------
         color : str
             Color of current player
-        x_coor : int
+        x_val : int
             x coordinate of spot on board
-        y_coor : int
+        y_val : int
             y coordinate of spont on board
 
         Returns
@@ -322,25 +319,25 @@ class Game:
             True/false if move is valid
 
         """
-        if self.board[x_coor][y_coor]['occupant'] != color:
+        if self.board[x_val][y_val]['occupant'] != color:
             self.message = "You don't own that piece"
         else:
-            self.col = x_coor
-            self.row = y_coor
-            self.make_choice_active(x_coor, y_coor)
-            self.subturn = 'move'
+            self.col = x_val
+            self.row = y_val
+            self.make_choice_active(x_val, y_val)
+            self.sub_turn = 'move'
             return True
         return False
 
-    def move(self, x_coor, y_coor):
+    def move(self, x_val, y_val):
         """
         Move piece to new spot on board.
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x-coordinate
-        y_coor : int
+        y_val : int
             y-coordinate
 
         Returns
@@ -350,33 +347,33 @@ class Game:
         """
         prev_col = self.col  # x
         prev_row = self.row  # y
-        if (abs(y_coor - prev_row) > 1 or
-            abs(x_coor - prev_col) > 1) or \
-                y_coor == prev_row and x_coor == prev_col or \
-                self.board[x_coor][y_coor]['occupant'] != 'O' or \
-                (self.board[x_coor][y_coor]['level'] -
+        if (abs(y_val - prev_row) > 1 or
+            abs(x_val - prev_col) > 1) or \
+                y_val == prev_row and x_val == prev_col or \
+                self.board[x_val][y_val]['occupant'] != 'O' or \
+                (self.board[x_val][y_val]['level'] -
                  self.board[prev_col][prev_row]['level'] > 1):
             return False
         else:
-            self.board[x_coor][y_coor]['occupant'] = self.color
+            self.board[x_val][y_val]['occupant'] = self.color
             self.board[prev_col][prev_row]['occupant'] = 'O'
-            if self.board[x_coor][y_coor]['level'] == 3:
+            if self.board[x_val][y_val]['level'] == 3:
                 self.end_game()
-            self.col = x_coor
-            self.row = y_coor
-            self.subturn = 'build'
+            self.col = x_val
+            self.row = y_val
+            self.sub_turn = 'build'
             self.make_exterior_active()
             return True
 
-    def build(self, x_coor, y_coor):
+    def build(self, x_val, y_val):
         """
         Build on a space.
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x coordinate
-        y_coor : int
+        y_val : int
             y coordinate
 
         Returns
@@ -384,19 +381,19 @@ class Game:
         bool
             True if move is valid
         """
-        if (abs(y_coor - self.row) > 1 or
-            abs(x_coor - self.col) > 1) or \
-                y_coor == self.row and x_coor == self.col or \
-                self.board[x_coor][y_coor]['occupant'] != 'O':
+        if (abs(y_val - self.row) > 1 or
+            abs(x_val - self.col) > 1) or \
+                y_val == self.row and x_val == self.col or \
+                self.board[x_val][y_val]['occupant'] != 'O':
             return False
         else:
-            self.board[x_coor][y_coor]['level'] += 1
-            if self.board[x_coor][y_coor]['level'] == 4:
-                self.board[x_coor][y_coor]['occupant'] = 'X'
-            self.subturn = 'switch'
+            self.board[x_val][y_val]['level'] += 1
+            if self.board[x_val][y_val]['level'] == 4:
+                self.board[x_val][y_val]['occupant'] = 'X'
+            self.sub_turn = 'switch'
             return True
 
-    def play_manual_turn(self, x_coor, y_coor):
+    def play_manual_turn(self, x_val, y_val):
         """
         Run through a turn.
 
@@ -405,20 +402,20 @@ class Game:
 
         Parameters
         ----------
-        x_coor : int
+        x_val : int
             x coordinate
-        y_coor : int
+        y_val : int
             y coordinate
         """
         # Playing the regular game
-        if self.subturn == 'select':  # Selecting which piece to move
+        if self.sub_turn == 'select':  # Selecting which piece to move
             self.make_color_active()
-            self.select(self.color, x_coor, y_coor)
-        elif self.subturn == 'move':  # Moving that piece
+            self.select(self.color, x_val, y_val)
+        elif self.sub_turn == 'move':  # Moving that piece
             self.check_move_available()
-            self.move(x_coor, y_coor)
-        elif self.subturn == 'build':
-            self.build(x_coor, y_coor)
+            self.move(x_val, y_val)
+        elif self.sub_turn == 'build':
+            self.build(x_val, y_val)
 
     def play_automatic_turn(self, move_color, eval_color = None, tree_depth=DEPTH):
         """
@@ -462,7 +459,7 @@ class Game:
         self.board = best_state.board
         self.end = best_state.end
         if not self.end:
-            self.subturn = 'switch'
+            self.sub_turn = 'switch'
 
 
 def create_game_tree(node, eval_color):
@@ -508,7 +505,7 @@ def create_game_tree(node, eval_color):
             create_game_tree(child, eval_color)
 
 
-def create_potential_moves(node, move_color='G', eval_color ='G'):
+def create_potential_moves(node, move_color, eval_color):
     """
     Add list of possible moves to game state.
 
@@ -516,12 +513,10 @@ def create_potential_moves(node, move_color='G', eval_color ='G'):
     ----------
     game : Game
         Game fomr which to attempt moves
-    move_color : char, optional
+    move_color : char
         Player color, G(ray) or W(hite). The default is 'G'.
-    level : char, optional
-        what level of the tree board takes place on
-        Root node is level 0, its children are level 1,
-        children of those children are level 2 etc. The default is 0.
+    eval_color : char
+        Color from which to give score to board
 
     Returns
     -------
@@ -629,9 +624,9 @@ def get_adjacent(x_val, y_val, when='general'):
     Parameters
     ----------
     x_val : int
-        x_coordinate ie column value
+        x_valdinate ie column value
     y_val : int
-        y_coordinate ie row value
+        y_valdinate ie row value
 
     when : string
         Not currently used. Idea is to use function to get adjacent

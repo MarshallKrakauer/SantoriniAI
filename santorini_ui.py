@@ -70,17 +70,12 @@ def check_valid(num):
     return -1 < num < 5
 
 
-def end_fanfare(color, switch):
+def end_fanfare():
     """Produce visual showing who won the game."""
-    if switch:
-        if color == 'W':
-            color = 'G'
-        else:
-            color = 'W'
 
-    pygame.draw.rect(SCREEN, GREEN,
+    pygame.draw.rect(SCREEN, BLUE,
                      BUTTON_MEASURES, 0)
-    text = font.render("WINNER: " + color, True, BLACK)
+    text = font.render("WINNER!!!", True, BLACK)
     SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
 
 
@@ -102,7 +97,7 @@ def make_undo_button(player):
     undo_button.draw()
 
 
-def show_thinking(player):
+def thinking(player):
     """Show a "THINKING..." box when AI plays turn."""
     if player.color == 'W':
         button_color = WHITE
@@ -149,7 +144,7 @@ def draw_board(board):
             SCREEN.blit(text, (vertical + 20, horizontal + 20))
 
 
-def draw_arrow(x_val=0, y_val=0):
+def choose_arrow_location(x_val, y_val):
     """Draw arrow onto start screen."""
     pygame.draw.polygon(SCREEN,
                         RED,
@@ -159,7 +154,7 @@ def draw_arrow(x_val=0, y_val=0):
                          (62 + x_val, 137 + y_val),
                          (62 + x_val, 162 + y_val),
                          (87 + x_val, 125 + y_val),
-                         (62 + x_val, 87 +  y_val),
+                         (62 + x_val, 87 + y_val),
                          (62 + x_val, 112 + y_val)
                          )
                         )
@@ -214,39 +209,44 @@ def get_title_screen_buttons():
     return return_dict
 
 
+def draw_title_screen_material(w_human_arrow, g_human_arrow, w_ai_arrow, g_ai_arrow, button_dict, counter):
+    # Choose where to show red arrow for white piece
+    if w_human_arrow:
+        choose_arrow_location(30, 200 - 24)
+    elif w_ai_arrow:
+        choose_arrow_location(30, 100 - 24)
+
+    # Choose where to show red arrow for gray piece
+    if g_human_arrow:
+        choose_arrow_location(410, 200 - 24)
+    elif g_ai_arrow:
+        choose_arrow_location(410, 100 - 24)
+
+    # Show start button if all choices have been made
+    if ((g_human_arrow | g_ai_arrow) and
+            (w_human_arrow | w_ai_arrow) and
+            counter % 2500 < 1500):
+        button_dict['start'].draw()
+
+    # Draw all four buttons
+    for button in button_dict.keys():
+        if button != 'start':
+            button_dict[button].draw()
+
+
 def title_screen():
     """Show title screen before playing."""
     counter = 0
 
     button_dict = get_title_screen_buttons()
 
-    (show_white_human_arrow, show_white_ai_arrow, show_gray_human_arrow,
-     show_gray_ai_arrow, end_loop) = [False] * 5
+    (w_human_arrow, w_ai_arrow, g_human_arrow,
+     g_ai_arrow, end_loop) = [False] * 5
     while not end_loop:
         SCREEN.fill(LIGHT_GREEN)
 
-        # Choose where to show red arrow for white piece
-        if show_white_human_arrow:
-            draw_arrow(30, 200 - 24)
-        elif show_white_ai_arrow:
-            draw_arrow(30, 100 - 24)
-
-        # Choose where to show red arrow for gray piece
-        if show_gray_human_arrow:
-            draw_arrow(410, 200 - 24)
-        elif show_gray_ai_arrow:
-            draw_arrow(410, 100 - 24)
-
-        # Show start button if all choices have been made
-        if ((show_gray_human_arrow | show_gray_ai_arrow) and
-                (show_white_human_arrow | show_white_ai_arrow) and
-                counter % 3000 < 10000):
-            button_dict['start'].draw()
-
-        # Draw all four buttons
-        for button in button_dict.keys():
-            if button != 'start':
-                button_dict[button].draw()
+        # Update arrows + show start screen if it's ready
+        draw_title_screen_material(w_human_arrow, g_human_arrow, w_ai_arrow, g_ai_arrow, button_dict, counter)
 
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
@@ -259,26 +259,26 @@ def title_screen():
             # Move red arrow based on selection for white
             if (button_dict['white human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
-                show_white_human_arrow = True
-                show_white_ai_arrow = False
+                w_human_arrow = True
+                w_ai_arrow = False
             elif (button_dict['white alphabeta'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
-                show_white_human_arrow = False
-                show_white_ai_arrow = True
+                w_human_arrow = False
+                w_ai_arrow = True
 
             # Move red arrow based on selection for gray
             if (button_dict['gray human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
-                show_gray_human_arrow = True
-                show_gray_ai_arrow = False
+                g_human_arrow = True
+                g_ai_arrow = False
             elif (button_dict['gray alphabeta'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
-                show_gray_human_arrow = False
-                show_gray_ai_arrow = True
+                g_human_arrow = False
+                g_ai_arrow = True
 
             # If both choices have been made, show the start button
-            if ((show_gray_human_arrow | show_gray_ai_arrow) and
-                    (show_white_human_arrow | show_white_ai_arrow)):
+            if ((g_human_arrow | g_ai_arrow) and
+                    (w_human_arrow | w_ai_arrow)):
                 button_dict['start'].update(pos)
 
             # If person clicks start, star the game!
@@ -294,12 +294,12 @@ def title_screen():
         pygame.display.flip()
 
     # Choose what to return
-    if show_white_human_arrow:
+    if w_human_arrow:
         white_player = 'human'
     else:
         white_player = 'alphabeta'
 
-    if show_gray_human_arrow:
+    if g_human_arrow:
         gray_player = 'human'
     else:
         gray_player = 'alphabeta'
@@ -322,7 +322,7 @@ def play_game(white_player, gray_player):
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
     counter = 0  # not in use, holder if something shows every other frame
-    done = False  # ends pygame when true
+    game_is_done = False  # ends pygame when true
     show_board = False  # Used to show board when AI is playing
     stop_game = False
     player_num = 0
@@ -331,7 +331,7 @@ def play_game(white_player, gray_player):
     game = current_player.game
     # -------- Main Program Loop -----------
     pygame.event.clear()
-    while not done:
+    while not game_is_done:
         # --- Main event loop
         SCREEN.fill(LIGHT_GREEN)
         event = pygame.event.wait()  # event queue
@@ -339,13 +339,13 @@ def play_game(white_player, gray_player):
         # Check if someone clicked x
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                done = True
+                game_is_done = True
 
         # Special conditions
 
         # AI player plays game
         if not stop_game and current_player.player_type == 'alphabeta':
-            show_thinking(current_player)
+            thinking(current_player)
             if show_board:
                 current_player.play_turn()
                 show_board = False
@@ -382,7 +382,7 @@ def play_game(white_player, gray_player):
         # Check for end of game
         if game.end:
             game.end_game(False)
-            end_fanfare(current_player.color, True)
+            end_fanfare()
             stop_game = True
 
         # Update the screen
