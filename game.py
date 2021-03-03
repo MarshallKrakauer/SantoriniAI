@@ -14,9 +14,7 @@ PICKLE = False
 class Game:
     """
     Implentation of the board game Santorini using Pygame.
-
     White player chooses actions, while gray turns are automated.
-
     Attributes
     ----------
     board : list
@@ -53,7 +51,6 @@ class Game:
     def __str__(self):
         """
         Create ASCII representation of game state.
-
         Returns
         -------
         return_val : str
@@ -86,7 +83,8 @@ class Game:
         # spots are open
         chose_spaces = False
         while not chose_spaces:
-            # debugging
+
+            # choosing spaces randomly. No function for choosing first space
             space1, space2 = SYS_RANDOM.sample(potential_li, k=1)[0]
             x_0, y_0 = space1
             x_1, y_1 = space2
@@ -100,15 +98,12 @@ class Game:
     def get_board_score(self, color='W'):
         """
         Give numeric score to game.
-
         Gives a score to the board based on position of the pices
         Used to for the alpha beta pruning algorith
-
         Parameters
         ----------
         color : char
             Player's perspective from which to evaluate board strenght.
-
         Returns
         -------
         score : int
@@ -150,14 +145,12 @@ class Game:
     def is_valid_move_space(self, x_val, y_val):
         """
         Check if user made valid movement.
-
         Parameters
         ----------
         x_val : int
             x coordinate of space
         y_val : int
             y coordinate of space
-
         Returns
         -------
         bool
@@ -179,14 +172,12 @@ class Game:
     def is_valid_build_space(self, x_val, y_val):
         """
         Check is user can build on chosen space.
-
         Parameters
         ----------
         x_val : int
             x coordinate of space
         y_val : int
             y coordinate of space
-
         Returns
         -------
         bool
@@ -205,9 +196,7 @@ class Game:
     def end_game(self, switch_color=False):
         """
         End game and prevent further moves.
-
         Declare the games winner and makes all spaces inactive
-
         Parameters
         ----------
         switchcolor : bool, optional
@@ -229,10 +218,8 @@ class Game:
     def make_color_active(self):
         """
         Mark pieces as active.
-
         For a given player color, mark all the spaces with that
         player color as active
-
         """
         for i, j in SPACE_LIST:
             self.board[i][j]['active'] = self.board[i][j]['occupant'] == self.color
@@ -240,14 +227,12 @@ class Game:
     def make_choice_active(self, x_val, y_val):
         """
         Mark the piece a player has chosen as active.
-
         Parameters
         ----------
         x_val : int
             x coordinate of chosen piece
         y_val : int
             y coordinate of chosen piece
-
         """
         for j, i in SPACE_LIST:
             self.board[i][j]['active'] = \
@@ -256,7 +241,6 @@ class Game:
     def make_exterior_active(self):
         """
         Mark build-able spaces.
-
         after a player moves, marks the surrounding pieces
         where they can build as active
         """
@@ -289,7 +273,6 @@ class Game:
     def place(self, color, x_val, y_val):  # Only runs at beginning of game
         """
         Place two pieces of given color on the board.
-
         Parameters
         ----------
         color : str
@@ -306,7 +289,6 @@ class Game:
     def select(self, color, x_val, y_val):
         """
         Choose piece to move.
-
         Parameters
         ----------
         color : str
@@ -315,12 +297,10 @@ class Game:
             x coordinate of spot on board
         y_val : int
             y coordinate of spont on board
-
         Returns
         -------
         bool
             True/false if move is valid
-
         """
         if self.board[x_val][y_val]['occupant'] != color:
             self.message = "You don't own that piece"
@@ -335,14 +315,12 @@ class Game:
     def move(self, x_val, y_val):
         """
         Move piece to new spot on board.
-
         Parameters
         ----------
         x_val : int
             x-coordinate
         y_val : int
             y-coordinate
-
         Returns
         -------
         bool
@@ -371,14 +349,12 @@ class Game:
     def build(self, x_val, y_val):
         """
         Build on a space.
-
         Parameters
         ----------
         x_val : int
             x coordinate
         y_val : int
             y coordinate
-
         Returns
         -------
         bool
@@ -399,10 +375,8 @@ class Game:
     def play_manual_turn(self, x_val, y_val):
         """
         Run through a turn.
-
         After the piece placement has taken place, goes through
         motion of a normal turn.
-
         Parameters
         ----------
         x_val : int
@@ -423,21 +397,16 @@ class Game:
     def play_automatic_turn(self, move_color, eval_color = None, tree_depth=DEPTH):
         """
         Select turn for AI player
-
         Uses alpha-beta pruning to selection best turn
         and update game object to that ideal turn
-
         Parameters
         ----------
         move_color : char
             Whose turn is it is. This will be the color moved
-
         eval_color : char
             Color to use for the eval function. Which perpective to score from
-
         tree_depth : int
             Depth of the tree. How far to look ahead for creating potential moves
-
         """
         tree_depth = int(tree_depth)
         if tree_depth <= 2:
@@ -468,10 +437,8 @@ class Game:
 def create_game_tree(node, eval_color):
     """
     Create future turns, plus future turns for those future turns.
-
     Recursive function. root node will contain a "max level"
     value, which will tell this function when to stop
-
     Parameters
     ----------
     node : Node
@@ -511,16 +478,16 @@ def create_game_tree(node, eval_color):
 def create_potential_moves(node, move_color, eval_color):
     """
     Add list of possible moves to game state.
-
     Parameters
     ----------
     game : Game
         Game fomr which to attempt moves
-    move_color : char
+    move_color : char, optional
         Player color, G(ray) or W(hite). The default is 'G'.
-    eval_color : char
-        Color from which to give score to board
-
+    level : char, optional
+        what level of the tree board takes place on
+        Root node is level 0, its children are level 1,
+        children of those children are level 2 etc. The default is 0.
     Returns
     -------
     return_li : list
@@ -579,22 +546,18 @@ def create_potential_moves(node, move_color, eval_color):
 def game_deep_copy(game, color):
     """
     Deep copies board from another game.
-
     Used as part of the create children functions. Standard
     Python copy.deepcopy was too slow.
-
     Parameters
     ----------
     game : Game
         game from which to copy info
     color :
         color to set as the player of that game
-
     Returns
     -------
     new_game : Game
         new game with same info as others and a new color
-
     """
     new_game = Game()
 
@@ -628,19 +591,16 @@ def get_opponent_color(color):
 def get_adjacent(x_val, y_val, when='general'):
     """
     Get spaces surrounding the passed one.
-
     Parameters
     ----------
     x_val : int
         x_valdinate ie column value
     y_val : int
         y_valdinate ie row value
-
     when : string
         Not currently used. Idea is to use function to get adjacent
         values base on phase of the game. eg account for height during build
         phase
-
     Returns
     -------
     space_li : li
@@ -656,10 +616,10 @@ def get_adjacent(x_val, y_val, when='general'):
                       (x_val - 1, y_val - 1),
                       (x_val, y_val - 1),
                       (x_val + 1, y_val - 1)]
-        space_list = list(filter(
+        space_list = iter(list(filter(
             lambda t: t[0] >= 0 and t[0] <= 4
                       and t[1] >= 0 and t[1] <= 4,
-            space_list))
+            space_list)))
 
     return space_list
 
@@ -667,12 +627,10 @@ def get_adjacent(x_val, y_val, when='general'):
 def is_valid_num(num):
     """
     Check if x or y falls on board.
-
     Parameters
     ----------
     num : str
         row or column value
-
     Returns
     -------
     bool
