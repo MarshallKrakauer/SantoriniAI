@@ -59,13 +59,14 @@ class Game:
         return_val = ''  # 'score: ' + str(self.evaluate_board()) + ' \n'
         return_val += "    x0 x1 x2 x3 x4\n"
         return_val += "    --------------\n"
-        for i, j in SPACE_LIST:
-            if j == 0:
-                return_val += 'y' + str(i) + '| '
-            return_val += (str(self.board[j][i]['level']) +
-                           str(self.board[j][i]['occupant']) +
-                           ' ')
-        return_val += '\n'
+        for i in range(5):
+            for j in range(5):
+                if j == 0:
+                    return_val += 'y' + str(i) + '| '
+                return_val += (str(self.board[j][i]['level']) +
+                               str(self.board[j][i]['occupant']) +
+                               ' ')
+            return_val += '\n'
         return return_val
 
     def randomize_placement(self, color):
@@ -116,7 +117,7 @@ class Game:
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self.board[i][j]
-            adjacent_spaces = get_adjacent(i, j)
+            adjacent_spaces = get_moveable_spaces(game=self, space=(i, j))
 
             # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
@@ -124,6 +125,7 @@ class Game:
                 score += 4 ** space['level']
             elif space['occupant'] == other_color:
                 score -= 4 ** space['level']
+
             for k, l in adjacent_spaces:
                 space = self.board[k][l]
                 if space['occupant'] == color and space['level'] != 4:
@@ -312,7 +314,7 @@ class Game:
             return True
         return False
 
-    def move(self, x_val, y_val):
+    def move_worker(self, x_val, y_val, auto = False):
         """
         Move piece to new spot on board.
         Parameters
@@ -328,7 +330,7 @@ class Game:
         """
         prev_col = self.col  # x
         prev_row = self.row  # y
-        if (abs(y_val - prev_row) > 1 or
+        if not auto and (abs(y_val - prev_row) > 1 or
             abs(x_val - prev_col) > 1) or \
                 y_val == prev_row and x_val == prev_col or \
                 self.board[x_val][y_val]['occupant'] != 'O' or \
@@ -346,7 +348,7 @@ class Game:
             self.make_exterior_active()
             return True
 
-    def build(self, x_val, y_val):
+    def build_level(self, x_val, y_val, auto = False):
         """
         Build on a space.
         Parameters
@@ -360,7 +362,7 @@ class Game:
         bool
             True if move is valid
         """
-        if (abs(y_val - self.row) > 1 or
+        if not auto and (abs(y_val - self.row) > 1 or
             abs(x_val - self.col) > 1) or \
                 y_val == self.row and x_val == self.col or \
                 self.board[x_val][y_val]['occupant'] != 'O':
@@ -390,11 +392,11 @@ class Game:
             self.select(self.color, x_val, y_val)
         elif self.sub_turn == 'move':  # Moving that piece
             self.check_move_available()
-            self.move(x_val, y_val)
+            self.move_worker(x_val, y_val)
         elif self.sub_turn == 'build':
-            self.build(x_val, y_val)
+            self.build_level(x_val, y_val)
 
-    def play_automatic_turn(self, move_color, eval_color = None, tree_depth=DEPTH):
+    def play_automatic_turn(self, move_color, eval_color=None, tree_depth=DEPTH):
         """
         Select turn for AI player
         Uses alpha-beta pruning to selection best turn
@@ -434,6 +436,30 @@ class Game:
             self.sub_turn = 'switch'
 
 
+def get_moveable_spaces(game, space):
+    return_li = []
+    x_val, y_val = space
+    height = game.board[x_val][y_val]['level']
+    for spot in get_adjacent(x_val, y_val):
+        x_adj, y_adj = spot
+        if (game.board[x_adj][y_adj]['occupant'] == 'O' and
+                (game.board[x_adj][y_adj]['level'] - height) <= 1):
+            return_li.append((x_adj, y_adj))
+
+    return iter(return_li)
+
+
+def get_buildable_spaces(game, space):
+    return_li = []
+    x_val, y_val = space
+    for spot in get_adjacent(x_val, y_val):
+        x_adj, y_adj = spot
+        if (game.board[x_adj][y_adj]['occupant'] == 'O'):
+            return_li.append((x_adj, y_adj))
+
+    return iter(return_li)
+
+
 def create_game_tree(node, eval_color):
     """
     Create future turns, plus future turns for those future turns.
@@ -445,8 +471,7 @@ def create_game_tree(node, eval_color):
         Nodes with which to create child nodes (ie subsequent turns)
     """
 
-
-    #Set which color will be moved on the board
+    # Set which color will be moved on the board
     if node.level % 2 == 0:
         # for even numbered levels, move the other color
         color = node.game.color
@@ -460,15 +485,15 @@ def create_game_tree(node, eval_color):
 
     # For finished games, print self as the child
     if node.game.end:
-        finished_game_node = Node(game = game_deep_copy(node.game, other_color),
-                                  level = node.level + 1,
-                                  max_level = node.max_level,
-                                  parent = node
+        finished_game_node = Node(game=game_deep_copy(node.game, other_color),
+                                  level=node.level + 1,
+                                  max_level=node.max_level,
+                                  parent=node
                                   )
         finished_game_node.score = finished_game_node.game.get_board_score(eval_color)
         node.children = [finished_game_node]
     else:
-        node.children = create_potential_moves(node, move_color = color, eval_color=eval_color)
+        node.children = create_potential_moves(node, move_color=color, eval_color=eval_color)
 
     if node.level + 1 < node.max_level:
         for child in node.children:
@@ -500,45 +525,44 @@ def create_potential_moves(node, move_color, eval_color):
         i, j = spot
         # check each possible move
 
-        for space in get_adjacent(i, j):
+        for space in get_moveable_spaces(game=node.game, space=(i, j)):
 
             new_game = Game()
             new_game = game_deep_copy(node.game, move_color)
             new_game.select(move_color, i, j)
 
-            if new_game.move(space[0], space[1]):
-                if new_game.end:
+            new_game.move_worker(space[0], space[1], auto = True)
+            if new_game.end:
+                return_li.append(Node(
+                    game=new_game,
+                    level=node.level + 1,
+                    max_level=node.max_level,
+                    score=new_game.get_board_score(move_color),
+                    parent=node))
+            else:
+                # given a legal move, check for each possible build
+                for build in get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+                    build_game = game_deep_copy(new_game,
+                                                new_game.color)
+
+                    build_game.build_level(build[0], build[1], auto = True)
+                    if build_game.end or node.level + 1 == node.max_level:
+                        new_score = build_game.get_board_score(eval_color)
+                    else:
+                        new_score = 0
+
                     return_li.append(Node(
-                        game=new_game,
+                        game=build_game,
                         level=node.level + 1,
                         max_level=node.max_level,
-                        score=new_game.get_board_score(move_color),
+                        score=new_score,
                         parent=node))
-                else:
-                    # given a legal move, check for each possible build
-                    for build in get_adjacent(new_game.col,
-                                              new_game.row):
-                        build_game = game_deep_copy(new_game,
-                                                    new_game.color)
 
-                        if build_game.build(build[0], build[1]):
-                            if build_game.end or node.level + 1 == node.max_level:
-                                new_score = build_game.get_board_score(eval_color)
-                            else:
-                                new_score = 0
-
-                            return_li.append(Node(
-                                game=build_game,
-                                level=node.level + 1,
-                                max_level=node.max_level,
-                                score=new_score,
-                                parent=node))
-
-        # Sort by highest score for your moves, lowest for opponent moves
-        if node.level % 2 == 1:
-            return_li = sorted(return_li, key=lambda x: x.score)
-        else:
-            return_li = sorted(return_li, key=lambda x: x.score * -1)
+    # Sort by highest score for your moves, lowest for opponent moves
+    if node.level % 2 == 1:
+        return_li = sorted(return_li, key=lambda x: x.score)
+    else:
+        return_li = sorted(return_li, key=lambda x: x.score * -1)
 
     return return_li
 
@@ -580,6 +604,14 @@ def game_deep_copy(game, color):
 
 
 def get_opponent_color(color):
+    """Get player color that isn't the one passed
+
+    Parameters
+    ----------
+    color : char
+        Either W or G. Color of the current player
+
+    """
     if color == 'W':
         other_color = 'G'
     else:
