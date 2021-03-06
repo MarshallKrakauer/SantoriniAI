@@ -1,9 +1,10 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
-# from game import Game, get_adjacent, game_deep_copy
+#from game import Game, create_potential_moves, game_deep_copy
 import pickle
 
 
+# noinspection PyDefaultArgument
 class Node:
     """
     Individual node of tree used for alpha beta pruning.
@@ -128,6 +129,8 @@ class Node:
                 best_move = elem.game
 
         return best_move
+
+
 
 
 def is_terminal(node):
