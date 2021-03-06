@@ -1,6 +1,5 @@
 """Tree for alpha beta pruning."""
 from queue import Queue
-#from game import Game, create_potential_moves, game_deep_copy
 import pickle
 
 
@@ -15,22 +14,16 @@ class Node:
         Santorini game scored inside the node
     children : list
         list of child nodes, ie potential moves
-    level : level
-        Number of parent nodes. Root node has level 0
-    max_level : int
-        Level at bottom of the tree, ie how many moves ahead to look
     parent : Node
         parent node, ie what board looked like before this move
     score:
         How good or bad of a game it is for that player. Used for alpha-beta pruning & minimax
     """
 
-    def __init__(self, game, children=[], level=0, max_level=2, parent=None,
+    def __init__(self, game, children=[], parent=None,
                  score=0):
         self.game = game
         self.children = children
-        self.level = level
-        self.max_level = max_level
         self.parent = parent
         self.score = score
 
@@ -44,7 +37,6 @@ class Node:
             board with its level and score
         """
         return ('\n'
-                + 'level: ' + str(self.level) + '\n'
                 + 'score: ' + str(self.score) + '\n'
                 + str(self.game)
                 )
@@ -129,8 +121,6 @@ class Node:
                 best_move = elem.game
 
         return best_move
-
-
 
 
 def is_terminal(node):

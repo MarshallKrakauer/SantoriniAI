@@ -416,9 +416,7 @@ class Game:
 
         game_copy = deepcopy(self)
         root_node = Node(game=game_copy,
-                         children=[],
-                         level=0,
-                         max_level=tree_depth)
+                         children=[])
 
         if PICKLE:
             time1 = dt.datetime.now()
@@ -544,8 +542,6 @@ def create_potential_moves(node, move_color, eval_color):
             if new_game.end:
                 return_li.append(Node(
                     game=new_game,
-                    level=node.level + 1,
-                    max_level=node.max_level,
                     score=new_game.get_board_score(move_color),
                     parent=node))
             else:
@@ -555,23 +551,18 @@ def create_potential_moves(node, move_color, eval_color):
                                                 new_game.color)
 
                     build_game.build_level(build[0], build[1], auto = True)
-                    if build_game.end or node.level + 1 == node.max_level:
+                    if build_game.end:
                         new_score = build_game.get_board_score(eval_color)
                     else:
                         new_score = 0
 
                     return_li.append(Node(
                         game=build_game,
-                        level=node.level + 1,
-                        max_level=node.max_level,
                         score=new_score,
                         parent=node))
 
     # Sort by highest score for your moves, lowest for opponent moves
-    if node.level % 2 == 1:
-        return_li = sorted(return_li, key=lambda x: x.score)
-    else:
-        return_li = sorted(return_li, key=lambda x: x.score * -1)
+    return_li = sorted(return_li, key=lambda x: x.score)
 
     return return_li
 
