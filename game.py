@@ -420,20 +420,69 @@ class Game:
                          level=0,
                          max_level=tree_depth)
 
-        time1 = dt.datetime.now()
-        create_game_tree(root_node, eval_color)
-        print("Tree creation time:", dt.datetime.now() - time1)
-
         if PICKLE:
             time1 = dt.datetime.now()
             store_breadth_first(root_node)
             print("Pickle time: ", dt.datetime.now() - time1)
 
-        best_state = root_node.alpha_beta_search()
-        self.board = best_state.board
-        self.end = best_state.end
+        time1 = dt.datetime.now()
+        best_state = alpha_beta_whole(root_node=root_node, depth=tree_depth,
+                                      move_color=move_color, eval_color=eval_color)[1]
+        print("Tree creation time:", dt.datetime.now() - time1)
+        self.board = best_state.game.board
+        self.end = best_state.game.end
         if not self.end:
             self.sub_turn = 'switch'
+
+
+def alpha_beta_whole(root_node, depth, alpha = -10**5, beta = 10**5, move_color='G', eval_color='G', is_max=True):
+    if root_node.game.end:
+        print("ENDGAME; color: ", move_color, " is max: ", str(is_max), " depth: ", str(depth))
+        if eval_color != move_color:
+            return 10 ** 5, None
+        else:
+            return -10 ** 5, None
+
+    if depth == 0:
+        return root_node.game.get_board_score(get_opponent_color(move_color)), None
+
+    potential_nodes = create_potential_moves(node=root_node, move_color=move_color, eval_color=eval_color)
+    best_node = None
+
+    if is_max:
+        current_value = -9999999
+
+        for node in potential_nodes:
+            node.game.color = get_opponent_color(move_color)
+            results = alpha_beta_whole(root_node = node, depth = depth - 1,alpha = alpha,  beta = beta,
+                                       move_color=get_opponent_color(move_color), eval_color=eval_color,
+                                       is_max = not is_max)
+
+            if current_value < results[0]:
+                current_value = results[0]
+                alpha = max(alpha, current_value)
+                best_node = node
+
+            if beta <= alpha:
+                break
+
+    else:
+        current_value = 9999999
+        for node in potential_nodes:
+            node.game.color = get_opponent_color(move_color)
+            results = alpha_beta_whole(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
+                                       move_color=get_opponent_color(move_color), eval_color=eval_color,
+                                       is_max=not is_max)
+
+            if current_value > results[0]:
+                current_value = results[0]
+                beta = min(beta, current_value)
+                best_node = node
+
+            if beta <= alpha:
+                break
+
+    return current_value, best_node
 
 
 def get_moveable_spaces(game, space):
@@ -458,46 +507,6 @@ def get_buildable_spaces(game, space):
             return_li.append((x_adj, y_adj))
 
     return iter(return_li)
-
-
-def create_game_tree(node, eval_color):
-    """
-    Create future turns, plus future turns for those future turns.
-    Recursive function. root node will contain a "max level"
-    value, which will tell this function when to stop
-    Parameters
-    ----------
-    node : Node
-        Nodes with which to create child nodes (ie subsequent turns)
-    """
-
-    # Set which color will be moved on the board
-    if node.level % 2 == 0:
-        # for even numbered levels, move the other color
-        color = node.game.color
-    else:
-        if node.game.color == 'G':
-            color = 'W'
-        else:
-            color = 'G'
-
-    other_color = get_opponent_color(color)
-
-    # For finished games, print self as the child
-    if node.game.end:
-        finished_game_node = Node(game=game_deep_copy(node.game, other_color),
-                                  level=node.level + 1,
-                                  max_level=node.max_level,
-                                  parent=node
-                                  )
-        finished_game_node.score = finished_game_node.game.get_board_score(eval_color)
-        node.children = [finished_game_node]
-    else:
-        node.children = create_potential_moves(node, move_color=color, eval_color=eval_color)
-
-    if node.level + 1 < node.max_level:
-        for child in node.children:
-            create_game_tree(child, eval_color)
 
 
 def create_potential_moves(node, move_color, eval_color):
