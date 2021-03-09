@@ -43,3 +43,4 @@ This project is licensed under Creative Commons.
 * [Gord](https://boardgamegeek.com/boardgamedesigner/3302/gord) - Created Santorini
 * [Tech with Tim](https://www.youtube.com/channel/UC4JX40jDee_tINbkjycV4Sg) - Pygame tutorial, pycharm tutorial, github tutorial, checkers AI tutorial, OOP tutorial...
 * [Kevin Mess](https://www.csn.edu/directory/kevin-mess) - The best CS lecturer
+* [Sam Ragusa](https://github.com/SamRagusa/Checkers-Reinforcement-Learning) - Example of Alpha-Beta Pruning in Python
