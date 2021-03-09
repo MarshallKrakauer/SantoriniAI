@@ -7,7 +7,7 @@ from node import Node, store_breadth_first
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 3
+DEPTH = 4
 PICKLE = False
 
 
@@ -72,11 +72,12 @@ class Game:
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
-        all_spaces = [(i, j) for i in range(5) for j in range(5)]
+        all_spaces = [(i, j) for i in range(1,3,1) for j in range(1,3,1)]
 
         # For all spaces, get the adjacent space
         for i, j in all_spaces:
             adjacent = get_adjacent(i, j)
+            adjacent = filter(lambda x: x[0] in range(1,3) and x[1] in range(1,3), adjacent)
             for space in adjacent:
                 potential_li.append(((i, j), space))
 
@@ -418,24 +419,18 @@ class Game:
         root_node = Node(game=game_copy,
                          children=[])
 
-        if PICKLE:
-            time1 = dt.datetime.now()
-            store_breadth_first(root_node)
-            print("Pickle time: ", dt.datetime.now() - time1)
+        best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
+                                               move_color=move_color, eval_color=eval_color)[1]
 
-        time1 = dt.datetime.now()
-        best_state = alpha_beta_whole(root_node=root_node, depth=tree_depth,
-                                      move_color=move_color, eval_color=eval_color)[1]
-        print("Tree creation time:", dt.datetime.now() - time1)
         self.board = best_state.game.board
         self.end = best_state.game.end
         if not self.end:
             self.sub_turn = 'switch'
 
 
-def alpha_beta_whole(root_node, depth, alpha = -10**5, beta = 10**5, move_color='G', eval_color='G', is_max=True):
+def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5, move_color='G', eval_color='G', is_max=True):
+    # End game, don't need to check child nodes
     if root_node.game.end:
-        print("ENDGAME; color: ", move_color, " is max: ", str(is_max), " depth: ", str(depth))
         if eval_color != move_color:
             return 10 ** 5, None
         else:
@@ -445,16 +440,16 @@ def alpha_beta_whole(root_node, depth, alpha = -10**5, beta = 10**5, move_color=
         return root_node.game.get_board_score(get_opponent_color(move_color)), None
 
     potential_nodes = create_potential_moves(node=root_node, move_color=move_color, eval_color=eval_color)
-    best_node = None
+    best_node = potential_nodes[0]
 
     if is_max:
-        current_value = -9999999
+        current_value = -10 ** 5
 
         for node in potential_nodes:
             node.game.color = get_opponent_color(move_color)
-            results = alpha_beta_whole(root_node = node, depth = depth - 1,alpha = alpha,  beta = beta,
-                                       move_color=get_opponent_color(move_color), eval_color=eval_color,
-                                       is_max = not is_max)
+            results = alpha_beta_move_selection(root_node = node, depth =depth - 1, alpha = alpha, beta = beta,
+                                                move_color=get_opponent_color(move_color), eval_color=eval_color,
+                                                is_max = not is_max)
 
             if current_value < results[0]:
                 current_value = results[0]
@@ -464,13 +459,16 @@ def alpha_beta_whole(root_node, depth, alpha = -10**5, beta = 10**5, move_color=
             if beta <= alpha:
                 break
 
+        if best_node is None:
+            return current_value, None
+
     else:
-        current_value = 9999999
+        current_value = 10 ** 5
         for node in potential_nodes:
             node.game.color = get_opponent_color(move_color)
-            results = alpha_beta_whole(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
-                                       move_color=get_opponent_color(move_color), eval_color=eval_color,
-                                       is_max=not is_max)
+            results = alpha_beta_move_selection(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
+                                                move_color=get_opponent_color(move_color), eval_color=eval_color,
+                                                is_max=not is_max)
 
             if current_value > results[0]:
                 current_value = results[0]
@@ -479,6 +477,9 @@ def alpha_beta_whole(root_node, depth, alpha = -10**5, beta = 10**5, move_color=
 
             if beta <= alpha:
                 break
+
+        if best_node is None:
+            return current_value, None
 
     return current_value, best_node
 
@@ -507,7 +508,7 @@ def get_buildable_spaces(game, space):
     return iter(return_li)
 
 
-def create_potential_moves(node, move_color, eval_color):
+def create_potential_moves(node, move_color, eval_color, depth = 1):
     """
     Add list of possible moves to game state.
     Parameters
@@ -562,7 +563,7 @@ def create_potential_moves(node, move_color, eval_color):
                         parent=node))
 
     # Sort by highest score for your moves, lowest for opponent moves
-    return_li = sorted(return_li, key=lambda x: x.score)
+    return_li = sorted(return_li, key=lambda x: x.score * -1)
 
     return return_li
 
