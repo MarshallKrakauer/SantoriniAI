@@ -36,7 +36,7 @@ class Player:
     def place_piece(self, x_val=-1, y_val=-1):
         """Manual or automatic placement of piece on board."""
         if self.player_type == 'human':
-            if self.game.place(self.color, x_val, y_val):
+            if self.game.place_worker(self.color, x_val, y_val):
                 self.placements += 1
         elif self.player_type == 'alphabeta':
             self.game.randomize_placement(self.color)
