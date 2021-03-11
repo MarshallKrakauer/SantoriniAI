@@ -7,7 +7,7 @@ from node import Node, store_breadth_first
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 4
+DEPTH = 3
 PICKLE = False
 
 
@@ -200,9 +200,10 @@ class Game:
         """
         End game and prevent further moves.
         Declare the games winner and makes all spaces inactive
+
         Parameters
         ----------
-        switchcolor : bool, optional
+        switch_color : bool, optional
             switches to opponent before declaring winner
             relevant for secondary win condition (winning through
             opponent having no valid turns). The default is False.
@@ -224,8 +225,11 @@ class Game:
         For a given player color, mark all the spaces with that
         player color as active
         """
+
+        # Check if spaces match color and worker can move
         for i, j in SPACE_LIST:
-            self.board[i][j]['active'] = self.board[i][j]['occupant'] == self.color
+            self.board[i][j]['active'] = (self.board[i][j]['occupant'] == self.color and
+                                          len(get_moveable_spaces(self, (i,j), False)) > 0)
 
     def make_choice_active(self, x_val, y_val):
         """
@@ -273,7 +277,7 @@ class Game:
                 return  # end function if we have a valid space
         self.end_game(True)
 
-    def place(self, color, x_val, y_val):  # Only runs at beginning of game
+    def place_worker(self, color, x_val, y_val):  # Only runs at beginning of game
         """
         Place two pieces of given color on the board.
         Parameters
@@ -289,7 +293,7 @@ class Game:
             return True
         return False
 
-    def select(self, color, x_val, y_val):
+    def select_worker(self, color, x_val, y_val):
         """
         Choose piece to move.
         Parameters
@@ -390,7 +394,7 @@ class Game:
         # Playing the regular game
         if self.sub_turn == 'select':  # Selecting which piece to move
             self.make_color_active()
-            self.select(self.color, x_val, y_val)
+            self.select_worker(self.color, x_val, y_val)
         elif self.sub_turn == 'move':  # Moving that piece
             self.check_move_available()
             self.move_worker(x_val, y_val)
@@ -484,7 +488,7 @@ def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5,
     return current_value, best_node
 
 
-def get_moveable_spaces(game, space):
+def get_moveable_spaces(game, space, return_iter = True):
     return_li = []
     x_val, y_val = space
     height = game.board[x_val][y_val]['level']
@@ -494,7 +498,11 @@ def get_moveable_spaces(game, space):
                 (game.board[x_adj][y_adj]['level'] - height) <= 1):
             return_li.append((x_adj, y_adj))
 
-    return iter(return_li)
+    # Choose to return either iterator or list
+    if return_iter:
+        return iter(return_li)
+    else:
+        return return_li
 
 
 def get_buildable_spaces(game, space):
@@ -537,7 +545,7 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
 
             new_game = Game()
             new_game = game_deep_copy(node.game, move_color)
-            new_game.select(move_color, i, j)
+            new_game.select_worker(move_color, i, j)
 
             new_game.move_worker(space[0], space[1], auto = True)
             if new_game.end:
