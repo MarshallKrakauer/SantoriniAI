@@ -397,4 +397,5 @@ def play_game(white_player, gray_player):
     pygame.quit()
 
 
-main()
+if __name__ == '__main__':
+    main()

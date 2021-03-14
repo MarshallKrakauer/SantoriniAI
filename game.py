@@ -10,6 +10,8 @@ SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
 PICKLE = False
 
+#Todo - add Markov based learning process
+#Todo - add reinforcement learning
 
 class Game:
     """
@@ -118,7 +120,7 @@ class Game:
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self.board[i][j]
-            adjacent_spaces = get_moveable_spaces(game=self, space=(i, j))
+            adjacent_spaces = get_movable_spaces(game=self, space=(i, j))
 
             # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
@@ -229,7 +231,7 @@ class Game:
         # Check if spaces match color and worker can move
         for i, j in SPACE_LIST:
             self.board[i][j]['active'] = (self.board[i][j]['occupant'] == self.color and
-                                          len(get_moveable_spaces(self, (i,j), False)) > 0)
+                                          len(get_movable_spaces(self, (i, j), False)) > 0)
 
     def make_choice_active(self, x_val, y_val):
         """
@@ -515,7 +517,7 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
         i, j = spot
         # check each possible move
 
-        for space in get_moveable_spaces(game=node.game, space=(i, j)):
+        for space in get_movable_spaces(game=node.game, space=(i, j)):
 
             new_game = Game()
             new_game = game_deep_copy(node.game, move_color)
@@ -550,7 +552,7 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
     return return_li
 
 
-def get_moveable_spaces(game, space, return_iter = True):
+def get_movable_spaces(game, space, return_iter = True):
     return_li = []
     x_val, y_val = space
     height = game.board[x_val][y_val]['level']

@@ -7,10 +7,19 @@ import pandas as pd
 from game import Game
 from player import Player
 
-ADDING_DATA = False
 
+def write_to_game_list(white_player, gray_player):
+    """
+    Create list to append to "game_list.csv" list. This will track whether a given player was a human or
+    AI. In the future, additional types of AIs will be included. For now, it is either human or alphabeta
 
-def write_to_csv(white_player, gray_player):
+    Attributes
+    ----------
+    white_player : Player
+        Player object for the W color
+    gray_player : Player
+        Player object for the G color
+    """
     df = pd.read_csv('game_list.csv')
     next_id = df['id'].max() + 1
     csv_row = [next_id, white_player.player_type, gray_player.player_type]
@@ -31,8 +40,13 @@ def play_game(current_game):
             gray_player.play_turn()
             white_turn = not white_turn
         print(current_game)
-    write_to_csv(white_player, gray_player)
+    write_to_game_list(white_player, gray_player)
 
 
-new_game = Game()
-play_game(new_game)
+def main():
+    new_game = Game()
+    play_game(new_game)
+
+
+if __name__ == '__main__':
+    main()
