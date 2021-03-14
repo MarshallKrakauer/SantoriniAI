@@ -13,7 +13,6 @@ class Player:
         self.color = color
         self.player_type = player_type
         self.placements = 0
-        self.active = True
 
     def __str__(self):
         """Show string representation of player."""

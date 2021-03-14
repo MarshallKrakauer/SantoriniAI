@@ -425,9 +425,11 @@ class Game:
 
         best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
                                                move_color=move_color, eval_color=eval_color)[1]
-
-        self.board = best_state.game.board
-        self.end = best_state.game.end
+        try:
+            self.board = best_state.game.board
+            self.end = best_state.game.end
+        except AttributeError:
+            create_potential_moves(node = root_node, eval_color= eval_color, move_color= move_color)[0]
         if not self.end:
             self.sub_turn = 'switch'
 
@@ -444,7 +446,7 @@ def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5,
         return root_node.game.get_board_score(get_opponent_color(move_color)), None
 
     potential_nodes = create_potential_moves(node=root_node, move_color=move_color, eval_color=eval_color)
-    best_node = potential_nodes[0]
+    best_node = None #potential_nodes[0]
 
     if is_max:
         current_value = -10 ** 5
@@ -486,34 +488,6 @@ def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5,
             return current_value, None
 
     return current_value, best_node
-
-
-def get_moveable_spaces(game, space, return_iter = True):
-    return_li = []
-    x_val, y_val = space
-    height = game.board[x_val][y_val]['level']
-    for spot in get_adjacent(x_val, y_val):
-        x_adj, y_adj = spot
-        if (game.board[x_adj][y_adj]['occupant'] == 'O' and
-                (game.board[x_adj][y_adj]['level'] - height) <= 1):
-            return_li.append((x_adj, y_adj))
-
-    # Choose to return either iterator or list
-    if return_iter:
-        return iter(return_li)
-    else:
-        return return_li
-
-
-def get_buildable_spaces(game, space):
-    return_li = []
-    x_val, y_val = space
-    for spot in get_adjacent(x_val, y_val):
-        x_adj, y_adj = spot
-        if (game.board[x_adj][y_adj]['occupant'] == 'O'):
-            return_li.append((x_adj, y_adj))
-
-    return iter(return_li)
 
 
 def create_potential_moves(node, move_color, eval_color, depth = 1):
@@ -574,6 +548,34 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
     return_li = sorted(return_li, key=lambda x: x.score * -1)
 
     return return_li
+
+
+def get_moveable_spaces(game, space, return_iter = True):
+    return_li = []
+    x_val, y_val = space
+    height = game.board[x_val][y_val]['level']
+    for spot in get_adjacent(x_val, y_val):
+        x_adj, y_adj = spot
+        if (game.board[x_adj][y_adj]['occupant'] == 'O' and
+                (game.board[x_adj][y_adj]['level'] - height) <= 1):
+            return_li.append((x_adj, y_adj))
+
+    # Choose to return either iterator or list
+    if return_iter:
+        return iter(return_li)
+    else:
+        return return_li
+
+
+def get_buildable_spaces(game, space):
+    return_li = []
+    x_val, y_val = space
+    for spot in get_adjacent(x_val, y_val):
+        x_adj, y_adj = spot
+        if (game.board[x_adj][y_adj]['occupant'] == 'O'):
+            return_li.append((x_adj, y_adj))
+
+    return iter(return_li)
 
 
 def game_deep_copy(game, color):
