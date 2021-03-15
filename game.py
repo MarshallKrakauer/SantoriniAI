@@ -1,17 +1,15 @@
 # pylint: disable=E0633
-import datetime as dt
 import random
 from copy import deepcopy
 
-from node import Node, store_breadth_first
+from node import Node
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
-PICKLE = False
 
-#Todo - add Markov based learning process
-#Todo - add reinforcement learning
+# Todo - add Markov based learning process
+# Todo - add reinforcement learning
 
 class Game:
     """
@@ -74,12 +72,12 @@ class Game:
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
-        all_spaces = [(i, j) for i in range(1,3,1) for j in range(1,3,1)]
+        all_spaces = [(i, j) for i in range(1, 3, 1) for j in range(1, 3, 1)]
 
         # For all spaces, get the adjacent space
         for i, j in all_spaces:
             adjacent = get_adjacent(i, j)
-            adjacent = filter(lambda x: x[0] in range(1,3) and x[1] in range(1,3), adjacent)
+            adjacent = filter(lambda x: x[0] in range(1, 3) and x[1] in range(1, 3), adjacent)
             for space in adjacent:
                 potential_li.append(((i, j), space))
 
@@ -321,7 +319,7 @@ class Game:
             return True
         return False
 
-    def move_worker(self, x_val, y_val, auto = False):
+    def move_worker(self, x_val, y_val, auto=False):
         """
         Move piece to new spot on board.
         Parameters
@@ -338,7 +336,7 @@ class Game:
         prev_col = self.col  # x
         prev_row = self.row  # y
         if not auto and (abs(y_val - prev_row) > 1 or
-            abs(x_val - prev_col) > 1) or \
+                         abs(x_val - prev_col) > 1) or \
                 y_val == prev_row and x_val == prev_col or \
                 self.board[x_val][y_val]['occupant'] != 'O' or \
                 (self.board[x_val][y_val]['level'] -
@@ -355,7 +353,7 @@ class Game:
             self.make_exterior_active()
             return True
 
-    def build_level(self, x_val, y_val, auto = False):
+    def build_level(self, x_val, y_val, auto=False):
         """
         Build on a space.
         Parameters
@@ -370,7 +368,7 @@ class Game:
             True if move is valid
         """
         if not auto and (abs(y_val - self.row) > 1 or
-            abs(x_val - self.col) > 1) or \
+                         abs(x_val - self.col) > 1) or \
                 y_val == self.row and x_val == self.col or \
                 self.board[x_val][y_val]['occupant'] != 'O':
             return False
@@ -424,19 +422,21 @@ class Game:
         game_copy = deepcopy(self)
         root_node = Node(game=game_copy,
                          children=[])
-
-        best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
-                                               move_color=move_color, eval_color=eval_color)[1]
         try:
+            best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
+                                                   move_color=move_color, eval_color=eval_color)[1]
             self.board = best_state.game.board
             self.end = best_state.game.end
         except AttributeError:
-            create_potential_moves(node = root_node, eval_color= eval_color, move_color= move_color)[0]
+            best_state = create_potential_moves(node=root_node, eval_color=eval_color, move_color=move_color)[0]
+            self.board = best_state.game.board
+            self.end = best_state.game.end
         if not self.end:
             self.sub_turn = 'switch'
 
 
-def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5, move_color='G', eval_color='G', is_max=True):
+def alpha_beta_move_selection(root_node, depth, alpha=-10 ** 5, beta=10 ** 5, move_color='G', eval_color='G',
+                              is_max=True):
     # End game, don't need to check child nodes
     if root_node.game.end:
         if eval_color != move_color:
@@ -448,16 +448,16 @@ def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5,
         return root_node.game.get_board_score(get_opponent_color(move_color)), None
 
     potential_nodes = create_potential_moves(node=root_node, move_color=move_color, eval_color=eval_color)
-    best_node = None #potential_nodes[0]
+    best_node = None  # potential_nodes[0]
 
     if is_max:
         current_value = -10 ** 5
 
         for node in potential_nodes:
             node.game.color = get_opponent_color(move_color)
-            results = alpha_beta_move_selection(root_node = node, depth =depth - 1, alpha = alpha, beta = beta,
+            results = alpha_beta_move_selection(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
                                                 move_color=get_opponent_color(move_color), eval_color=eval_color,
-                                                is_max = not is_max)
+                                                is_max=not is_max)
 
             if current_value < results[0]:
                 current_value = results[0]
@@ -492,7 +492,7 @@ def alpha_beta_move_selection(root_node, depth, alpha = -10 ** 5, beta =10 ** 5,
     return current_value, best_node
 
 
-def create_potential_moves(node, move_color, eval_color, depth = 1):
+def create_potential_moves(node, move_color, eval_color, depth=1):
     """
     Add list of possible moves to game state.
     Parameters
@@ -523,7 +523,7 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
             new_game = game_deep_copy(node.game, move_color)
             new_game.select_worker(move_color, i, j)
 
-            new_game.move_worker(space[0], space[1], auto = True)
+            new_game.move_worker(space[0], space[1], auto=True)
             if new_game.end:
                 return_li.append(Node(
                     game=new_game,
@@ -535,7 +535,7 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
                     build_game = game_deep_copy(new_game,
                                                 new_game.color)
 
-                    build_game.build_level(build[0], build[1], auto = True)
+                    build_game.build_level(build[0], build[1], auto=True)
                     if build_game.end:
                         new_score = build_game.get_board_score(eval_color)
                     else:
@@ -549,10 +549,12 @@ def create_potential_moves(node, move_color, eval_color, depth = 1):
     # Sort by highest score for your moves, lowest for opponent moves
     return_li = sorted(return_li, key=lambda x: x.score * -1)
 
+    if len(return_li) == 0:
+        print("DEBUG TEST")
     return return_li
 
 
-def get_movable_spaces(game, space, return_iter = True):
+def get_movable_spaces(game, space, return_iter=True):
     return_li = []
     x_val, y_val = space
     height = game.board[x_val][y_val]['level']

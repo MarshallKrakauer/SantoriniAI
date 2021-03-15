@@ -8,6 +8,8 @@ from game import Game
 from player import Player
 
 
+# Todo add human player possibility
+
 def write_to_game_list(white_player, gray_player):
     """
     Create list to append to "game_list.csv" list. This will track whether a given player was a human or
@@ -28,7 +30,7 @@ def write_to_game_list(white_player, gray_player):
         writer.writerow(csv_row)
 
 
-def play_game(current_game):
+def play_game(current_game, print_boards=True):
     white_turn = True
     gray_player = Player(game=current_game, color='G', player_type='alphabeta')
     white_player = Player(game=current_game, color='W', player_type='alphabeta')
@@ -39,13 +41,16 @@ def play_game(current_game):
         else:
             gray_player.play_turn()
             white_turn = not white_turn
-        print(current_game)
+
+        if print_boards:
+            print(current_game)
     write_to_game_list(white_player, gray_player)
+    print("This game's winner is...", current_game.color)
 
 
 def main():
     new_game = Game()
-    play_game(new_game)
+    play_game(new_game, True)
 
 
 if __name__ == '__main__':
