@@ -1,10 +1,18 @@
+"""
+Pseudo-pathfinder that will find how far apart a player's two pieces are.
+
+This will be used as part of the scoring function. I call it a pseudo-pathfinder because it doesn't account
+for the changes in height as player moves across the board. I'm simplifying to save both production time
+and run time. The current file tests the pathfinder.
+"""
+
+import numpy as np
 from pathfinding.core.diagonal_movement import DiagonalMovement
 from pathfinding.core.grid import Grid
 from pathfinding.finder.a_star import AStarFinder
 
-from game import Game, SPACE_LIST
-
 EMPTY_MATRIX = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 
 
 def get_colors(game, color):
@@ -32,7 +40,7 @@ def create_matrix(game, space, color):
     return path_matrix
 
 
-def find_path(path_matrix,start_coordinates, end_coordinates, print_path=False):
+def find_path(path_matrix, start_coordinates, end_coordinates, print_path=False):
     grid = Grid(matrix=path_matrix)
     start = grid.node(start_coordinates[0], start_coordinates[1])
     end = grid.node(end_coordinates[0], end_coordinates[1])
@@ -47,21 +55,22 @@ def find_path(path_matrix,start_coordinates, end_coordinates, print_path=False):
     return len(path)
 
 
-def main():
-    test_game = Game()
-    test_game.board[2][0]['level'] = 4
-    test_game.board[2][1]['level'] = 4
-    test_game.board[2][2]['level'] = 4
-    test_game.board[2][3]['level'] = 4
+def get_path_score(game, color):
+    space_list = get_colors(game, color)
 
-    test_game.board[0][0]['occupant'] = 'W'
-    test_game.board[4][4]['occupant'] = 'W'
+    matrix_0 = create_matrix(game, space_list[0], color)
+    matrix_1 = create_matrix(game, space_list[1], color)
+    num_0 = find_path(matrix_0, space_list[0], space_list[1])
+    num_1 = find_path(matrix_1, space_list[1], space_list[0])
 
-    li = get_colors(test_game, 'W')
+    if num_0 == 0:
+        num_0 = 15
+    else:
+        num_0 = np.min([num_0, 15])
 
-    test_matrix = create_matrix(test_game, li[0], 'W')
-    find_path(test_matrix, li[0], li[1])
+    if num_1 == 0:
+        num_1 = 15
+    else:
+        num_1 = np.min([num_1, 15])
 
-
-if __name__ == '__main__':
-    main()
+    return num_0 + num_1

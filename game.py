@@ -3,6 +3,7 @@ import random
 from copy import deepcopy
 
 from node import Node
+from path_finding import get_path_score
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -133,6 +134,12 @@ class Game:
                     score += 2 ** space['level']
                 elif space['occupant'] == other_color and space['level'] != 4:
                     score -= 2 ** space['level']
+
+        # Loser points for your pieces being far apart, gain for your opponents pieces
+        # being far apart
+        score -= get_path_score(self, color)
+        score += get_path_score(self, other_color)
+
         return score
 
     def undo(self):
