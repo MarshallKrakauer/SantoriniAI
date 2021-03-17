@@ -1,6 +1,6 @@
 # Santorini AI
 
-This code seeks to implement the abstract board game Santorini with Python. The interfact of the game is implemented with Pygame, and the AI uses the minimax algorithm, optimized with alpha-beta pruning.
+This code seeks to implement the abstract board game Santorini with Python. The interfact of the game is implemented with Pygame, and the AI uses the minimax algorithm, optimized with alpha-beta pruning. I am working on a Monte Carlo Tree Search AI, but that is not currently functioning.
 
 ## Getting Started
 
