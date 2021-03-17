@@ -9,6 +9,7 @@ SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
 
+
 # Todo - add Markov based learning process
 # Todo - add reinforcement learning
 
@@ -535,7 +536,8 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
                 return_li.append(Node(
                     game=new_game,
                     score=new_game.get_board_score(move_color),
-                    parent=node))
+                    parent=node,
+                    children=None))
             else:
                 # given a legal move, check for each possible build
                 for build in get_buildable_spaces(new_game, (new_game.col, new_game.row)):
@@ -551,7 +553,8 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
                     return_li.append(Node(
                         game=build_game,
                         score=new_score,
-                        parent=node))
+                        parent=node,
+                        children=[]))
 
     # Sort by highest score for your moves, lowest for opponent moves
     return_li = sorted(return_li, key=lambda x: x.score * -1)

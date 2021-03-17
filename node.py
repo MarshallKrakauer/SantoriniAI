@@ -20,7 +20,7 @@ class Node:
         How good or bad of a game it is for that player. Used for alpha-beta pruning & minimax
     """
 
-    def __init__(self, game, children=[], parent=None,
+    def __init__(self, game, children, parent=None,
                  score=0):
         self.game = game
         self.children = children
