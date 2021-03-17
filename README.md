@@ -17,10 +17,6 @@ Users must have some environment to run Python, with pygame installed. Note that
 * [Pycharm](https://www.jetbrains.com/pycharm/) - IDE
 * [Pygame](https://www.pygame.org/news) - Game interface
 
-## Contributing
-
-Please read [CONTRIBUTING.md](https://gist.github.com/PurpleBooth/b24679402957c63ec426) for details on our code of conduct, and the process for submitting pull requests to us.
-
 ## Versioning
 
 Currently in beta testing. Version control using Git.
