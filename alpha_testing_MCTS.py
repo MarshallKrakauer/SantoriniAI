@@ -10,7 +10,7 @@ import random
 from math import sqrt, log
 from queue import Queue
 
-from game import game_deep_copy
+from game import game_deep_copy, create_potential_moves
 
 
 class MCTSNode:
@@ -26,7 +26,7 @@ class MCTSNode:
         self.outcome = 0
 
     def create_potential_moves(self):
-        pass  # placeholder, need to move function from game.py
+        self.children = create_potential_moves()
 
     def value(self, explore):
         """Upper confidence bound for this node
@@ -46,8 +46,8 @@ class TreeSearch:
 
     def __init__(self, game):
         self.node_count = self.get_tree_size()
-        self.root_state = game_deep_copy(game, game.color)
-        self.root = MCTSNode(move=None, parent=None)
+        self.root_game = game_deep_copy(game, game.color)
+        self.root = game
         self.run_time_seconds = 0
         self.num_nodes = 0
         self.num_rollouts = 0
@@ -66,7 +66,7 @@ class TreeSearch:
             node, game = self.choose_simulation_node()
             turn = game.turn()
             outcome = self.simulate_random_game(game)
-            self.backup(node, turn, outcome)
+            self.update_node_info(node, turn, outcome)
             num_rollouts += 1
             current_time = dt.datetime.now()
 
@@ -79,23 +79,22 @@ class TreeSearch:
         """
 
         node = self.root
-        game = game_deep_copy(self.root.game, self.root.game.color)
+        game = game_deep_copy(self.root_game, self.root_game.color)
 
         while len(node.children) > 0:
-            children = node.children.values()  # placeholder function for
-            max_value = max(node.children())
+            max_value = max(node.children.values())
 
             # obtain list of nodes with max value, pick one randomly
             max_node_list = [n for n in node.children.values if n.value == max_value]
             node = random.choice(max_node_list)
-            game.play(node.move)
+            game = game_deep_copy(node.game, node.game.color)
 
             if node.N == 0:
                 return node, game
 
         if self.expand(node, game):
             node = random.choice(list(node.children.values()))
-            game.play(node.move)
+            game = game_deep_copy(node.game, node.game.color)
         return node, game
 
     @staticmethod
@@ -112,7 +111,7 @@ class TreeSearch:
             # don't expand a finished game
             return False
 
-        for move in game.moves():
+        for move in create_potential_moves(game, game.color, game.color):
             children.append(MCTSNode(move, parent))
 
         parent.add_children(children)
@@ -121,7 +120,7 @@ class TreeSearch:
     @staticmethod
     def simulate_random_game(game):
         """
-        Called 'roll_out' in Monte Carlo Tree Search terminology
+        Called 'roll out' in Monte Carlo Tree Search terminology
 
         Attributes
         ----------
@@ -161,7 +160,7 @@ class TreeSearch:
             Game : best move, ie highest N
         """
 
-        if not self.game.end:
+        if not self.root_game.end:
             return None
 
         max_score = max(self.root.children.values())
