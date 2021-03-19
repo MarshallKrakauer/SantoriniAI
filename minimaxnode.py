@@ -3,7 +3,6 @@ from queue import Queue
 import pickle
 
 
-# noinspection PyDefaultArgument
 class MiniMaxNode:
     """
     Individual node of tree used for alpha beta pruning.
