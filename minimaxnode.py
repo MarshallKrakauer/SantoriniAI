@@ -4,7 +4,7 @@ import pickle
 
 
 # noinspection PyDefaultArgument
-class Node:
+class MiniMaxNode:
     """
     Individual node of tree used for alpha beta pruning.
 
@@ -14,7 +14,7 @@ class Node:
         Santorini game scored inside the node
     children : list
         list of child nodes, ie potential moves
-    parent : Node
+    parent : MiniMaxNode
         parent node, ie what board looked like before this move
     score:
         How good or bad of a game it is for that player. Used for alpha-beta pruning & minimax
@@ -47,7 +47,7 @@ class Node:
 
         Parameters
         ----------
-        node : Node
+        node : MiniMaxNode
             node with board, state, and children
         alpha : int
             alpha value for alpha-beta pruning algorithm
@@ -78,7 +78,7 @@ class Node:
 
         Parameters
         ----------
-        node : Node
+        node : MiniMaxNode
             node with board, state, and children
         alpha : int
             alpha value for alpha-beta pruning algorithm
@@ -129,7 +129,7 @@ def is_terminal(node):
 
     Parameters
     ----------
-    node : Node
+    node : MiniMaxNode
         Node to check for children
     Returns
     -------
@@ -145,7 +145,7 @@ def print_depth_first(root):
 
     Parameters
     ----------
-    root : Node
+    root : MiniMaxNode
         root node of tree to search
     Returns
     -------
@@ -162,7 +162,7 @@ def store_breadth_first(root, print_nodes=False):
 
     Parameters
     ----------
-    root : Node
+    root : MiniMaxNode
         root node of tree to search
     print_nodes: bool
         if true, prints boards while storing pkl file

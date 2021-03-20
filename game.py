@@ -2,7 +2,7 @@
 import random
 from copy import deepcopy
 
-from node import Node
+from minimaxnode import MiniMaxNode
 from path_finding import get_path_score
 
 SYS_RANDOM = random.SystemRandom()
@@ -428,8 +428,8 @@ class Game:
             tree_depth = 2
 
         game_copy = deepcopy(self)
-        root_node = Node(game=game_copy,
-                         children=[])
+        root_node = MiniMaxNode(game=game_copy,
+                                children=[])
         try:
             best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
                                                    move_color=move_color, eval_color=eval_color)[1]
@@ -533,7 +533,7 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
 
             new_game.move_worker(space[0], space[1], auto=True)
             if new_game.end:
-                return_li.append(Node(
+                return_li.append(MiniMaxNode(
                     game=new_game,
                     score=new_game.get_board_score(move_color),
                     parent=node,
@@ -550,7 +550,7 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
                     else:
                         new_score = 0
 
-                    return_li.append(Node(
+                    return_li.append(MiniMaxNode(
                         game=build_game,
                         score=new_score,
                         parent=node,
