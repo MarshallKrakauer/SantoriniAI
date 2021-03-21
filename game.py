@@ -1,8 +1,7 @@
-# pylint: disable=E0633
 import random
 from copy import deepcopy
 
-from minimaxnode import MiniMaxNode
+from minimax_node import MiniMaxNode
 from path_finding import get_path_score
 
 SYS_RANDOM = random.SystemRandom()
