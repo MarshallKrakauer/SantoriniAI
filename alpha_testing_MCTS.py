@@ -12,6 +12,8 @@ from queue import Queue
 
 from game import game_deep_copy, create_potential_moves
 
+EXPLORATION_FACTOR = 0.5
+
 
 class MCTSNode:
 
@@ -23,12 +25,12 @@ class MCTSNode:
         self.children = []
         self.N = 0
         self.Q = 0
-        self.outcome = 0
 
     def create_potential_moves(self):
         self.children = create_potential_moves(self.game, self.game.color, self.game.color)
 
-    def value(self, exploration_factor):
+    @property
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
         """Upper confidence bound for this node
 
         Attributes
@@ -52,9 +54,6 @@ class TreeSearch:
         self.num_nodes = 0
         self.num_rollouts = 0
 
-    # currently using placeholder function for "values", func will get
-    # value of each child in node
-
     def search_tree(self, max_seconds=60):
         """
         Search children nodes of tree.
@@ -64,9 +63,8 @@ class TreeSearch:
         num_rollouts = 0
         while (current_time - start_time).total_seconds() < max_seconds:
             node, game = self.choose_simulation_node()
-            turn = game.turn()
-            winner = self.simulate_random_game(game)
-            self.update_node_info(node, winner)
+            winning_color = self.simulate_random_game(game)
+            self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
 
@@ -85,8 +83,11 @@ class TreeSearch:
         while len(node.children) > 0:
 
             for child in node.children:
-                current_score = node.game.get_board_score(self.game.color)
-                if current_score >= max_score:
+                current_score = node.mcts_score
+                if current_score > max_score:
+                    max_child_list = [child]
+                    max_score = current_score
+                elif current_score == max_score:
                     max_child_list.append(child)
 
             # obtain list of nodes with max value, pick one randomly
@@ -135,11 +136,11 @@ class TreeSearch:
         -------
             char : color that won the game
         """
-        move_list = create_potential_moves(game, game.color)
+        move_list = create_potential_moves(game, game.color, game.color)
         rand_int = random.randint(0, len(move_list) - 1)
         while not game.end:
             move_choice = move_list[rand_int]
-            game = game_deep_copy(game, game.color)
+            game = game_deep_copy(move_choice, move_choice.color)
             del move_list[rand_int]
 
         return game.color
@@ -163,13 +164,19 @@ class TreeSearch:
         -------
             Game : best move, ie highest N
         """
-
+        max_node_list = []
+        max_node_score = float('-inf')
         if not self.root_game.end:
             return None
 
-        max_score = max(self.root.children.values())
-        max_nodes = [n for n in self.root.children.values() if n.N == max_score]
-        return random.choice(max_nodes)
+        for child in self.root.children:
+            if child.mcts_score > max_node_score:
+                max_node_list = [child]
+                max_node_score = child.mcts_score
+            elif child.mcts_score == max_node_score:
+                max_node_list.append(child)
+
+        return random.choice(max_node_list)
 
     def get_tree_size(self):
         node_queue = Queue()
