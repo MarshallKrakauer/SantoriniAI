@@ -47,7 +47,7 @@ class Player:
             self.game.play_manual_turn(x_val, y_val)
 
         elif self.player_type == 'alphabeta':
-            self.game.play_automatic_turn(move_color=self.color, eval_color=self.color)
+            self.game.play_minimax_turn(move_color=self.color, eval_color=self.color)
             self.game.sub_turn = 'switch'
 
     def update_game(self):

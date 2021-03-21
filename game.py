@@ -3,6 +3,7 @@ from copy import deepcopy
 
 from minimax_node import MiniMaxNode
 from path_finding import get_path_score
+#from alpha_testing_MCTS import MCTSNode, TreeSearch
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -409,7 +410,7 @@ class Game:
         elif self.sub_turn == 'build':
             self.build_level(x_val, y_val)
 
-    def play_automatic_turn(self, move_color, eval_color=None, tree_depth=DEPTH):
+    def play_minimax_turn(self, move_color, eval_color=None, tree_depth=DEPTH):
         """
         Select turn for AI player
         Uses alpha-beta pruning to selection best turn
@@ -556,12 +557,6 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
                         score=new_score,
                         parent=node,
                         children=[]))
-
-    # Sort by highest score for your moves, lowest for opponent moves
-    if eval_color == move_color:
-        return_li = sorted(return_li, key=lambda x: x.score)
-    else:
-        return_li = sorted(return_li, key=lambda x: x.score * -1)
 
     return return_li
 
