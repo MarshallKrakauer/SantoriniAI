@@ -47,7 +47,7 @@ class TreeSearch:
     def __init__(self, game):
         self.node_count = self.get_tree_size()
         self.root_game = game_deep_copy(game, game.color)
-        self.root = MCTSNode(game = self.root_game, parent = None)
+        self.root = MCTSNode(game=self.root_game, parent=None)
         self.run_time_seconds = 0
         self.num_nodes = 0
         self.num_rollouts = 0
@@ -65,8 +65,8 @@ class TreeSearch:
         while (current_time - start_time).total_seconds() < max_seconds:
             node, game = self.choose_simulation_node()
             turn = game.turn()
-            outcome = self.simulate_random_game(game)
-            self.update_node_info(node, turn, outcome)
+            winner = self.simulate_random_game(game)
+            self.update_node_info(node, winner)
             num_rollouts += 1
             current_time = dt.datetime.now()
 
@@ -135,20 +135,19 @@ class TreeSearch:
         -------
             char : color that won the game
         """
-
-        moves = game.get_moves()  # placeholder, get_moves() is note defined
-
+        move_list = create_potential_moves(game, game.color)
+        rand_int = random.randint(0, len(move_list) - 1)
         while not game.end:
-            move = random.choice(moves)
-            game.play(move)
-            moves.remove(move)
+            move_choice = move_list[rand_int]
+            game = game_deep_copy(game, game.color)
+            del move_list[rand_int]
 
         return game.color
 
     @staticmethod
-    def update_node_info(node, turn, outcome):
+    def update_node_info(node, outcome):
 
-        reward = 0 if outcome == turn else 1
+        reward = 0 if outcome == node.game.color else 1
 
         while node is not None:
             node.N += 1
