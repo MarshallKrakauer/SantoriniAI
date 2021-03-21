@@ -7,6 +7,7 @@ from path_finding import get_path_score
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
+METHOD = 'MINIMAX'
 
 
 # Todo - add Markov based learning process
@@ -422,9 +423,10 @@ class Game:
         tree_depth : int
             Depth of the tree. How far to look ahead for creating potential moves
         """
-        tree_depth = int(tree_depth)
-        if tree_depth <= 2:
-            tree_depth = 2
+        self.color = move_color
+        self.check_move_available()
+        if self.end:
+            return
 
         game_copy = deepcopy(self)
         root_node = MiniMaxNode(game=game_copy,
@@ -556,10 +558,11 @@ def create_potential_moves(node, move_color, eval_color, depth=1):
                         children=[]))
 
     # Sort by highest score for your moves, lowest for opponent moves
-    return_li = sorted(return_li, key=lambda x: x.score * -1)
+    if eval_color == move_color:
+        return_li = sorted(return_li, key=lambda x: x.score)
+    else:
+        return_li = sorted(return_li, key=lambda x: x.score * -1)
 
-    if len(return_li) == 0:
-        print("DEBUG TEST")
     return return_li
 
 

@@ -35,6 +35,7 @@ def play_game(current_game, print_boards=True):
     gray_player = Player(game=current_game, color='G', player_type='alphabeta')
     white_player = Player(game=current_game, color='W', player_type='alphabeta')
     while not current_game.end:
+        print("Turn: ", current_game.color)
         if white_turn:
             white_player.play_turn()
             white_turn = not white_turn
