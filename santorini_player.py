@@ -1,7 +1,7 @@
 """Individual playing Santorini game. Needs a refactor to replace complexity."""
 
 
-class Player:
+class SantoriniPlayer:
     """
     Player of the Game class.
 
@@ -37,7 +37,7 @@ class Player:
         if self.player_type == 'human':
             if self.game.place_worker(self.color, x_val, y_val):
                 self.placements += 1
-        elif self.player_type == 'alphabeta':
+        else:
             self.game.randomize_placement(self.color)
             self.placements = 2
 
@@ -45,9 +45,10 @@ class Player:
         """Manual or auto play of turn, depending on player type."""
         if self.player_type == 'human':
             self.game.play_manual_turn(x_val, y_val)
-
         elif self.player_type == 'alphabeta':
             self.game.play_minimax_turn(move_color=self.color, eval_color=self.color)
+            self.game.sub_turn = 'switch'
+        elif self.player_type == 'MCTS':
             self.game.sub_turn = 'switch'
 
     def update_game(self):

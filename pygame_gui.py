@@ -4,7 +4,7 @@
 import pygame
 import pygame.freetype
 from game import Game
-from player import Player
+from santorini_player import SantoriniPlayer
 from button import Button
 
 # Define some colors
@@ -37,8 +37,8 @@ def main():
     player_dict = title_screen()
     this_game = Game()
 
-    white_player = Player(this_game, player_dict['W'], 'W')
-    gray_player = Player(this_game, player_dict['G'], 'G')
+    white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
+    gray_player = SantoriniPlayer(this_game, player_dict['G'], 'G')
 
     play_game(white_player, gray_player)
 
@@ -313,10 +313,10 @@ def play_game(white_player, gray_player):
 
     Parameters
     ----------
-    white_player : Player
+    white_player : SantoriniPlayer
         Player object moving the white piece
 
-    gray_player : Player
+    gray_player : SantoriniPlayer
         Player object moving the gray piece
     """
     # Used to manage how fast the screen updates

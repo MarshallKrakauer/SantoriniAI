@@ -1,18 +1,18 @@
 import random
-from copy import deepcopy
 
-from minimax_node import MiniMaxNode
+import minimax_node
 from path_finding import get_path_score
-#from alpha_testing_MCTS import MCTSNode, TreeSearch
+
+# from alpha_testing_MCTS import MCTSNode, TreeSearch
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 3
+DEPTH = 4
 METHOD = 'MINIMAX'
 
 
-# Todo - add Markov based learning process
-# Todo - add reinforcement learning
+# Todo - test Monte Carlo Tree Search in game.py
+# Todo - add tensorflow reinforcement learning
 
 class Game:
     """
@@ -100,7 +100,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def get_board_score(self, color='W'):
+    def get_board_score(self, color='W', include_path_score = False):
         """
         Give numeric score to game.
         Gives a score to the board based on position of the pices
@@ -115,13 +115,13 @@ class Game:
             score of the board needed for alpha-beta pruning
             higher score is better
         """
-        other_color = get_opponent_color(color)
+        other_color = self.get_opponent_color(color)
 
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
         for i, j in spaces:
             space = self.board[i][j]
-            adjacent_spaces = get_movable_spaces(game=self, space=(i, j))
+            adjacent_spaces = self.get_movable_spaces(game=self, space=(i, j))
 
             # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
@@ -139,8 +139,9 @@ class Game:
 
         # Loser points for your pieces being far apart, gain for your opponents pieces
         # being far apart
-        score -= get_path_score(self, color)
-        score += get_path_score(self, other_color)
+        if include_path_score:
+            score -= get_path_score(self, color) // 2
+            score += get_path_score(self, other_color) // 2
 
         return score
 
@@ -238,7 +239,7 @@ class Game:
         # Check if spaces match color and worker can move
         for i, j in SPACE_LIST:
             self.board[i][j]['active'] = (self.board[i][j]['occupant'] == self.color and
-                                          len(get_movable_spaces(self, (i, j), False)) > 0)
+                                          len(self.get_movable_spaces(self, (i, j), False)) > 0)
 
     def make_choice_active(self, x_val, y_val):
         """
@@ -424,14 +425,48 @@ class Game:
         tree_depth : int
             Depth of the tree. How far to look ahead for creating potential moves
         """
+        #self.color = move_color
+        #self.check_move_available()
+        if self.end:
+            return
+
+        # game_copy = deepcopy(self)
+        game_copy = self.game_deep_copy(self, self.color)
+        root_node = minimax_node.MiniMaxNode(game=game_copy,
+                                             children=[])
+        best_state = root_node.alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
+                                                         move_color=move_color, eval_color=eval_color)[1]
+        if best_state is None:
+            best_state = root_node.create_potential_moves(node=root_node, eval_color=eval_color, move_color=move_color)[
+                0]
+        self.board = best_state.game.board
+        self.end = best_state.game.end
+
+        if not self.end:
+            self.sub_turn = 'switch'
+
+    def play_mcts_turn(self, move_color):
+        """
+        Select turn for AI player
+        Uses alpha-beta pruning to selection best turn
+        and update game object to that ideal turn
+        Parameters
+        ----------
+        move_color : char
+            Whose turn is it is. This will be the color moved
+        eval_color : char
+            Color to use for the eval function. Which perpective to score from
+        tree_depth : int
+            Depth of the tree. How far to look ahead for creating potential moves
+        """
         self.color = move_color
         self.check_move_available()
         if self.end:
             return
 
         game_copy = deepcopy(self)
-        root_node = MiniMaxNode(game=game_copy,
-                                children=[])
+        root_node = minimax_node.MiniMaxNode(game=game_copy,
+                                             parent=None)
         try:
             best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
                                                    move_color=move_color, eval_color=eval_color)[1]
@@ -441,208 +476,93 @@ class Game:
             best_state = create_potential_moves(node=root_node, eval_color=eval_color, move_color=move_color)[0]
             self.board = best_state.game.board
             self.end = best_state.game.end
+
         if not self.end:
             self.sub_turn = 'switch'
 
+    @staticmethod
+    def game_deep_copy(game, color):
+        """
+        Deep copies board from another game.
+        Used as part of the create children functions. Standard
+        Python copy.deepcopy was too slow.
+        Parameters
+        ----------
+        game : Game
+            game from which to copy info
+        color :
+            color to set as the player of that game
+        Returns
+        -------
+        new_game : Game
+            new game with same info as others and a new color
+        """
+        new_game = Game()
 
-def alpha_beta_move_selection(root_node, depth, alpha=-10 ** 5, beta=10 ** 5, move_color='G', eval_color='G',
-                              is_max=True):
-    # End game, don't need to check child nodes
-    if root_node.game.end:
-        if eval_color != move_color:
-            return 10 ** 5, None
+        other_board = game.board
+
+        new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
+                      for i in range(5)] for j in range(5)]
+
+        for i, j in SPACE_LIST:
+            new_board[i][j]['occupant'] = other_board[i][j]['occupant']
+            new_board[i][j]['level'] = other_board[i][j]['level']
+
+        new_game.board = new_board
+        new_game.end = game.end
+        new_game.col = game.col
+        new_game.row = game.row
+        new_game.color = color
+
+        return new_game
+
+    @staticmethod
+    def get_movable_spaces(game, space, return_iter=True):
+        return_li = []
+        x_val, y_val = space
+        height = game.board[x_val][y_val]['level']
+        for spot in get_adjacent(x_val, y_val):
+            x_adj, y_adj = spot
+            if (game.board[x_adj][y_adj]['occupant'] == 'O' and
+                    (game.board[x_adj][y_adj]['level'] - height) <= 1):
+                return_li.append((x_adj, y_adj))
+
+        # Choose to return either iterator or list
+        if return_iter:
+            return iter(return_li)
         else:
-            return -10 ** 5, None
+            return return_li
 
-    if depth == 0:
-        return root_node.game.get_board_score(get_opponent_color(move_color)), None
+    @staticmethod
+    def get_buildable_spaces(game, space):
+        return_li = []
+        x_val, y_val = space
+        for spot in get_adjacent(x_val, y_val):
+            x_adj, y_adj = spot
+            if (game.board[x_adj][y_adj]['occupant'] == 'O'):
+                return_li.append((x_adj, y_adj))
 
-    potential_nodes = create_potential_moves(node=root_node, move_color=move_color, eval_color=eval_color)
-    best_node = None  # potential_nodes[0]
-
-    if is_max:
-        current_value = -10 ** 5
-
-        for node in potential_nodes:
-            node.game.color = get_opponent_color(move_color)
-            results = alpha_beta_move_selection(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
-                                                move_color=get_opponent_color(move_color), eval_color=eval_color,
-                                                is_max=not is_max)
-
-            if current_value < results[0]:
-                current_value = results[0]
-                alpha = max(alpha, current_value)
-                best_node = node
-
-            if beta <= alpha:
-                break
-
-        if best_node is None:
-            return current_value, None
-
-    else:
-        current_value = 10 ** 5
-        for node in potential_nodes:
-            node.game.color = get_opponent_color(move_color)
-            results = alpha_beta_move_selection(root_node=node, depth=depth - 1, alpha=alpha, beta=beta,
-                                                move_color=get_opponent_color(move_color), eval_color=eval_color,
-                                                is_max=not is_max)
-
-            if current_value > results[0]:
-                current_value = results[0]
-                beta = min(beta, current_value)
-                best_node = node
-
-            if beta <= alpha:
-                break
-
-        if best_node is None:
-            return current_value, None
-
-    return current_value, best_node
-
-
-def create_potential_moves(node, move_color, eval_color, depth=1):
-    """
-    Add list of possible moves to game state.
-    Parameters
-    ----------
-    game : Game
-        Game fomr which to attempt moves
-    move_color : char, optional
-        Player color, G(ray) or W(hite). The default is 'G'.
-    level : char, optional
-        what level of the tree board takes place on
-        Root node is level 0, its children are level 1,
-        children of those children are level 2 etc. The default is 0.
-    Returns
-    -------
-    return_li : list
-        Children of that node
-    """
-    return_li = []
-    # Check both of the spaces occupied by the player
-    for spot in [(i, j) for i in range(5) for j in range(5) if
-                 node.game.board[i][j]['occupant'] == move_color]:
-        i, j = spot
-        # check each possible move
-
-        for space in get_movable_spaces(game=node.game, space=(i, j)):
-
-            new_game = Game()
-            new_game = game_deep_copy(node.game, move_color)
-            new_game.select_worker(move_color, i, j)
-
-            new_game.move_worker(space[0], space[1], auto=True)
-            if new_game.end:
-                return_li.append(MiniMaxNode(
-                    game=new_game,
-                    score=new_game.get_board_score(move_color),
-                    parent=node,
-                    children=None))
-            else:
-                # given a legal move, check for each possible build
-                for build in get_buildable_spaces(new_game, (new_game.col, new_game.row)):
-                    build_game = game_deep_copy(new_game,
-                                                new_game.color)
-
-                    build_game.build_level(build[0], build[1], auto=True)
-                    if build_game.end:
-                        new_score = build_game.get_board_score(eval_color)
-                    else:
-                        new_score = 0
-
-                    return_li.append(MiniMaxNode(
-                        game=build_game,
-                        score=new_score,
-                        parent=node,
-                        children=[]))
-
-    return return_li
-
-
-def get_movable_spaces(game, space, return_iter=True):
-    return_li = []
-    x_val, y_val = space
-    height = game.board[x_val][y_val]['level']
-    for spot in get_adjacent(x_val, y_val):
-        x_adj, y_adj = spot
-        if (game.board[x_adj][y_adj]['occupant'] == 'O' and
-                (game.board[x_adj][y_adj]['level'] - height) <= 1):
-            return_li.append((x_adj, y_adj))
-
-    # Choose to return either iterator or list
-    if return_iter:
         return iter(return_li)
-    else:
-        return return_li
+
+    @staticmethod
+    def get_opponent_color(color):
+        """Get player color that isn't the one passed
+
+        Parameters
+        ----------
+        color : char
+            Either W or G. Color of the current player
+
+        """
+        if color == 'W':
+            other_color = 'G'
+        else:
+            other_color = 'W'
+
+        return other_color
 
 
-def get_buildable_spaces(game, space):
-    return_li = []
-    x_val, y_val = space
-    for spot in get_adjacent(x_val, y_val):
-        x_adj, y_adj = spot
-        if (game.board[x_adj][y_adj]['occupant'] == 'O'):
-            return_li.append((x_adj, y_adj))
-
-    return iter(return_li)
-
-
-def game_deep_copy(game, color):
-    """
-    Deep copies board from another game.
-    Used as part of the create children functions. Standard
-    Python copy.deepcopy was too slow.
-    Parameters
-    ----------
-    game : Game
-        game from which to copy info
-    color :
-        color to set as the player of that game
-    Returns
-    -------
-    new_game : Game
-        new game with same info as others and a new color
-    """
-    new_game = Game()
-
-    other_board = game.board
-
-    new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
-                  for i in range(5)] for j in range(5)]
-
-    for i, j in SPACE_LIST:
-        new_board[i][j]['occupant'] = other_board[i][j]['occupant']
-        new_board[i][j]['level'] = other_board[i][j]['level']
-
-    new_game.board = new_board
-    new_game.end = game.end
-    new_game.col = game.col
-    new_game.row = game.row
-    new_game.color = color
-
-    return new_game
-
-
-def get_opponent_color(color):
-    """Get player color that isn't the one passed
-
-    Parameters
-    ----------
-    color : char
-        Either W or G. Color of the current player
-
-    """
-    if color == 'W':
-        other_color = 'G'
-    else:
-        other_color = 'W'
-
-    return other_color
-
-
-def get_adjacent(x_val, y_val, when='general'):
+def get_adjacent(x_val, y_val):
     """
     Get spaces surrounding the passed one.
     Parameters
@@ -661,19 +581,18 @@ def get_adjacent(x_val, y_val, when='general'):
         list of spaces adjacent to the one provided through
         x_val and y_val
     """
-    if when == 'general':
-        space_list = [(x_val - 1, y_val + 1),
-                      (x_val, y_val + 1),
-                      (x_val + 1, y_val + 1),
-                      (x_val - 1, y_val),
-                      (x_val + 1, y_val),
-                      (x_val - 1, y_val - 1),
-                      (x_val, y_val - 1),
-                      (x_val + 1, y_val - 1)]
-        space_list = iter(list(filter(
-            lambda t: t[0] >= 0 and t[0] <= 4
-                      and t[1] >= 0 and t[1] <= 4,
-            space_list)))
+    space_list = [(x_val - 1, y_val + 1),
+                  (x_val, y_val + 1),
+                  (x_val + 1, y_val + 1),
+                  (x_val - 1, y_val),
+                  (x_val + 1, y_val),
+                  (x_val - 1, y_val - 1),
+                  (x_val, y_val - 1),
+                  (x_val + 1, y_val - 1)]
+    space_list = iter(list(filter(
+        lambda t: t[0] >= 0 and t[0] <= 4
+                  and t[1] >= 0 and t[1] <= 4,
+        space_list)))
 
     return space_list
 

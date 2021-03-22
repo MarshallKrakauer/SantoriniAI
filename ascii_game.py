@@ -4,8 +4,8 @@ import csv
 
 import pandas as pd
 
-from game import Game
-from player import Player
+import game
+import santorini_player
 
 
 # Todo add human player possibility
@@ -32,8 +32,8 @@ def write_to_game_list(white_player, gray_player):
 
 def play_game(current_game, print_boards=True):
     white_turn = True
-    gray_player = Player(game=current_game, color='G', player_type='alphabeta')
-    white_player = Player(game=current_game, color='W', player_type='alphabeta')
+    gray_player = santorini_player.SantoriniPlayer(game=current_game, color='G', player_type='alphabeta')
+    white_player = santorini_player.SantoriniPlayer(game=current_game, color='W', player_type='alphabeta')
     while not current_game.end:
         print("Turn: ", current_game.color)
         if white_turn:
@@ -50,7 +50,7 @@ def play_game(current_game, print_boards=True):
 
 
 def main():
-    new_game = Game()
+    new_game = game.Game()
     play_game(new_game, True)
 
 

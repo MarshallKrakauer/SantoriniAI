@@ -26,9 +26,6 @@ class MCTSNode:
         self.N = 0
         self.Q = 0
 
-    def create_potential_moves(self):
-        self.children = create_potential_moves(self.game, self.game.color, self.game.color)
-
     @property
     def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
         """Upper confidence bound for this node
