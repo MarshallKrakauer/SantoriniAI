@@ -464,7 +464,6 @@ class Game:
         game_copy = self.game_deep_copy(self, move_color)
         mcts_game_tree = alpha_testing_MCTS.TreeSearch(game_copy)
         mcts_game_tree.search_tree()
-        print(move_color, ' : ',dt.datetime.now())
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
         self.end = best_node.game.end

@@ -41,6 +41,7 @@ class MCTSNode:
             Children of that node
         """
         return_li = []
+
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
                      node.game.board[i][j]['occupant'] == move_color]:
@@ -154,6 +155,7 @@ class TreeSearch:
         -------
             bool: false if the game is over
         """
+        print("add_children_to_game_tree")
         children_list = []
         if root_game.end:
             # don't expand a finished game
@@ -220,7 +222,6 @@ class TreeSearch:
         max_node_list = []
         max_node_score = float('-inf')
         if self.root_game.end:
-            print("did the game end?")
             return None
 
         for child in self.root.children:
@@ -229,7 +230,6 @@ class TreeSearch:
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
                 max_node_list.append(child)
-
         return random.choice(max_node_list)
 
     def get_tree_size(self):

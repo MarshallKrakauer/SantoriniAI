@@ -3,6 +3,7 @@
 import csv
 
 import pandas as pd
+import datetime as dt
 
 import game
 import santorini_player
@@ -45,7 +46,7 @@ def play_game(current_game, print_boards=True):
             white_turn = not white_turn
 
         if print_boards:
-            print(current_game)
+            print(current_game.color, current_game, dt.datetime.now())
     write_to_game_list(white_player, gray_player)
     print("This game's winner is...", current_game.color)
 
