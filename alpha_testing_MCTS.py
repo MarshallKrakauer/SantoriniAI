@@ -10,21 +10,62 @@ import random
 from math import sqrt, log
 from queue import Queue
 
-from game import game_deep_copy, create_potential_moves
-
 EXPLORATION_FACTOR = 0.5
 
 
 class MCTSNode:
 
-    def __init__(self, game, parent):
+    def __init__(self, root_game, parent):
 
-        self.game = game
+        self.game = root_game
         self.parent = parent
         self.visits = 0
         self.children = []
         self.N = 0
         self.Q = 0
+
+    @staticmethod
+    def create_potential_moves(node, move_color):
+        """
+        Add list of possible moves to game state.
+
+        Parameters
+        ----------
+        node : MiniMaxNode
+            Parent node of all potential moves
+        move_color : char, optional
+            Player color, G or W
+        Returns
+        -------
+        return_li : list
+            Children of that node
+        """
+        return_li = []
+        # Check both of the spaces occupied by the player
+        for spot in [(i, j) for i in range(5) for j in range(5) if
+                     node.game.board[i][j]['occupant'] == move_color]:
+            i, j = spot
+            # check each possible move
+
+            for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+
+                new_game = node.game.game_deep_copy(node.game, move_color)
+                new_game.select_worker(move_color, i, j)
+
+                new_game.move_worker(space[0], space[1], auto=True)
+                if new_game.end:
+                    return_li.append(MCTSNode(root_game=new_game, parent=node))
+                else:
+                    # given a legal move, check for each possible build
+                    for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+                        build_game = new_game.game_deep_copy(new_game,
+                                                             new_game.color)
+
+                        build_game.build_level(build[0], build[1], auto=True)
+
+                        return_li.append(MCTSNode(root_game=build_game, parent=node))
+
+        return return_li
 
     @property
     def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
@@ -38,20 +79,23 @@ class MCTSNode:
         if self.N == 0:  # what to do if node hasn't been visited
             return float('inf')
         else:
-            return self.Q / self.N + exploration_factor * sqrt(2 * log(self.parent.N) / self.N)
+            if self.parent is not None:
+                return self.Q / self.N + exploration_factor * sqrt(2 * log(self.parent.N) / self.N)
+            else:
+                return self.Q / self.N + exploration_factor * sqrt(2 * log(1) / self.N)
 
 
 class TreeSearch:
 
-    def __init__(self, game):
-        self.node_count = self.get_tree_size()
-        self.root_game = game_deep_copy(game, game.color)
-        self.root = MCTSNode(game=self.root_game, parent=None)
+    def __init__(self, root_game):
+        # self.node_count = self.get_tree_size()
+        self.root_game = root_game.game_deep_copy(root_game, root_game.color)
+        self.root = MCTSNode(self.root_game, None)
         self.run_time_seconds = 0
         self.num_nodes = 0
         self.num_rollouts = 0
 
-    def search_tree(self, max_seconds=60):
+    def search_tree(self, max_seconds=10):
         """
         Search children nodes of tree.
         """
@@ -59,8 +103,8 @@ class TreeSearch:
         current_time = dt.datetime.now()
         num_rollouts = 0
         while (current_time - start_time).total_seconds() < max_seconds:
-            node, game = self.choose_simulation_node()
-            winning_color = self.simulate_random_game(game)
+            node, root_game = self.choose_simulation_node()
+            winning_color = self.simulate_random_game(root_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
@@ -73,12 +117,11 @@ class TreeSearch:
         Choose the node to simulate from
         """
         node = self.root
-        game = game_deep_copy(self.root_game, self.root_game.color)
+        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
         max_score = float('-inf')
         max_child_list = []
 
         while len(node.children) > 0:
-
             for child in node.children:
                 current_score = node.mcts_score
                 if current_score > max_score:
@@ -89,58 +132,71 @@ class TreeSearch:
 
             # obtain list of nodes with max value, pick one randomly
             node = random.choice(max_child_list)
-            game = game_deep_copy(node.game, node.game.color)
+
+            root_game = self.root_game.game_deep_copy(node.game, node.game.color)
 
             if node.N == 0:
-                return node, game
+                return node, root_game
 
-        if self.add_children_to_game_tree(node, game):
+        if self.add_children_to_game_tree(node, root_game):
             node = random.choice(node.children)
-            game = game_deep_copy(node.game, node.game.color)
+            root_game = self.root_game.game_deep_copy(node.game, node.game.color)
 
-        return node, game
+        return node, root_game
 
     @staticmethod
-    def add_children_to_game_tree(parent, game):
+    def add_children_to_game_tree(parent, root_game):
         """
-        Create children of parent node, add them to game tree
+        Create children of parent node, add them to game tree.
+        "Expand" in MCTS terminology
 
         Returns
         -------
             bool: false if the game is over
         """
         children_list = []
-        if game.end:
+        if root_game.end:
             # don't expand a finished game
             return False
-
-        for game in create_potential_moves(game, game.color, game.color):
-            children_list.append(MCTSNode(game, parent))
+        for move in parent.create_potential_moves(parent, root_game.color):
+            children_list.append(MCTSNode(root_game=move.game, parent=parent))
 
         parent.children = children_list
         return True
 
     @staticmethod
-    def simulate_random_game(game):
+    def simulate_random_game(root_game):
         """
         Called 'roll out' in Monte Carlo Tree Search terminology
 
         Attributes
         ----------
-            game : Game object
+            root_game : Game object
 
         Returns
         -------
             char : color that won the game
         """
-        move_list = create_potential_moves(game, game.color, game.color)
-        rand_int = random.randint(0, len(move_list) - 1)
-        while not game.end:
-            move_choice = move_list[rand_int]
-            game = game_deep_copy(move_choice, move_choice.color)
-            del move_list[rand_int]
+        temp_node = MCTSNode(root_game=root_game, parent=None)
+        potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
+        rand_int = random.randint(0, len(potential_game_list) - 1)
+        game_choice = potential_game_list[rand_int].game
+        root_game = root_game.game_deep_copy(game_choice, game_choice.color)
 
-        return game.color
+        while not root_game.end:
+            temp_node = MCTSNode(root_game=root_game, parent=temp_node)
+            potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
+            list_size = len(potential_game_list)
+
+            if list_size >= 1:
+                rand_int = random.randint(0, list_size - 1)
+                game_choice = potential_game_list[rand_int].game
+                root_game = root_game.game_deep_copy(game_choice, game_choice.color)
+                root_game.color = root_game.get_opponent_color(root_game)
+            else:
+                root_game.end = True
+
+        return root_game.color
 
     @staticmethod
     def update_node_info(node, outcome):
@@ -163,7 +219,8 @@ class TreeSearch:
         """
         max_node_list = []
         max_node_score = float('-inf')
-        if not self.root_game.end:
+        if self.root_game.end:
+            print("did the game end?")
             return None
 
         for child in self.root.children:
@@ -178,11 +235,11 @@ class TreeSearch:
     def get_tree_size(self):
         node_queue = Queue()
         num_of_children = 0
-        node_queue.put(self.root)
+        node_queue.put(self.root_game)
         while not node_queue.empty():
             current_node = node_queue.get()
             num_of_children += 1
-            for child in current_node.children.values():
+            for child in current_node.children:
                 node_queue.put(child)
 
         return num_of_children

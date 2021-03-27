@@ -49,6 +49,7 @@ class SantoriniPlayer:
             self.game.play_minimax_turn(move_color=self.color, eval_color=self.color)
             self.game.sub_turn = 'switch'
         elif self.player_type == 'MCTS':
+            self.game.play_mcts_turn(self.color)
             self.game.sub_turn = 'switch'
 
     def update_game(self):

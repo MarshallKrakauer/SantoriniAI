@@ -1,13 +1,14 @@
 import random
 
 import minimax_node
-from path_finding import get_path_score
+import path_finding
+import alpha_testing_MCTS
+import datetime as dt
 
-# from alpha_testing_MCTS import MCTSNode, TreeSearch
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 4
+DEPTH = 3
 METHOD = 'MINIMAX'
 
 
@@ -454,29 +455,21 @@ class Game:
         ----------
         move_color : char
             Whose turn is it is. This will be the color moved
-        eval_color : char
-            Color to use for the eval function. Which perpective to score from
-        tree_depth : int
-            Depth of the tree. How far to look ahead for creating potential moves
         """
         self.color = move_color
         self.check_move_available()
         if self.end:
             return
 
-        game_copy = deepcopy(self)
-        root_node = minimax_node.MiniMaxNode(game=game_copy,
-                                             parent=None)
-        try:
-            best_state = alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
-                                                   move_color=move_color, eval_color=eval_color)[1]
-            self.board = best_state.game.board
-            self.end = best_state.game.end
-        except AttributeError:
-            best_state = create_potential_moves(node=root_node, eval_color=eval_color, move_color=move_color)[0]
-            self.board = best_state.game.board
-            self.end = best_state.game.end
+        game_copy = self.game_deep_copy(self, move_color)
+        mcts_game_tree = alpha_testing_MCTS.TreeSearch(game_copy)
+        mcts_game_tree.search_tree()
+        print(move_color, ' : ',dt.datetime.now())
+        best_node = mcts_game_tree.get_best_move()
+        self.board = best_node.game.board
+        self.end = best_node.game.end
 
+        self.check_move_available()
         if not self.end:
             self.sub_turn = 'switch'
 

@@ -7,6 +7,8 @@ import pandas as pd
 import game
 import santorini_player
 
+PLAYER_ALGO = 'alphabeta'  # alphabeta or MCTS
+
 
 # Todo add human player possibility
 
@@ -32,10 +34,9 @@ def write_to_game_list(white_player, gray_player):
 
 def play_game(current_game, print_boards=True):
     white_turn = True
-    gray_player = santorini_player.SantoriniPlayer(game=current_game, color='G', player_type='alphabeta')
-    white_player = santorini_player.SantoriniPlayer(game=current_game, color='W', player_type='alphabeta')
+    gray_player = santorini_player.SantoriniPlayer(game=current_game, color='G', player_type=PLAYER_ALGO)
+    white_player = santorini_player.SantoriniPlayer(game=current_game, color='W', player_type=PLAYER_ALGO)
     while not current_game.end:
-        print("Turn: ", current_game.color)
         if white_turn:
             white_player.play_turn()
             white_turn = not white_turn
