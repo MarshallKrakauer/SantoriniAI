@@ -42,6 +42,8 @@ class MCTSNode:
         """
         return_li = []
 
+        if node.game.end:
+            return return_li
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
                      node.game.board[i][j]['occupant'] == move_color]:
@@ -132,6 +134,9 @@ class TreeSearch:
                     max_child_list.append(child)
 
             # obtain list of nodes with max value, pick one randomly
+            if len(max_child_list) == 0:
+                print(self.root_game)
+
             node = random.choice(max_child_list)
 
             root_game = self.root_game.game_deep_copy(node.game, node.game.color)
@@ -155,7 +160,7 @@ class TreeSearch:
         -------
             bool: false if the game is over
         """
-        print("add_children_to_game_tree")
+
         children_list = []
         if root_game.end:
             # don't expand a finished game
@@ -171,6 +176,8 @@ class TreeSearch:
         """
         Called 'roll out' in Monte Carlo Tree Search terminology
 
+        This function currently has an awful control structure. Will fix after I have tested it
+        and know it works.
         Attributes
         ----------
             root_game : Game object
@@ -181,6 +188,10 @@ class TreeSearch:
         """
         temp_node = MCTSNode(root_game=root_game, parent=None)
         potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
+
+        if len(potential_game_list) == 0:
+            return root_game.color
+
         rand_int = random.randint(0, len(potential_game_list) - 1)
         game_choice = potential_game_list[rand_int].game
         root_game = root_game.game_deep_copy(game_choice, game_choice.color)
@@ -190,13 +201,16 @@ class TreeSearch:
             potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
             list_size = len(potential_game_list)
 
-            if list_size >= 1:
+            if list_size > 0:
                 rand_int = random.randint(0, list_size - 1)
                 game_choice = potential_game_list[rand_int].game
-                root_game = root_game.game_deep_copy(game_choice, game_choice.color)
-                root_game.color = root_game.get_opponent_color(root_game)
+                if game_choice.end:
+                    return game_choice.color
+                else:
+                    root_game = root_game.game_deep_copy(game_choice, game_choice.color)
+                    root_game.color = root_game.get_opponent_color(root_game)
             else:
-                root_game.end = True
+                return root_game.color
 
         return root_game.color
 

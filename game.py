@@ -431,7 +431,6 @@ class Game:
         if self.end:
             return
 
-        # game_copy = deepcopy(self)
         game_copy = self.game_deep_copy(self, self.color)
         root_node = minimax_node.MiniMaxNode(game=game_copy,
                                              children=[])
@@ -490,7 +489,7 @@ class Game:
             new game with same info as others and a new color
         """
         new_game = Game()
-
+        # print("deep copy", dt.datetime.now())
         other_board = game.board
 
         new_board = [[{'level': 0, 'occupant': 'O', 'active': False}

@@ -8,7 +8,7 @@ import datetime as dt
 import game
 import santorini_player
 
-PLAYER_ALGO = 'alphabeta'  # alphabeta or MCTS
+PLAYER_ALGO = 'MCTS'  # alphabeta or MCTS
 
 
 # Todo add human player possibility
