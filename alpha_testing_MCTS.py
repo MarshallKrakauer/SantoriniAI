@@ -124,14 +124,17 @@ class TreeSearch:
         max_score = float('-inf')
         max_child_list = []
 
+        i = 0  # counter exists to debug
         while len(node.children) > 0:
             for child in node.children:
-                current_score = node.mcts_score
+                current_score = node.mcts_score  # This is where it hangs
                 if current_score > max_score:
                     max_child_list = [child]
                     max_score = current_score
                 elif current_score == max_score:
                     max_child_list.append(child)
+                i += 1
+                print(i)  # this number got up to 1889129, something isn't leaving here
 
             # obtain list of nodes with max value, pick one randomly
             if len(max_child_list) == 0:
