@@ -120,12 +120,12 @@ class TreeSearch:
         Choose the node to simulate from
         """
         node = self.root
-        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
+        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)  # also seen it hang here
         max_score = float('-inf')
         max_child_list = []
 
         i = 0  # counter exists to debug
-        while len(node.children) > 0:
+        while len(node.children) > 0 and i < 1000:
             for child in node.children:
                 current_score = node.mcts_score  # This is where it hangs
                 if current_score > max_score:
@@ -134,11 +134,13 @@ class TreeSearch:
                 elif current_score == max_score:
                     max_child_list.append(child)
                 i += 1
-                print(i)  # this number got up to 1889129, something isn't leaving here
+                if i == 10000:
+                    print("hitting break statement")
+                    break
 
             # obtain list of nodes with max value, pick one randomly
-            if len(max_child_list) == 0:
-                print(self.root_game)
+            # if len(max_child_list) == 0:
+            #    print(self.root_game)
 
             node = random.choice(max_child_list)
 
@@ -170,6 +172,9 @@ class TreeSearch:
             return False
         for move in parent.create_potential_moves(parent, root_game.color):
             children_list.append(MCTSNode(root_game=move.game, parent=parent))
+
+        if len(children_list) == 0:
+            return False
 
         parent.children = children_list
         return True
