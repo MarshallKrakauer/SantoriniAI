@@ -11,7 +11,10 @@ from math import sqrt, log
 from queue import Queue
 
 EXPLORATION_FACTOR = 0.5
+TURN_TIME = 30
 
+
+# Todo fix endgame, MCTS player is not making winning move (third level)
 
 class MCTSNode:
 
@@ -65,7 +68,7 @@ class MCTSNode:
                                                              new_game.color)
 
                         build_game.build_level(build[0], build[1], auto=True)
-
+                        build_game.is_winning_move()
                         return_li.append(MCTSNode(root_game=build_game, parent=node))
 
         return return_li
@@ -98,9 +101,14 @@ class TreeSearch:
         self.num_nodes = 0
         self.num_rollouts = 0
 
-    def search_tree(self, max_seconds=10):
+    def search_tree(self, max_seconds=TURN_TIME):
         """
         Search children nodes of tree.
+
+        Parameters
+        ----------
+        max_seconds : int
+            Amount of seconds MCTS algorithm searches for the best move.
         """
         start_time = dt.datetime.now()
         current_time = dt.datetime.now()
@@ -116,18 +124,17 @@ class TreeSearch:
         self.num_rollouts = num_rollouts
 
     def choose_simulation_node(self):
-        """
-        Choose the node to simulate from
-        """
+        """Choose a node from which to simulate a game"""
         node = self.root
-        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)  # also seen it hang here
+        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
         max_score = float('-inf')
         max_child_list = []
 
         i = 0  # counter exists to debug
+        # loop through potential children until we find a leaf node that doesn't permit further turns
         while len(node.children) > 0 and i < 1000:
             for child in node.children:
-                current_score = node.mcts_score  # This is where it hangs
+                current_score = node.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
                     max_score = current_score
@@ -137,11 +144,6 @@ class TreeSearch:
                 if i == 10000:
                     print("hitting break statement")
                     break
-
-            # obtain list of nodes with max value, pick one randomly
-            # if len(max_child_list) == 0:
-            #    print(self.root_game)
-
             node = random.choice(max_child_list)
 
             root_game = self.root_game.game_deep_copy(node.game, node.game.color)
@@ -166,26 +168,29 @@ class TreeSearch:
             bool: false if the game is over
         """
 
-        children_list = []
         if root_game.end:
             # don't expand a finished game
             return False
-        for move in parent.create_potential_moves(parent, root_game.color):
-            children_list.append(MCTSNode(root_game=move.game, parent=parent))
 
-        if len(children_list) == 0:
+        potential_moves = parent.create_potential_moves(parent, root_game.color)
+
+        if len(potential_moves) == 0:
             return False
 
-        parent.children = children_list
+        child_node_list = []
+        for move in potential_moves:
+            child_node_list.append(MCTSNode(root_game=move.game, parent=parent))
+
+        parent.children = child_node_list
         return True
 
     @staticmethod
     def simulate_random_game(root_game):
         """
-        Called 'roll out' in Monte Carlo Tree Search terminology
+        Find winner of simulated game
+        Called 'rollout' in Monte Carlo Tree Search terminology
 
-        This function currently has an awful control structure. Will fix after I have tested it
-        and know it works.
+        This function currently has an awful control structure. Will fix after further testing.
         Attributes
         ----------
             root_game : Game object
@@ -194,22 +199,29 @@ class TreeSearch:
         -------
             char : color that won the game
         """
+
+        # Initialize variables pre-loop to avoid terminal node related errors
         temp_node = MCTSNode(root_game=root_game, parent=None)
         potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
 
+        # If no children, the game is done
         if len(potential_game_list) == 0:
             return root_game.color
 
+        # Select the first gam choice before the loop
         rand_int = random.randint(0, len(potential_game_list) - 1)
         game_choice = potential_game_list[rand_int].game
         root_game = root_game.game_deep_copy(game_choice, game_choice.color)
 
+        # Play the game until we find a winner
         while not root_game.end:
             temp_node = MCTSNode(root_game=root_game, parent=temp_node)
             potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
             list_size = len(potential_game_list)
 
-            if list_size > 0:
+            if list_size == 0:  # this indicates we have reached the end of a game
+                return root_game.color
+            else:
                 rand_int = random.randint(0, list_size - 1)
                 game_choice = potential_game_list[rand_int].game
                 if game_choice.end:
@@ -217,8 +229,6 @@ class TreeSearch:
                 else:
                     root_game = root_game.game_deep_copy(game_choice, game_choice.color)
                     root_game.color = root_game.get_opponent_color(root_game)
-            else:
-                return root_game.color
 
         return root_game.color
 
@@ -247,11 +257,15 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
+            if child.game.is_winning_move():
+                print("WINNING MOVE SCORE: ", child.mcts_score)
             if child.mcts_score > max_node_score:
                 max_node_list = [child]
                 max_node_score = child.mcts_score
+                print("HIGHEST SCORE: ", child.mcts_score)
             elif child.mcts_score == max_node_score:
                 max_node_list.append(child)
+
         return random.choice(max_node_list)
 
     def get_tree_size(self):

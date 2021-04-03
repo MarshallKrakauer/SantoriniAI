@@ -1,10 +1,7 @@
 import random
 
-import minimax_node
-import path_finding
 import alpha_testing_MCTS
-import datetime as dt
-
+import minimax_node
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -42,7 +39,7 @@ class Game:
     """
 
     def __init__(self):
-        self.board = [[{'level': 0, 'occupant': 'O', 'active': False}
+        self.board = [[{'level': 1, 'occupant': 'O', 'active': False}
                        for i in range(5)] for j in range(5)]
         self.row = 0
         self.col = 0
@@ -101,7 +98,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def get_board_score(self, color='W', include_path_score = False):
+    def get_board_score(self, color='W', include_path_score=False):
         """
         Give numeric score to game.
         Gives a score to the board based on position of the pices
@@ -426,8 +423,8 @@ class Game:
         tree_depth : int
             Depth of the tree. How far to look ahead for creating potential moves
         """
-        #self.color = move_color
-        #self.check_move_available()
+        # self.color = move_color
+        # self.check_move_available()
         if self.end:
             return
 
@@ -465,11 +462,24 @@ class Game:
         mcts_game_tree.search_tree()
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
-        self.end = best_node.game.end
+
+        # self.end = best_node.game.end
 
         self.check_move_available()
         if not self.end:
             self.sub_turn = 'switch'
+
+    def is_winning_move(self, move_color=None):
+        if move_color is None:
+            move_color = self.color
+
+        for i, j in SPACE_LIST:
+            if self.board[i][j]['level'] == 3 and self.board[i][j]['occupant'] == move_color:
+                self.end = True
+                return True
+
+        #self.check_move_available()
+        return False
 
     @staticmethod
     def game_deep_copy(game, color):
