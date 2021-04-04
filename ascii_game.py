@@ -1,14 +1,16 @@
 """ASCII/text version of Santorini. Used to reduce overheard associated with Pygame."""
 
 import csv
+import sys
 
 import pandas as pd
-import datetime as dt
 
 import game
 import santorini_player
 
 PLAYER_ALGO = 'MCTS'  # alphabeta or MCTS
+
+LOG_INFO = False
 
 
 # Todo add human player possibility
@@ -46,14 +48,23 @@ def play_game(current_game, print_boards=True):
             white_turn = not white_turn
 
         if print_boards:
-            print(current_game.color, current_game, dt.datetime.now())
+            print(current_game)
     write_to_game_list(white_player, gray_player)
     print("This game's winner is...", current_game.color)
 
 
 def main():
-    new_game = game.Game()
-    play_game(new_game, True)
+    if LOG_INFO:
+        old_stdout = sys.stdout
+        logfile = open("endgame_testing.log", 'w')
+        sys.stdout = logfile
+        new_game = game.Game()
+        play_game(new_game, True)
+        sys.stdout = old_stdout
+        logfile.close()
+    else:
+        new_game = game.Game()
+        play_game(new_game, True)
 
 
 if __name__ == '__main__':

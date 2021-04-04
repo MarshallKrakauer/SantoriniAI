@@ -11,7 +11,7 @@ from math import sqrt, log
 from queue import Queue
 
 EXPLORATION_FACTOR = 0.5
-TURN_TIME = 30
+TURN_TIME = 20
 
 
 # Todo fix endgame, MCTS player is not making winning move (third level)
@@ -116,6 +116,8 @@ class TreeSearch:
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(root_game)
+            if node.game.color == 'G' and winning_color == 'W':
+                print(node.game.color, winning_color)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
@@ -235,13 +237,14 @@ class TreeSearch:
     @staticmethod
     def update_node_info(node, outcome):
 
-        reward = 0 if outcome == node.game.color else 1
-
+        reward = int(outcome == node.game.color)
         while node is not None:
             node.N += 1
             node.Q += reward
+            if node.game.color == 'G':
+                print(node.game.color, outcome, reward)
             node = node.parent  # traverse up the tree
-            reward = 0 if reward == 1 else 1
+            reward = int(not reward)  # switch reward for other color
 
     def get_best_move(self):
         """
@@ -262,7 +265,6 @@ class TreeSearch:
             if child.mcts_score > max_node_score:
                 max_node_list = [child]
                 max_node_score = child.mcts_score
-                print("HIGHEST SCORE: ", child.mcts_score)
             elif child.mcts_score == max_node_score:
                 max_node_list.append(child)
 

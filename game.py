@@ -39,7 +39,7 @@ class Game:
     """
 
     def __init__(self):
-        self.board = [[{'level': 1, 'occupant': 'O', 'active': False}
+        self.board = [[{'level': 0, 'occupant': 'O', 'active': False}
                        for i in range(5)] for j in range(5)]
         self.row = 0
         self.col = 0
@@ -453,6 +453,7 @@ class Game:
             Whose turn is it is. This will be the color moved
         """
         self.color = move_color
+        print("~~~~~~MOVE COLOR: ", move_color)
         self.check_move_available()
         if self.end:
             return
@@ -463,9 +464,9 @@ class Game:
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
 
-        # self.end = best_node.game.end
+        self.end = best_node.game.end
 
-        self.check_move_available()
+        #self.check_move_available()
         if not self.end:
             self.sub_turn = 'switch'
 
@@ -499,7 +500,6 @@ class Game:
             new game with same info as others and a new color
         """
         new_game = Game()
-        # print("deep copy", dt.datetime.now())
         other_board = game.board
 
         new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
