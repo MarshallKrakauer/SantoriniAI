@@ -3,9 +3,10 @@
 
 import pygame
 import pygame.freetype
+
+from button import Button
 from game import Game
 from santorini_player import SantoriniPlayer
-from button import Button
 
 # Define some colors
 BLACK = (0, 0, 0)
@@ -161,9 +162,13 @@ def choose_arrow_location(x_val, y_val):
 
 
 def get_title_screen_buttons():
-    """Create title screen buttons."""
-    return_dict = {'start': Button(
-        center_position=(400, 450),  # left,top
+    """Create title screen buttons.
+
+    Returns
+        dict: Container of all buttons needed to make title screen selection
+    """
+    return {'start': Button(
+        center_position=(400, 475),  # left,top
         font_size=75,
         bg_rgb=GREEN,
         text_rgb=BLACK,
@@ -180,51 +185,65 @@ def get_title_screen_buttons():
         bg_rgb=BLUE,
         text_rgb=GRAY,
         text='GRAY',
-        multiplier=1.2), 'white alphabeta': Button(
-        center_position=(200, 200),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='AI',
-        multiplier=1.2), 'gray alphabeta': Button(
-        center_position=(600, 200),
-        font_size=50,
-        bg_rgb=BLACK,
-        text_rgb=WHITE,
-        text='AI',
         multiplier=1.2), 'white human': Button(
-        center_position=(200, 300),
-        font_size=50,
+        center_position=(200, 200),
+        font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
         multiplier=1.2), 'gray human': Button(
-        center_position=(600, 300),
-        font_size=50,
+        center_position=(600, 200),
+        font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
+        multiplier=1.2), 'white minimax': Button(
+        center_position=(200, 300),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Minimax',
+        multiplier=1.2), 'gray minimax': Button(
+        center_position=(600, 300),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='Minimax',
+        multiplier=1.2), 'white MCTS': Button(
+        center_position=(200, 400),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='MCTS',
+        multiplier=1.2), 'gray MCTS': Button(
+        center_position=(600, 400),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='MCTS',
         multiplier=1.2)}
 
-    return return_dict
 
-
-def draw_title_screen_material(w_human_arrow, g_human_arrow, w_ai_arrow, g_ai_arrow, button_dict, counter):
+def draw_title_screen_material(arrow_dict, button_dict, counter):
     # Choose where to show red arrow for white piece
-    if w_human_arrow:
+    if arrow_dict['white minimax']:
         choose_arrow_location(30, 200 - 24)
-    elif w_ai_arrow:
+    elif arrow_dict['white human']:
         choose_arrow_location(30, 100 - 24)
+    elif arrow_dict['white MCTS']:
+        choose_arrow_location(30, 300 - 24)
 
     # Choose where to show red arrow for gray piece
-    if g_human_arrow:
+    if arrow_dict['gray minimax']:
         choose_arrow_location(410, 200 - 24)
-    elif g_ai_arrow:
+    elif arrow_dict['gray human']:
         choose_arrow_location(410, 100 - 24)
+    elif arrow_dict['gray MCTS']:
+        choose_arrow_location(410, 300 - 24)
 
     # Show start button if all choices have been made
-    if ((g_human_arrow | g_ai_arrow) and
-            (w_human_arrow | w_ai_arrow) and
+    if ((arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS']) and
+            (arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS']) and
             counter % 2500 < 1500):
         button_dict['start'].draw()
 
@@ -239,14 +258,15 @@ def title_screen():
     counter = 0
 
     button_dict = get_title_screen_buttons()
+    arrow_dict = {'white human': False, 'white minimax': False, 'white MCTS': False,
+                  'gray human': False, 'gray minimax': False, 'gray MCTS': False}
+    end_loop = False
 
-    (w_human_arrow, w_ai_arrow, g_human_arrow,
-     g_ai_arrow, end_loop) = [False] * 5
     while not end_loop:
         SCREEN.fill(LIGHT_GREEN)
 
         # Update arrows + show start screen if it's ready
-        draw_title_screen_material(w_human_arrow, g_human_arrow, w_ai_arrow, g_ai_arrow, button_dict, counter)
+        draw_title_screen_material(arrow_dict, button_dict, counter)
 
         for event in pygame.event.get():
             pos = pygame.mouse.get_pos()
@@ -259,29 +279,43 @@ def title_screen():
             # Move red arrow based on selection for white
             if (button_dict['white human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
-                w_human_arrow = True
-                w_ai_arrow = False
-            elif (button_dict['white alphabeta'].check_press(pos) and
+                arrow_dict['white human'] = True
+                arrow_dict['white minimax'] = False
+                arrow_dict['white MCTS'] = False
+            elif (button_dict['white minimax'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
-                w_human_arrow = False
-                w_ai_arrow = True
+                arrow_dict['white human'] = False
+                arrow_dict['white minimax'] = True
+                arrow_dict['white MCTS'] = False
+            elif (button_dict['white MCTS'].check_press(pos) and
+                  event.type == pygame.MOUSEBUTTONDOWN):
+                arrow_dict['white human'] = False
+                arrow_dict['white minimax'] = False
+                arrow_dict['white MCTS'] = True
 
-            # Move red arrow based on selection for gray
+            # Move red arrow based on selection for white
             if (button_dict['gray human'].check_press(pos) and
                     event.type == pygame.MOUSEBUTTONDOWN):
-                g_human_arrow = True
-                g_ai_arrow = False
-            elif (button_dict['gray alphabeta'].check_press(pos) and
+                arrow_dict['gray human'] = True
+                arrow_dict['gray minimax'] = False
+                arrow_dict['gray MCTS'] = False
+            elif (button_dict['gray minimax'].check_press(pos) and
                   event.type == pygame.MOUSEBUTTONDOWN):
-                g_human_arrow = False
-                g_ai_arrow = True
+                arrow_dict['gray human'] = False
+                arrow_dict['gray minimax'] = True
+                arrow_dict['gray MCTS'] = False
+            elif (button_dict['gray MCTS'].check_press(pos) and
+                  event.type == pygame.MOUSEBUTTONDOWN):
+                arrow_dict['gray human'] = False
+                arrow_dict['gray minimax'] = False
+                arrow_dict['gray MCTS'] = True
 
             # If both choices have been made, show the start button
-            if ((g_human_arrow | g_ai_arrow) and
-                    (w_human_arrow | w_ai_arrow)):
+            if ((arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS']) and
+                    (arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS'])):
                 button_dict['start'].update(pos)
 
-            # If person clicks start, star the game!
+            # If person clicks start, start the game!
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if button_dict['start'].check_press(pos):
                     end_loop = True
@@ -293,16 +327,22 @@ def title_screen():
         counter += 1
         pygame.display.flip()
 
-    # Choose what to return
-    if w_human_arrow:
-        white_player = 'human'
-    else:
-        white_player = 'alphabeta'
+    # default option if title screen is skipped (not currently possible, could be in the future)
+    white_player, gray_player = 'alphabeta', 'alphabeta'
 
-    if g_human_arrow:
+    if arrow_dict['white human']:
+        white_player = 'human'
+    elif arrow_dict['white minimax']:
+        white_player = 'alphabeta'
+    elif arrow_dict['white MCTS']:
+        white_player = 'MCTS'
+
+    if arrow_dict['gray human']:
         gray_player = 'human'
-    else:
+    elif arrow_dict['gray minimax']:
         gray_player = 'alphabeta'
+    elif arrow_dict['gray MCTS']:
+        gray_player = 'MCTS'
 
     return {'W': white_player, 'G': gray_player}
 
@@ -344,7 +384,7 @@ def play_game(white_player, gray_player):
         # Special conditions
 
         # AI player plays game
-        if not stop_game and current_player.player_type == 'alphabeta':
+        if not stop_game and (current_player.player_type == 'alphabeta' or current_player.player_type == 'MCTS'):
             thinking(current_player)
             if show_board:
                 current_player.play_turn()
