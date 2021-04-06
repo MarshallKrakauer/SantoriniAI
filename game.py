@@ -1,6 +1,6 @@
 import random
 
-import alpha_testing_MCTS
+import MCTS
 import minimax_node
 
 SYS_RANDOM = random.SystemRandom()
@@ -8,8 +8,6 @@ SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 3
 METHOD = 'MINIMAX'
 
-
-# Todo - test Monte Carlo Tree Search in game.py
 # Todo - add tensorflow reinforcement learning
 
 class Game:
@@ -57,8 +55,7 @@ class Game:
         return_val : str
             ASCII represntation of the board
         """
-        return_val = ''  # 'score: ' + str(self.evaluate_board()) + ' \n'
-        return_val += "    x0 x1 x2 x3 x4\n"
+        return_val = "    x0 x1 x2 x3 x4\n"
         return_val += "    --------------\n"
         for i in range(5):
             for j in range(5):
@@ -68,7 +65,7 @@ class Game:
                                str(self.board[j][i]['occupant']) +
                                ' ')
             return_val += '\n'
-        return return_val
+        return return_val[:-1]
 
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
@@ -459,7 +456,7 @@ class Game:
             return
 
         game_copy = self.game_deep_copy(self, move_color)
-        mcts_game_tree = alpha_testing_MCTS.TreeSearch(game_copy)
+        mcts_game_tree = MCTS.TreeSearch(game_copy)
         mcts_game_tree.search_tree()
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board

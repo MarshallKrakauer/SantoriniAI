@@ -14,8 +14,6 @@ EXPLORATION_FACTOR = 0.5
 TURN_TIME = 20
 
 
-# Todo fix endgame, MCTS player is not making winning move (third level)
-
 class MCTSNode:
 
     def __init__(self, root_game, parent):
@@ -116,8 +114,6 @@ class TreeSearch:
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(root_game)
-            if node.game.color == 'G' and winning_color == 'W':
-                print(node.game.color, winning_color)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
@@ -132,7 +128,7 @@ class TreeSearch:
         max_score = float('-inf')
         max_child_list = []
 
-        i = 0  # counter exists to debug
+        i = 0  # here to cut off potential endless loops
         # loop through potential children until we find a leaf node that doesn't permit further turns
         while len(node.children) > 0 and i < 1000:
             for child in node.children:
@@ -143,9 +139,6 @@ class TreeSearch:
                 elif current_score == max_score:
                     max_child_list.append(child)
                 i += 1
-                if i == 10000:
-                    print("hitting break statement")
-                    break
             node = random.choice(max_child_list)
 
             root_game = self.root_game.game_deep_copy(node.game, node.game.color)
@@ -241,8 +234,6 @@ class TreeSearch:
         while node is not None:
             node.N += 1
             node.Q += reward
-            if node.game.color == 'G':
-                print(node.game.color, outcome, reward)
             node = node.parent  # traverse up the tree
             reward = int(not reward)  # switch reward for other color
 
@@ -260,8 +251,6 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
-            if child.game.is_winning_move():
-                print("WINNING MOVE SCORE: ", child.mcts_score)
             if child.mcts_score > max_node_score:
                 max_node_list = [child]
                 max_node_score = child.mcts_score
