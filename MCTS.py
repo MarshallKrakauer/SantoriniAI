@@ -10,8 +10,8 @@ import random
 from math import sqrt, log
 from queue import Queue
 
-EXPLORATION_FACTOR = 0.5
-TURN_TIME = 20
+EXPLORATION_FACTOR = 0.8
+TURN_TIME = 40
 
 
 class MCTSNode:

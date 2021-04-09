@@ -37,8 +37,8 @@ def write_to_game_list(white_player, gray_player):
 
 def play_game(current_game, print_boards=True):
     white_turn = True
-    gray_player = santorini_player.SantoriniPlayer(game=current_game, color='G', player_type=PLAYER_ALGO)
-    white_player = santorini_player.SantoriniPlayer(game=current_game, color='W', player_type=PLAYER_ALGO)
+    gray_player = santorini_player.SantoriniPlayer(game=current_game, color='G', player_type='alphabeta')
+    white_player = santorini_player.SantoriniPlayer(game=current_game, color='W', player_type='MCTS')
     while not current_game.end:
         if white_turn:
             white_player.play_turn()
