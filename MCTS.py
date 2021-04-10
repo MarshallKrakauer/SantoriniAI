@@ -9,9 +9,10 @@ import datetime as dt
 import random
 from math import sqrt, log
 from queue import Queue
+import time
 
-EXPLORATION_FACTOR = 0.8
-TURN_TIME = 40
+EXPLORATION_FACTOR = 1
+TURN_TIME = 25
 
 
 class MCTSNode:
@@ -92,7 +93,6 @@ class MCTSNode:
 class TreeSearch:
 
     def __init__(self, root_game):
-        # self.node_count = self.get_tree_size()
         self.root_game = root_game.game_deep_copy(root_game, root_game.color)
         self.root = MCTSNode(self.root_game, None)
         self.run_time_seconds = 0
@@ -203,9 +203,8 @@ class TreeSearch:
         if len(potential_game_list) == 0:
             return root_game.color
 
-        # Select the first gam choice before the loop
-        rand_int = random.randint(0, len(potential_game_list) - 1)
-        game_choice = potential_game_list[rand_int].game
+        # Select the first game choice before the loop
+        game_choice = random.choice(potential_game_list).game
         root_game = root_game.game_deep_copy(game_choice, game_choice.color)
 
         # Play the game until we find a winner
@@ -215,7 +214,7 @@ class TreeSearch:
             list_size = len(potential_game_list)
 
             if list_size == 0:  # this indicates we have reached the end of a game
-                return root_game.color
+                return root_game.get_opponent_color(root_game.color)
             else:
                 rand_int = random.randint(0, list_size - 1)
                 game_choice = potential_game_list[rand_int].game
@@ -223,13 +222,10 @@ class TreeSearch:
                     return game_choice.color
                 else:
                     root_game = root_game.game_deep_copy(game_choice, game_choice.color)
-                    root_game.color = root_game.get_opponent_color(root_game)
-
-        return root_game.color
+                    root_game.color = root_game.get_opponent_color(root_game.color)
 
     @staticmethod
     def update_node_info(node, outcome):
-
         reward = int(outcome == node.game.color)
         while node is not None:
             node.N += 1
@@ -252,6 +248,7 @@ class TreeSearch:
 
         for child in self.root.children:
             if child.mcts_score > max_node_score:
+                print(child.game)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
