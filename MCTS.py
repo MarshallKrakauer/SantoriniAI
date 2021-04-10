@@ -128,9 +128,9 @@ class TreeSearch:
         max_score = float('-inf')
         max_child_list = []
 
-        i = 0  # here to cut off potential endless loops
+        # i = 0  # here to cut off potential endless loops
         # loop through potential children until we find a leaf node that doesn't permit further turns
-        while len(node.children) > 0 and i < 1000:
+        while len(node.children) > 0:
             for child in node.children:
                 current_score = node.mcts_score
                 if current_score > max_score:
@@ -138,7 +138,7 @@ class TreeSearch:
                     max_score = current_score
                 elif current_score == max_score:
                     max_child_list.append(child)
-                i += 1
+                # i += 1
             node = random.choice(max_child_list)
 
             root_game = self.root_game.game_deep_copy(node.game, node.game.color)
@@ -248,7 +248,6 @@ class TreeSearch:
 
         for child in self.root.children:
             if child.mcts_score > max_node_score:
-                print(child.game)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
