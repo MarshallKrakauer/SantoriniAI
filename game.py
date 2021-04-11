@@ -558,6 +558,12 @@ class Game:
 
         return other_color
 
+    def game_has_cap(self):
+        for i, j in SPACE_LIST:
+            if self.board[i][j]['level'] == 4:
+                return True
+        return False
+
 
 def get_adjacent(x_val, y_val):
     """

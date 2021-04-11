@@ -11,8 +11,8 @@ from math import sqrt, log
 from queue import Queue
 import time
 
-EXPLORATION_FACTOR = 1
-TURN_TIME = 25
+EXPLORATION_FACTOR = 0.5
+TURN_TIME = 40
 
 
 class MCTSNode:
@@ -21,7 +21,6 @@ class MCTSNode:
 
         self.game = root_game
         self.parent = parent
-        self.visits = 0
         self.children = []
         self.N = 0
         self.Q = 0
@@ -84,10 +83,7 @@ class MCTSNode:
         if self.N == 0:  # what to do if node hasn't been visited
             return float('inf')
         else:
-            if self.parent is not None:
-                return self.Q / self.N + exploration_factor * sqrt(2 * log(self.parent.N) / self.N)
-            else:
-                return self.Q / self.N + exploration_factor * sqrt(2 * log(1) / self.N)
+            return self.Q / self.N + exploration_factor * sqrt(log(self.parent.N) / self.N)
 
 
 class TreeSearch:
@@ -132,7 +128,7 @@ class TreeSearch:
         # loop through potential children until we find a leaf node that doesn't permit further turns
         while len(node.children) > 0:
             for child in node.children:
-                current_score = node.mcts_score
+                current_score = child.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
                     max_score = current_score
@@ -247,10 +243,14 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
+            if child.game.game_has_cap():
+                print("CAP GAME:\n", child.game, child.mcts_score)
             if child.mcts_score > max_node_score:
+                print("BEST GAME:\n", child.game, child.mcts_score)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
+                print("BEST GAME:\n", child.game, child.mcts_score)
                 max_node_list.append(child)
 
         return random.choice(max_node_list)
