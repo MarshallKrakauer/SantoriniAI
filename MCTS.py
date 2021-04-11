@@ -9,10 +9,10 @@ import datetime as dt
 import random
 from math import sqrt, log
 from queue import Queue
-import time
+import time  # used for debugging
 
-EXPLORATION_FACTOR = 0.5
-TURN_TIME = 40
+EXPLORATION_FACTOR = 1
+TURN_TIME = 20
 
 
 class MCTSNode:
@@ -124,7 +124,6 @@ class TreeSearch:
         max_score = float('-inf')
         max_child_list = []
 
-        # i = 0  # here to cut off potential endless loops
         # loop through potential children until we find a leaf node that doesn't permit further turns
         while len(node.children) > 0:
             for child in node.children:
@@ -134,7 +133,8 @@ class TreeSearch:
                     max_score = current_score
                 elif current_score == max_score:
                     max_child_list.append(child)
-                # i += 1
+
+            # If multiple nodes have the max score, we randomly select one
             node = random.choice(max_child_list)
 
             root_game = self.root_game.game_deep_copy(node.game, node.game.color)
@@ -243,14 +243,10 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
-            if child.game.game_has_cap():
-                print("CAP GAME:\n", child.game, child.mcts_score)
             if child.mcts_score > max_node_score:
-                print("BEST GAME:\n", child.game, child.mcts_score)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
-                print("BEST GAME:\n", child.game, child.mcts_score)
                 max_node_list.append(child)
 
         return random.choice(max_node_list)
