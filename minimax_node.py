@@ -92,7 +92,6 @@ class MiniMaxNode:
                             score=new_score,
                             parent=node,
                             children=[]))
-
         return return_li
 
     @staticmethod

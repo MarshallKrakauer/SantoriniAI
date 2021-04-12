@@ -93,15 +93,20 @@ class MCTSNode:
         move_num = 0
         color = root_game.color
         while not found_winning_move and move_num < len(potential_game_list):
-            if potential_game_list[move_num].game.is_winning_move(color):
+            curr_game = potential_game_list[move_num].game # .is_winning_move(color)
+            has_won = curr_game.is_winning_move(color)
+            if has_won:
                 found_winning_move = True
                 game_choice = potential_game_list[move_num].game
+                game_choice.end = True
+
             move_num += 1
 
         if not found_winning_move:
             game_choice = random.choice(potential_game_list).game
 
         return game_choice
+
 
 class TreeSearch:
 
@@ -124,9 +129,10 @@ class TreeSearch:
         start_time = dt.datetime.now()
         current_time = dt.datetime.now()
         num_rollouts = 0
+        # while num_rollouts < 10000:
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
-            winning_color = self.simulate_random_game(node)
+            winning_color = self.simulate_random_game(node, root_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
@@ -142,7 +148,8 @@ class TreeSearch:
         max_child_list = []
 
         # loop through potential children until we find a leaf node that doesn't permit further turns
-        while len(node.children) > 0:
+        i = 0
+        while len(node.children) > 0 and i < 1000:
             for child in node.children:
                 current_score = child.mcts_score
                 if current_score > max_score:
@@ -153,14 +160,14 @@ class TreeSearch:
 
             # If multiple nodes have the max score, we randomly select one
             node = random.choice(max_child_list)
-            root_game = self.root_game.game_deep_copy(node.game, node.game.color)
-
+            root_game = self.root_game.game_deep_copy(node.game, node.game.get_opponent_color(node.game.color))
+            i += 1
             if node.N == 0:
                 return node, root_game
 
         if self.add_children_to_game_tree(node, root_game):
             node = random.choice(node.children)
-            root_game = self.root_game.game_deep_copy(node.game, node.game.color)
+            root_game = self.root_game.game_deep_copy(node.game, root_game.get_opponent_color(node.game.color))
 
         return node, root_game
 
@@ -192,7 +199,7 @@ class TreeSearch:
         return True
 
     @staticmethod
-    def simulate_random_game(root_node):
+    def simulate_random_game(node, root_game):
         """
         Find winner of simulated game
         Called 'rollout' in Monte Carlo Tree Search terminology
@@ -200,7 +207,7 @@ class TreeSearch:
         This function currently has an awful control structure. Will fix after further testing.
         Attributes
         ----------
-            root_node : Game object
+            root_game : Game object
 
         Returns
         -------
@@ -208,22 +215,13 @@ class TreeSearch:
         """
 
         # Initialize variables pre-loop to avoid terminal node related errors
-        root_game = root_node.game
-        temp_node = MCTSNode(root_game=root_game, parent=root_node)
+        temp_node = MCTSNode(root_game=root_game, parent=node)
         potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
-
         # If no children, the game is done
-        if len(potential_game_list) == 0:
-            return root_game.color
+        if len(potential_game_list) == 0 or root_game.end:
+            return root_game.get_opponent_color(root_game.color)
 
-        # Select the first game choice before the loop
-        game_choice = temp_node.choose_child_game(root_game, potential_game_list)
-        root_game = root_game.game_deep_copy(game_choice, game_choice.color)
-
-        # Play the game until we find a winner
         while not root_game.end:
-            temp_node = MCTSNode(root_game=root_game, parent=temp_node)
-            potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
             list_size = len(potential_game_list)
 
             if list_size == 0:  # this indicates we have reached the end of a game
@@ -236,6 +234,10 @@ class TreeSearch:
                 else:
                     root_game = root_game.game_deep_copy(game_choice, game_choice.color)
                     root_game.color = root_game.get_opponent_color(root_game.color)
+                    temp_node = MCTSNode(root_game=root_game, parent=node)
+                    potential_game_list = temp_node.create_potential_moves(temp_node, root_game.color)
+
+        return root_game.color
 
     @staticmethod
     def update_node_info(node, outcome):
@@ -260,8 +262,8 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
+
             if child.game.game_has_cap():
-                time.sleep(5)
                 print("~~~~~CAP MOVE:\n", child.game, child.mcts_score, child.N, child.Q)
             elif child.mcts_score >= max_node_score:
                 print("BEST MOVE:\n", child.game, child.mcts_score, child.N, child.Q)
