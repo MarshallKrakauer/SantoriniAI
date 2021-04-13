@@ -57,6 +57,8 @@ class MCTSNode:
                 new_game.select_worker(move_color, i, j)
 
                 new_game.move_worker(space[0], space[1], auto=True)
+                if new_game.is_winning_move():
+                    return [MCTSNode(root_game=new_game, parent=node)]
                 if new_game.end:
                     return_li.append(MCTSNode(root_game=new_game, parent=node))
                 else:
@@ -66,9 +68,7 @@ class MCTSNode:
                                                              new_game.color)
 
                         build_game.build_level(build[0], build[1], auto=True)
-                        # if build_game.is_winning_move(move_color):
-                        #     build_game.end = True
-                        #     return [build_game]
+
                         return_li.append(MCTSNode(root_game=build_game, parent=node))
         return return_li
 
@@ -93,7 +93,7 @@ class MCTSNode:
         move_num = 0
         color = root_game.color
         while not found_winning_move and move_num < len(potential_game_list):
-            curr_game = potential_game_list[move_num].game # .is_winning_move(color)
+            curr_game = potential_game_list[move_num].game
             has_won = curr_game.is_winning_move(color)
             if has_won:
                 found_winning_move = True
@@ -129,7 +129,6 @@ class TreeSearch:
         start_time = dt.datetime.now()
         current_time = dt.datetime.now()
         num_rollouts = 0
-        # while num_rollouts < 10000:
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(node, root_game)
@@ -262,12 +261,6 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
-
-            if child.game.game_has_cap():
-                print("~~~~~CAP MOVE:\n", child.game, child.mcts_score, child.N, child.Q)
-            elif child.mcts_score >= max_node_score:
-                print("BEST MOVE:\n", child.game, child.mcts_score, child.N, child.Q)
-
             if child.mcts_score > max_node_score:
                 max_node_list = [child]
                 max_node_score = child.mcts_score
