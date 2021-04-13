@@ -12,7 +12,7 @@ from queue import Queue
 import time
 
 EXPLORATION_FACTOR = 1
-TURN_TIME = 20
+TURN_TIME = 30
 
 
 class MCTSNode:
@@ -24,6 +24,9 @@ class MCTSNode:
         self.children = []
         self.N = 0
         self.Q = 0
+
+    def __repr__(self):
+        return str(self.game) + '\nN:' + str(self.N) + ' Q:' + str(self.Q) + ' score: ' + str(self.mcts_score)
 
     @staticmethod
     def create_potential_moves(node, move_color):
@@ -135,7 +138,7 @@ class TreeSearch:
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
-
+        print(num_rollouts)
         self.run_time_seconds = (current_time - start_time).total_seconds()
         self.num_rollouts = num_rollouts
 
@@ -261,10 +264,13 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
+
             if child.mcts_score > max_node_score:
+                # print(child)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
+                # print(child)
                 max_node_list.append(child)
 
         return random.choice(max_node_list)
