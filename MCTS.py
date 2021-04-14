@@ -9,7 +9,6 @@ import datetime as dt
 import random
 from math import sqrt, log
 from queue import Queue
-import time
 
 EXPLORATION_FACTOR = 1
 TURN_TIME = 30
@@ -92,9 +91,11 @@ class MCTSNode:
     @staticmethod
     def choose_child_game(root_game, potential_game_list):
         """Choose child game in node simulation"""
+        game_choice = root_game
         found_winning_move = False
         move_num = 0
         color = root_game.color
+
         while not found_winning_move and move_num < len(potential_game_list):
             curr_game = potential_game_list[move_num].game
             has_won = curr_game.is_winning_move(color)
