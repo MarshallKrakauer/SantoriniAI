@@ -1,6 +1,5 @@
 """
-Implementation of Monte Carlo Tree Search. I will have to merge this with my Node class at some point, since they
-serve overlapping purposes.
+Implementation of Monte Carlo Tree Search. Currently working on improving early game moves.
 
 In process of being built, code will not currently run.
 """
