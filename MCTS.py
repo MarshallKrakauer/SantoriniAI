@@ -137,7 +137,7 @@ class TreeSearch:
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
-        print(num_rollouts)
+        print("rollouts:", num_rollouts)
         self.run_time_seconds = (current_time - start_time).total_seconds()
         self.num_rollouts = num_rollouts
 

@@ -67,6 +67,27 @@ class Game:
             return_val += '\n'
         return return_val[:-1]
 
+    def get_game_from_key(self, game_str):
+        self.end = bool(int(game_str[0]))
+        self.color = game_str[1]
+        row = 0
+        col = 0
+        for i in range(2,52,2):
+            self.board[row][col]['occupant'] = game_str[i]
+            self.board[row][col]['level'] = int(game_str[i + 1])
+            col += 1
+            if col == 5:
+                col = 0
+                row += 1
+
+    @property
+    def dict_key_rep(self):
+        """Creates representation of game that can act as key in dictionary"""
+        game_str = str(int(self.end)) + str(self.color)
+        for i, j in SPACE_LIST:
+            game_str += self.board[i][j]['occupant'] + str(self.board[i][j]['level'])
+        return game_str
+
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
         potential_li = []  # list of potential spaces
