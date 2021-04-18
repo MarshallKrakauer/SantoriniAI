@@ -1,5 +1,4 @@
 import random
-
 import MCTS
 import minimax_node
 
@@ -79,6 +78,7 @@ class Game:
             if col == 5:
                 col = 0
                 row += 1
+        return self
 
     @property
     def dict_key_rep(self):
@@ -87,6 +87,16 @@ class Game:
         for i, j in SPACE_LIST:
             game_str += self.board[i][j]['occupant'] + str(self.board[i][j]['level'])
         return game_str
+
+    @property
+    def dict_repr(self):
+        return {'board':self.board, 'color' : self.color, 'end': self.end}
+
+    def get_dict_repr(self, game_dict):
+        self.board = game_dict['board']
+        self.color = game_dict['color']
+        self.end = game_dict['end']
+        return self
 
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
@@ -481,7 +491,6 @@ class Game:
         mcts_game_tree.search_tree()
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
-
         self.end = best_node.game.end
 
         #self.check_move_available()
