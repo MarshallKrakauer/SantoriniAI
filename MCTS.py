@@ -17,6 +17,7 @@ TURN_TIME = 30
 # Exists to save time from hefty potential moves process
 move_dict = {}
 
+
 class MCTSNode:
 
     def __init__(self, root_game, parent):
@@ -143,7 +144,7 @@ class TreeSearch:
         current_time = dt.datetime.now()
         num_rollouts = 0
         global move_dict
-        move_dict = {} # global variable reset every time we look for best node
+        move_dict = {}  # global variable reset every time we look for best node
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(node, root_game)
