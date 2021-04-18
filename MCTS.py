@@ -8,9 +8,14 @@ import datetime as dt
 import random
 from math import sqrt, log
 from queue import Queue
+import game
 
 EXPLORATION_FACTOR = 1
 TURN_TIME = 30
+
+# Global variable, stores list of moves with corresponding potential moves
+# Exists to save time from hefty potential moves process
+move_dict = {}
 
 
 class MCTSNode:
@@ -42,36 +47,43 @@ class MCTSNode:
         return_li : list
             Children of that node
         """
-        return_li = []
+        node.game.color = move_color
+        try:
+            moves = move_dict[node.game.dict_key_rep]
+            temp_game = game.Game()
+            return [MCTSNode(temp_game.get_dict_repr(move), parent=node) for move in iter(moves)]
+        except KeyError:
+            potential_move_li = []
+            if node.game.end:
+                return potential_move_li
+            # Check both of the spaces occupied by the player
+            for spot in [(i, j) for i in range(5) for j in range(5) if
+                         node.game.board[i][j]['occupant'] == move_color]:
+                i, j = spot
+                # check each possible move
+                for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+                    new_game = node.game.game_deep_copy(node.game, move_color)
+                    new_game.select_worker(move_color, i, j)
 
-        if node.game.end:
-            return return_li
-        # Check both of the spaces occupied by the player
-        for spot in [(i, j) for i in range(5) for j in range(5) if
-                     node.game.board[i][j]['occupant'] == move_color]:
-            i, j = spot
-            # check each possible move
+                    new_game.move_worker(space[0], space[1], auto=True)
 
-            for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+                    # If we find a winning moves, return only that
+                    # As such, this assumes that a player will always make a winning move when possible
+                    if new_game.is_winning_move():
+                        potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
+                        move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
+                        return potential_move_li
+                    else:
+                        # given a legal move, check for each possible build
+                        for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+                            build_game = new_game.game_deep_copy(new_game,
+                                                                 new_game.color)
 
-                new_game = node.game.game_deep_copy(node.game, move_color)
-                new_game.select_worker(move_color, i, j)
+                            build_game.build_level(build[0], build[1], auto=True)
 
-                new_game.move_worker(space[0], space[1], auto=True)
-                if new_game.is_winning_move():
-                    return [MCTSNode(root_game=new_game, parent=node)]
-                if new_game.end:
-                    return_li.append(MCTSNode(root_game=new_game, parent=node))
-                else:
-                    # given a legal move, check for each possible build
-                    for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
-                        build_game = new_game.game_deep_copy(new_game,
-                                                             new_game.color)
-
-                        build_game.build_level(build[0], build[1], auto=True)
-
-                        return_li.append(MCTSNode(root_game=build_game, parent=node))
-        return return_li
+                            potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
+            move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
+            return potential_move_li
 
     @property
     def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
@@ -94,7 +106,7 @@ class MCTSNode:
         found_winning_move = False
         move_num = 0
         color = root_game.color
-
+        game_choice = root_game
         while not found_winning_move and move_num < len(potential_game_list):
             curr_game = potential_game_list[move_num].game
             has_won = curr_game.is_winning_move(color)
@@ -132,13 +144,15 @@ class TreeSearch:
         start_time = dt.datetime.now()
         current_time = dt.datetime.now()
         num_rollouts = 0
+        global move_dict
+        move_dict = {}  # global variable reset every time we look for best node
         while (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(node, root_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
-        print(num_rollouts)
+        print("rollouts:", num_rollouts, 'moves', len(move_dict))
         self.run_time_seconds = (current_time - start_time).total_seconds()
         self.num_rollouts = num_rollouts
 
@@ -264,7 +278,6 @@ class TreeSearch:
             return None
 
         for child in self.root.children:
-
             if child.mcts_score > max_node_score:
                 # print(child)
                 max_node_list = [child]
@@ -273,7 +286,9 @@ class TreeSearch:
                 # print(child)
                 max_node_list.append(child)
 
-        return random.choice(max_node_list)
+        game_choice = random.choice(max_node_list)
+
+        return game_choice
 
     def get_tree_size(self):
         node_queue = Queue()
