@@ -10,12 +10,14 @@ from math import sqrt, log
 from queue import Queue
 import game
 
-EXPLORATION_FACTOR = 1
+EXPLORATION_FACTOR = 1.5
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
 # Exists to save time from hefty potential moves process
 move_dict = {}
+
+random.seed(dt.datetime.now().microsecond)  # set seed
 
 
 class MCTSNode:
@@ -279,11 +281,11 @@ class TreeSearch:
 
         for child in self.root.children:
             if child.mcts_score > max_node_score:
-                # print(child)
+                print(child)
                 max_node_list = [child]
                 max_node_score = child.mcts_score
             elif child.mcts_score == max_node_score:
-                # print(child)
+                print(child)
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
