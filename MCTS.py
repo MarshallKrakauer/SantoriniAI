@@ -10,7 +10,7 @@ from math import sqrt, log
 from queue import Queue
 import game
 
-EXPLORATION_FACTOR = 1.5
+EXPLORATION_FACTOR = 5
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -31,7 +31,9 @@ class MCTSNode:
         self.Q = 0
 
     def __repr__(self):
-        return str(self.game) + '\nN:' + str(self.N) + ' Q:' + str(self.Q) + ' score: ' + str(self.mcts_score)
+        return (str(self.game) + '\n' + str(self.Q) + '/' + str(self.N) + ' ' + str(round(100 * self.Q / self.N, 1)) +
+                '%, score: ' + str(round(self.mcts_score, 6))
+                )
 
     @staticmethod
     def create_potential_moves(node, move_color):
@@ -120,6 +122,7 @@ class MCTSNode:
             move_num += 1
 
         if not found_winning_move:
+            random.seed(dt.datetime.now().microsecond)
             game_choice = random.choice(potential_game_list).game
 
         return game_choice
@@ -278,8 +281,9 @@ class TreeSearch:
         max_node_score = float('-inf')
         if self.root_game.end:
             return None
-
+        i = 0
         for child in self.root.children:
+            i += 1
             if child.mcts_score > max_node_score:
                 print(child)
                 max_node_list = [child]
@@ -287,7 +291,7 @@ class TreeSearch:
             elif child.mcts_score == max_node_score:
                 print(child)
                 max_node_list.append(child)
-
+        print(i)
         game_choice = random.choice(max_node_list)
 
         return game_choice
