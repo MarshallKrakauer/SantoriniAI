@@ -184,8 +184,6 @@ class TreeSearch:
             node = random.choice(max_child_list)
             root_game = node.game.game_deep_copy(node.game, node.game.get_opponent_color(node.game.color))
 
-
-
             i += 1
 
             if node.N == 0:
@@ -245,7 +243,7 @@ class TreeSearch:
         potential_game_list = temp_node.create_potential_moves(node, root_game.color)
         # If no children, the game is done
         if len(potential_game_list) == 0 or root_game.end:
-            return root_game.get_opponent_color(root_game.color)
+            return root_game.color
 
         while not root_game.end:
             list_size = len(potential_game_list)
