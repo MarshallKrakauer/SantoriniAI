@@ -46,15 +46,6 @@ class Game:
         self.message = ''
         self.color = 'W'
 
-    @property
-    def dict_key_representation(self):
-        """Representation of game used for accessing/storing in dict"""
-        return_str = self.color
-        for i,j in SPACE_LIST:
-            return_str += str(self.board[i][j]['level']) + self.board[i][j]['occupant']
-
-        return return_str
-
     def __str__(self):
         """
         Create ASCII representation of game state.
