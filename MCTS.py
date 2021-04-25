@@ -10,7 +10,7 @@ from math import sqrt, log
 from queue import Queue
 import game
 
-EXPLORATION_FACTOR = 1
+EXPLORATION_FACTOR = 1.4  # square root of 2
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -121,7 +121,6 @@ class MCTSNode:
             move_num += 1
 
         if not found_winning_move:
-            random.seed(dt.datetime.now().microsecond)
             game_choice = random.choice(potential_game_list).game
 
         return game_choice
@@ -155,7 +154,6 @@ class TreeSearch:
             winning_color = self.simulate_random_game(node, root_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
-            print(num_rollouts)
             current_time = dt.datetime.now()
         print("rollouts:", num_rollouts, 'moves', len(move_dict))
         self.run_time_seconds = (current_time - start_time).total_seconds()
