@@ -11,7 +11,7 @@ from queue import Queue
 import game
 
 EXPLORATION_FACTOR = 1.4  # square root of 2
-TURN_TIME = 45
+TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
 # Exists to save time from hefty potential moves process
