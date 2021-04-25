@@ -10,7 +10,7 @@ from math import sqrt, log
 from queue import Queue
 import game
 
-EXPLORATION_FACTOR = 0.5
+EXPLORATION_FACTOR = 1.4
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -150,7 +150,7 @@ class TreeSearch:
         num_rollouts = 0
         global move_dict
         move_dict = {}  # global variable reset every time we look for best node
-        while (current_time - start_time).total_seconds() < max_seconds:
+        while num_rollouts < 10000 and (current_time - start_time).total_seconds() < max_seconds:
             node, root_game = self.choose_simulation_node()
             winning_color = self.simulate_random_game(node, root_game)
             self.update_node_info(node, winning_color)
@@ -165,7 +165,6 @@ class TreeSearch:
         """Choose a node from which to simulate a game"""
         node = self.root
         root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
-        max_score = float('-inf')
         max_child_list = []
 
         # loop through potential children until we find a leaf node that doesn't permit further turns
@@ -191,7 +190,7 @@ class TreeSearch:
 
         if self.add_children_to_game_tree(node, root_game):
             node = random.choice(node.children)
-            root_game = self.root_game.game_deep_copy(node.game, root_game.get_opponent_color(node.game.color))
+            #root_game = self.root_game.game_deep_copy(node.game, root_game.get_opponent_color(node.game.color))
 
         return node, root_game
 
@@ -279,18 +278,19 @@ class TreeSearch:
             Game : best move, ie highest N
         """
         max_node_list = []
-        max_node_score = float('-inf')
+        max_node_score = 0
         if self.root_game.end:
             return None
 
         for child in self.root.children:
-            if child.mcts_score > max_node_score:
+            current_score = child.N
+            if current_score > max_node_score:
                 max_node_list = [child]
-                max_node_score = child.mcts_score
-            elif child.mcts_score == max_node_score:
+                max_node_score = current_score
+            elif current_score == max_node_score:
                 max_node_list.append(child)
 
-            if child.mcts_score >= max_node_score:
+            if current_score >= max_node_score:
                 print(child)
         game_choice = random.choice(max_node_list)
 
