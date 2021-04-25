@@ -11,7 +11,7 @@ from queue import Queue
 import game
 
 EXPLORATION_FACTOR = 1.4  # square root of 2
-TURN_TIME = 30
+TURN_TIME = 45
 
 # Global variable, stores list of moves with corresponding potential moves
 # Exists to save time from hefty potential moves process
@@ -166,7 +166,6 @@ class TreeSearch:
         max_child_list = []
 
         # loop through potential children until we find a leaf node that doesn't permit further turns
-        i = 0
         while len(node.children) > 0:
             max_score = float('-inf')
             for child in node.children:
@@ -184,15 +183,13 @@ class TreeSearch:
             node.game.color = node.game.get_opponent_color(node.game.color)
             root_game = node.game.game_deep_copy(node.game, node.game.color)
 
-            i += 1
-
             if node.N == 0:
                 return node, root_game
 
-        # todo : look into this part of the code
         if self.add_children_to_game_tree(node, root_game):
             node = random.choice(node.children)
 
+        # switch to opponents turn again
         node.game.color = node.game.get_opponent_color(node.game.color)
         root_game = node.game.game_deep_copy(node.game, node.game.color)
 
