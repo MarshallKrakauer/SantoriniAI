@@ -36,6 +36,14 @@ def write_to_game_list(white_player, gray_player):
 
 
 def get_player_type(white_player=True):
+    """
+    Have user enter the player type.
+
+    Attributes
+    ----------
+    white_player: bool
+        True if entry is for white player, False for gray
+    """
     # Entry Prompt
     if white_player:
         user_entry = input("W player type: (H)uman/(Mi)nimax/(MC)TS: ")
@@ -54,8 +62,16 @@ def get_player_type(white_player=True):
         get_player_type(white_player)
 
 
-def get_coordinates(phase):
-    print(phase, 'phase')
+def get_coordinates(sub_turn):
+    """
+    Obtain coordinates entered by human user
+
+    Attributes
+    ----------
+    sub_turn: str
+        Game's sub turn. Used to prompt user.
+    """
+    print(sub_turn, 'phase')
     user_input = input("Please input in following format: xy ")
     column, row = -1, -1  # Adding this in in case other issues aren't caught
     if len(user_input) != 2:
@@ -80,6 +96,7 @@ def get_coordinates(phase):
 
 
 def play_game(current_game, print_boards=True):
+    """Obtains player type for both players and plays both games."""
     white_player_type = get_player_type()
     gray_player_type = get_player_type(False)
     white_turn = True
