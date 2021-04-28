@@ -392,6 +392,7 @@ def play_game(white_player, gray_player):
             else:
                 show_board = True
 
+            # Switches control to opponent
             if current_player.should_switch_turns():
                 player_num = (player_num + 1) % 2
                 current_player = players[player_num]
