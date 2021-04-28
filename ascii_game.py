@@ -12,12 +12,8 @@ import pandas as pd
 import game
 import santorini_player
 
-PLAYER_ALGO = 'MCTS'  # alphabeta or MCTS
-
 LOG_INFO = False
 
-
-# Todo add human player possibility
 
 def write_to_game_list(white_player, gray_player):
     """
