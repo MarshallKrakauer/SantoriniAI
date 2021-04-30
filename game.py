@@ -92,6 +92,10 @@ class Game:
     def dict_repr(self):
         return {'board':self.board, 'color' : self.color, 'end': self.end}
 
+    @property
+    def opponent_color(self):
+        return self.get_opponent_color(self.color)
+
     def get_dict_repr(self, game_dict):
         self.board = game_dict['board']
         self.color = game_dict['color']
