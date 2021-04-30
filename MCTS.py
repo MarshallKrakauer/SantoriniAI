@@ -31,6 +31,9 @@ class MCTSNode:
         self.Q = 0
 
     def __repr__(self):
+        if self.N == 0 or self.parent is None:
+            return str(self.game)
+
         return (str(self.game) + '\n' + str(self.Q) + '/' + str(self.N) + ' ' + str(round(100 * self.Q / self.N, 1)) +
                 '%, score: ' + str(round(self.mcts_score, 6))
                 )
@@ -294,7 +297,7 @@ class TreeSearch:
                 max_node_list.append(child)
 
             if current_score >= max_node_score:
-                print(child)
+                print(child, child.children[0])
         game_choice = random.choice(max_node_list)
 
         return game_choice
