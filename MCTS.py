@@ -299,14 +299,6 @@ class TreeSearch:
 
         game_choice = random.choice(max_node_list)
 
-        try:
-            if len(game_choice.children[0].children) > 0:
-                print(self.root_game, game_choice, game_choice.children[0], game_choice.children[0].children[0])
-            else:
-                print(self.root_game, game_choice, game_choice.children[0])
-        except:
-            pass
-
         return game_choice
 
     def get_tree_size(self):
