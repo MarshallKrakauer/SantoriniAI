@@ -32,11 +32,11 @@ class MCTSNode:
 
     def __repr__(self):
         if self.N == 0 or self.parent is None:
-            return str(self.game)
+            return str(self.game) + self.game.color
 
-        return (str(self.game) + '\n' + str(self.Q) + '/' + str(self.N) + ' ' + str(round(100 * self.Q / self.N, 1)) +
-                '%, score: ' + str(round(self.mcts_score, 6))
-                )
+        return (str(self.game) + self.game.color + '\n' + str(self.Q) + '/' + str(self.N) + ' '
+                + str(round(100 * self.Q / self.N, 1)) +
+                '%, score: ' + str(round(self.mcts_score, 6)))
 
     @staticmethod
     def create_potential_moves(node, move_color):
@@ -183,7 +183,7 @@ class TreeSearch:
             node = random.choice(max_child_list)
 
             # Switch to opponents turn
-            node.game.color = node.game.get_opponent_color(node.game.color)
+            node.game.color = node.game.opponent_color
             root_game = node.game.game_deep_copy(node.game, node.game.color)
 
             if node.N == 0:
@@ -193,7 +193,7 @@ class TreeSearch:
             node = random.choice(node.children)
 
         # switch to opponents turn again
-        node.game.color = node.game.get_opponent_color(node.game.color)
+        node.game.color = node.game.opponent_color
         root_game = node.game.game_deep_copy(node.game, node.game.color)
 
         return node, root_game
@@ -242,18 +242,18 @@ class TreeSearch:
         """
 
         # Initialize variables pre-loop to avoid terminal node related errors
-        new_node = MCTSNode(root_game=root_game, parent=node)
-        root_game.color = root_game.get_opponent_color(root_game.color)
-        potential_game_list = new_node.create_potential_moves(node, root_game.color)
+        root_game.color = root_game.opponent_color
+        new_node = MCTSNode(root_game=root_game, parent=None)
+        potential_game_list = new_node.create_potential_moves(node, node.game.opponent_color)
 
         # If no children, the game is done
-        if len(potential_game_list) == 0 or root_game.end:
-            return root_game.color
+        if len(potential_game_list) == 0 or node.game.end:
+            return node.game.color
 
         while not root_game.end:
             list_size = len(potential_game_list)
             if list_size == 0:  # this indicates we have reached the end of a game
-                return root_game.get_opponent_color(root_game.color)
+                return root_game.color
             else:
                 game_choice = new_node.choose_child_game(root_game, potential_game_list)
                 if game_choice.end:
@@ -288,6 +288,7 @@ class TreeSearch:
         if self.root_game.end:
             return None
 
+        # Find child that was visited the most
         for child in self.root.children:
             current_score = child.N
             if current_score > max_node_score:
@@ -296,9 +297,15 @@ class TreeSearch:
             elif current_score == max_node_score:
                 max_node_list.append(child)
 
-            if current_score >= max_node_score:
-                print(child, child.children[0])
         game_choice = random.choice(max_node_list)
+
+        try:
+            if len(game_choice.children[0].children) > 0:
+                print(self.root_game, game_choice, game_choice.children[0], game_choice.children[0].children[0])
+            else:
+                print(self.root_game, game_choice, game_choice.children[0])
+        except:
+            pass
 
         return game_choice
 
