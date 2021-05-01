@@ -9,6 +9,7 @@ import random
 from math import sqrt, log
 from queue import Queue
 import game
+import json
 
 EXPLORATION_FACTOR = 1.4  # square root of 2
 TURN_TIME = 30
@@ -16,6 +17,9 @@ TURN_TIME = 30
 # Global variable, stores list of moves with corresponding potential moves
 # Exists to save time from hefty potential moves process
 move_dict = {}
+
+with open('results.json') as json_file:
+    result_dict = json.load(json_file)
 
 random.seed(dt.datetime.now().microsecond)  # set seed
 
@@ -164,6 +168,7 @@ class TreeSearch:
 
     def choose_simulation_node(self):
         """Choose a node from which to simulate a game"""
+        global result_dict
         node = self.root
         root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
         max_child_list = []
@@ -172,6 +177,15 @@ class TreeSearch:
         while len(node.children) > 0:
             max_score = float('-inf')
             for child in node.children:
+
+                # See if we can get results from a previous game
+                try:
+                    memory = result_dict[child.game.dict_key_rep]
+                    plays, wins = memory['N'], memory['Q']
+                except KeyError:
+                    plays, wins = 0, 0
+                child.N += plays
+                child.Q += wins
                 current_score = child.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
@@ -270,8 +284,11 @@ class TreeSearch:
     def update_node_info(node, outcome):
         reward = int(outcome == node.game.color)
         while node is not None:
-            node.N += 1
-            node.Q += reward
+
+            # Don't need to update if its been played 10M times
+            if node.N < 10_000_000:
+                node.N += 1
+                node.Q += reward
             node = node.parent  # traverse up the tree
             reward = int(not reward)  # switch reward for other color
 
@@ -298,6 +315,12 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
+
+        if game_choice.game.end:
+            global result_dict
+            with open("results.json", "w") as outfile:
+                print(result_dict)
+                json.dump(result_dict, outfile)
 
         return game_choice
 
