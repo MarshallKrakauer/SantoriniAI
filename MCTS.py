@@ -282,13 +282,15 @@ class TreeSearch:
 
     @staticmethod
     def update_node_info(node, outcome):
+        global result_dict
         reward = int(outcome == node.game.color)
         while node is not None:
-
             # Don't need to update if its been played 10M times
             if node.N < 10_000_000:
                 node.N += 1
                 node.Q += reward
+                result_dict[node.game.dict_key_rep] = {'N': node.N, 'Q': node.Q}
+
             node = node.parent  # traverse up the tree
             reward = int(not reward)  # switch reward for other color
 
@@ -300,6 +302,7 @@ class TreeSearch:
         -------
             Game : best move, ie highest N
         """
+        global result_dict
         max_node_list = []
         max_node_score = 0
         if self.root_game.end:
@@ -319,7 +322,6 @@ class TreeSearch:
         if game_choice.game.end:
             global result_dict
             with open("results.json", "w") as outfile:
-                print(result_dict)
                 json.dump(result_dict, outfile)
 
         return game_choice

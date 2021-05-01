@@ -36,7 +36,7 @@ class Game:
     """
 
     def __init__(self):
-        self.board = [[{'level': 1, 'occupant': 'O', 'active': False}
+        self.board = [[{'level': 0, 'occupant': 'O', 'active': False}
                        for i in range(5)] for j in range(5)]
         self.row = 0
         self.col = 0
