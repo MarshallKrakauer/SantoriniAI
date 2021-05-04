@@ -285,7 +285,7 @@ class Game:
             self.board[i][j]['active'] = \
                 i == x_val and j == y_val
 
-    def make_exterior_active(self):
+    def highlight_movable_spaces(self):
         """
         Mark build-able spaces.
         after a player moves, marks the surrounding pieces
@@ -390,7 +390,7 @@ class Game:
             self.col = x_val
             self.row = y_val
             self.sub_turn = 'build'
-            self.make_exterior_active()
+            self.highlight_movable_spaces()
             return True
 
     def build_level(self, x_val, y_val, auto=False):
