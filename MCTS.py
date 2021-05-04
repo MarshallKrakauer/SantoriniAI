@@ -11,7 +11,7 @@ from queue import Queue
 import game
 import json
 
-EXPLORATION_FACTOR = 1.4  # square root of 2
+EXPLORATION_FACTOR = 0.5  # square root of 2
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
