@@ -11,7 +11,7 @@ from queue import Queue
 import game
 import json
 
-EXPLORATION_FACTOR = 0.5  # square root of 2
+EXPLORATION_FACTOR = 1  # square root of 2
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -31,6 +31,8 @@ class MCTSNode:
         self.game = root_game
         self.parent = parent
         self.children = []
+        self.past_Q = 0
+        self.past_N = 0
         self.N = 0
         self.Q = 0
 
@@ -97,7 +99,7 @@ class MCTSNode:
             return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0):
         """Upper confidence bound for this node
 
         Attributes
@@ -108,7 +110,9 @@ class MCTSNode:
         if self.N == 0:  # what to do if node hasn't been visited
             return float('inf')
         else:
-            return self.Q / self.N + exploration_factor * sqrt(log(self.parent.N) / self.N)
+            return (self.Q / self.N  # Exploration Factor (win %)
+                    + exploration_factor * sqrt(log(self.parent.N) / self.N)  # Exploitation Factor
+                    + heuristic_factor * (2 * self.past_Q - self.past_N))  # Heuristic (past value) factor
 
     @staticmethod
     def choose_child_game(root_game, potential_game_list):
@@ -180,12 +184,13 @@ class TreeSearch:
 
                 # See if we can get results from a previous game
                 try:
+                    # get past wins - losses
                     memory = result_dict[child.game.dict_key_rep]
-                    plays, wins = memory['N'], memory['Q']
+                    child.past_Q, child.past_N = memory['Q'], memory['N']
                 except KeyError:
-                    plays, wins = 0, 0
-                child.N += plays
-                child.Q += wins
+                    # If move has not been played before, past_value can stay at 0
+                    pass
+
                 current_score = child.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
@@ -262,12 +267,13 @@ class TreeSearch:
 
         # If no children, the game is done
         if len(potential_game_list) == 0 or node.game.end:
+            print("Endgame 0:", root_game, root_game.color, 'winner:', root_game.opponent_color)
             return node.game.color
 
         while not root_game.end:
             list_size = len(potential_game_list)
             if list_size == 0:  # this indicates we have reached the end of a game
-                return root_game.color
+                return root_game.opponent_color
             else:
                 game_choice = new_node.choose_child_game(root_game, potential_game_list)
                 if game_choice.end:
@@ -285,12 +291,12 @@ class TreeSearch:
         global result_dict
         reward = int(outcome == node.game.color)
         while node is not None:
+
             # Don't need to update if its been played 10M times
             if node.N < 10_000_000:
-                node.N += 1
-                node.Q += reward
-                result_dict[node.game.dict_key_rep] = {'N': node.N, 'Q': node.Q}
-
+                result_dict[node.game.dict_key_rep] = {'N': node.N + node.past_N, 'Q': node.Q + node.past_Q}
+            node.N += 1
+            node.Q += reward
             node = node.parent  # traverse up the tree
             reward = int(not reward)  # switch reward for other color
 
@@ -318,6 +324,7 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
+        print(game_choice)
 
         if game_choice.game.end:
             global result_dict
