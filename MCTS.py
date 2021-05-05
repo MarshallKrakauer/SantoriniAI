@@ -197,7 +197,6 @@ class TreeSearch:
                 except KeyError:
                     # If move has not been played before, past_value can stay at 0
                     pass
-
                 current_score = child.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
@@ -242,7 +241,7 @@ class TreeSearch:
         potential_moves = parent.create_potential_moves(parent, root_game.color)
 
         if len(potential_moves) == 0:
-            return False
+            return []
 
         child_node_list = []
         for move in potential_moves:
@@ -274,7 +273,8 @@ class TreeSearch:
 
         # If no children, the game is done
         if len(potential_game_list) == 0:
-            return new_node.get_winning_color()
+            #print("Endgame 0:", node, node.game.color)
+            return node.game.color
 
         if node.game.end:
             return node.game.color
