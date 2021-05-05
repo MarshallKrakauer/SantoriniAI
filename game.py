@@ -561,6 +561,10 @@ class Game:
 
         return iter(return_li)
 
+    def check_winner(self):
+        for i, j in SPACE_LIST:
+            pass
+
     @staticmethod
     def get_opponent_color(color):
         """Get player color that isn't the one passed

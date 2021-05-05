@@ -23,6 +23,8 @@ with open('results.json') as json_file:
 
 random.seed(dt.datetime.now().microsecond)  # set seed
 
+SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
+
 
 class MCTSNode:
 
@@ -135,6 +137,11 @@ class MCTSNode:
             game_choice = random.choice(potential_game_list).game
 
         return game_choice
+
+    def get_winning_color(self):
+        for i, j in SPACE_LIST:
+            if self.game.board[i][j]['level'] == 3:
+                return self.game.board[i][j]['occupant']
 
 
 class TreeSearch:
@@ -266,8 +273,10 @@ class TreeSearch:
         potential_game_list = new_node.create_potential_moves(node, node.game.opponent_color)
 
         # If no children, the game is done
-        if len(potential_game_list) == 0 or node.game.end:
-            print("Endgame 0:", root_game, root_game.color, 'winner:', root_game.opponent_color)
+        if len(potential_game_list) == 0:
+            return new_node.get_winning_color()
+
+        if node.game.end:
             return node.game.color
 
         while not root_game.end:
