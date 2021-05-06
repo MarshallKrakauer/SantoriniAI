@@ -101,7 +101,7 @@ class MCTSNode:
             return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.001):
         """Upper confidence bound for this node
 
         Attributes
@@ -114,7 +114,7 @@ class MCTSNode:
         else:
             return (self.Q / self.N  # Exploration Factor (win %)
                     + exploration_factor * sqrt(log(self.parent.N) / self.N)  # Exploitation Factor
-                    + heuristic_factor * (2 * self.past_Q - self.past_N))  # Heuristic (past value) factor
+                    + min(1.0, heuristic_factor * (2 * self.past_Q - self.past_N)))  # Heuristic (past value) factor
 
     @staticmethod
     def choose_child_game(root_game, potential_game_list):
@@ -273,7 +273,6 @@ class TreeSearch:
 
         # If no children, the game is done
         if len(potential_game_list) == 0:
-            #print("Endgame 0:", node, node.game.color)
             return node.game.color
 
         if node.game.end:
@@ -333,7 +332,6 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
-        print(game_choice)
 
         if game_choice.game.end:
             global result_dict
