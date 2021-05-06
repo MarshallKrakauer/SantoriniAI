@@ -1,6 +1,7 @@
 import random
 import MCTS
 import minimax_node
+from math import sqrt
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -116,7 +117,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def get_board_score(self, color='W', include_path_score=False):
+    def get_board_score(self, color='W', include_path_score=True):
         """
         Give numeric score to game.
         Gives a score to the board based on position of the pices
@@ -131,7 +132,7 @@ class Game:
             score of the board needed for alpha-beta pruning
             higher score is better
         """
-        other_color = self.get_opponent_color(color)
+        other_color = self.opponent_color
 
         score = 0
         spaces = [(i, j) for i in range(5) for j in range(5)]
@@ -156,8 +157,7 @@ class Game:
         # Loser points for your pieces being far apart, gain for your opponents pieces
         # being far apart
         if include_path_score:
-            score -= get_path_score(self, color) // 2
-            score += get_path_score(self, other_color) // 2
+            score += self.get_distance_score(self.color, other_color)
 
         return score
 
@@ -487,6 +487,26 @@ class Game:
         if not self.end:
             self.sub_turn = 'switch'
 
+    def get_distance_score(self, color, opponent_color):
+        player_spaces = []
+        opponent_spaces = []
+        for col, row in [(i, j) for i in range(5) for j in range(5)]:
+            if self.board[col][row]['occupant'] == color:
+                player_spaces.append((col, row))
+            elif self.board[col][row]['occupant'] == opponent_color:
+                opponent_spaces.append((col, row))
+
+        player_col_0, player_row_0 = player_spaces[0]
+        player_col_1, player_row_1 = player_spaces[1]
+
+        opponent_col_0, opponent_row_0 = opponent_spaces[0]
+        opponent_col_1, opponent_row_1 = opponent_spaces[1]
+
+        return -1 * (distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
+                     distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
+                     distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
+                     distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+
     def is_winning_move(self, move_color=None):
         if move_color is None:
             move_color = self.color
@@ -561,10 +581,6 @@ class Game:
 
         return iter(return_li)
 
-    def check_winner(self):
-        for i, j in SPACE_LIST:
-            pass
-
     @staticmethod
     def get_opponent_color(color):
         """Get player color that isn't the one passed
@@ -637,3 +653,6 @@ def is_valid_num(num):
         false otherwise
     """
     return -1 < num < 5
+
+def distance_between(col_0, row_0, col_1, row_1):
+    return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)
