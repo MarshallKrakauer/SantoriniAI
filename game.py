@@ -117,7 +117,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def get_board_score(self, color='W', include_path_score=True):
+    def get_board_score(self, color='W'):
         """
         Give numeric score to game.
         Gives a score to the board based on position of the pices
@@ -156,9 +156,8 @@ class Game:
 
         # Loser points for your pieces being far apart, gain for your opponents pieces
         # being far apart
-        if include_path_score:
-            score += 0
-            #score += self.get_distance_score(self.color, other_color)
+        # todo: have distance score change based on self.turn of turns
+        score += self.get_distance_score(self.color, other_color)
 
         return score
 
