@@ -69,7 +69,7 @@ class MiniMaxNode:
                 new_game.select_worker(move_color, i, j)
 
                 new_game.move_worker(space[0], space[1], auto=True)
-                if new_game.is_winning_move():
+                if new_game.is_winning_move(move_color):
                     return [MiniMaxNode(
                         game=new_game,
                         score=new_game.get_board_score(move_color),

@@ -157,7 +157,8 @@ class Game:
         # Loser points for your pieces being far apart, gain for your opponents pieces
         # being far apart
         if include_path_score:
-            score += self.get_distance_score(self.color, other_color)
+            score += 0
+            #score += self.get_distance_score(self.color, other_color)
 
         return score
 
@@ -456,6 +457,7 @@ class Game:
                 0]
         self.board = best_state.game.board
         self.end = best_state.game.end
+        print(self.turn)
 
         if not self.end:
             self.sub_turn = 'switch'

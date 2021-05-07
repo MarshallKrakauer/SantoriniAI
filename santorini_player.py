@@ -57,6 +57,7 @@ class SantoriniPlayer:
         self.game.color = self.color
         if self.placements >= 2:
             self.game.sub_turn = 'select'
+            self.game.turn += 1
             if self.player_type == 'human':
                 self.game.make_color_active()
             else:
