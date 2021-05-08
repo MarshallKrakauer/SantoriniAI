@@ -143,9 +143,15 @@ class Game:
             # 4^level for occupied spaces, 2^level for adjacent spaces
             # in both cases, negative points given for opponent pieces
             if space['occupant'] == color:
-                score += 4 ** space['level']
+                if space['level'] == 3:
+                    return 10000
+                else:
+                    score += 4 ** space['level']
             elif space['occupant'] == other_color:
-                score -= 4 ** space['level']
+                if space['level'] == 3:
+                    return -10000
+                else:
+                    score -= 4 ** space['level']
 
             for k, l in adjacent_spaces:
                 space = self.board[k][l]
@@ -158,7 +164,9 @@ class Game:
         # being far apart
         # todo: have distance score change based on self.turn of turns
         if self.turn < 20:
-            score += self.get_distance_score(self.color, other_color) / (self.turn / 5)
+            distance = self.get_distance_score(self.color, other_color) / (self.turn / 4)
+            print(distance)
+            score += distance
 
         return score
 
