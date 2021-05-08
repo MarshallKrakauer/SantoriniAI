@@ -72,14 +72,14 @@ class MiniMaxNode:
                 if new_game.is_winning_move(move_color):
                     return [MiniMaxNode(
                         game=new_game,
-                        score=new_game.get_board_score(move_color),
+                        score=new_game.get_minimax_score(move_color),
                         parent=node,
                         children=None)]
 
                 if new_game.end:
                     return_li.append(MiniMaxNode(
                         game=new_game,
-                        score=new_game.get_board_score(move_color),
+                        score=new_game.get_minimax_score(move_color),
                         parent=node,
                         children=None))
                 else:
@@ -90,7 +90,7 @@ class MiniMaxNode:
 
                         build_game.build_level(build[0], build[1], auto=True)
                         if build_game.end:
-                            new_score = build_game.get_board_score(eval_color)
+                            new_score = build_game.get_minimax_score(eval_color)
                         else:
                             new_score = 0
 
@@ -113,7 +113,7 @@ class MiniMaxNode:
                 return -10 ** 5, None
 
         if depth == 0:
-            return root_node.game.get_board_score(root_game.get_opponent_color(move_color)), None
+            return root_node.game.get_minimax_score(root_game.get_opponent_color(move_color)), None
 
         potential_nodes = root_node.create_potential_moves(node=root_node, move_color=move_color,
                                                            eval_color=eval_color)

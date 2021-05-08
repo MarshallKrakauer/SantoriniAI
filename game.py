@@ -117,7 +117,7 @@ class Game:
                 self.turn += 2
                 chose_spaces = True
 
-    def get_board_score(self, color='W'):
+    def get_minimax_score(self, color):
         """
         Give numeric score to game.
         Gives a score to the board based on position of the pices
@@ -157,7 +157,8 @@ class Game:
         # Loser points for your pieces being far apart, gain for your opponents pieces
         # being far apart
         # todo: have distance score change based on self.turn of turns
-        score += self.get_distance_score(self.color, other_color)
+        if self.turn < 20:
+            score += self.get_distance_score(self.color, other_color) / (self.turn / 5)
 
         return score
 
@@ -456,7 +457,6 @@ class Game:
                 0]
         self.board = best_state.game.board
         self.end = best_state.game.end
-        print(self.turn)
 
         if not self.end:
             self.sub_turn = 'switch'
@@ -472,7 +472,6 @@ class Game:
             Whose turn is it is. This will be the color moved
         """
         self.color = move_color
-        print("~~~~~~MOVE COLOR: ", move_color)
         self.check_move_available()
         if self.end:
             return
