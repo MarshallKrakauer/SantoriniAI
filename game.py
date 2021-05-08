@@ -164,9 +164,7 @@ class Game:
         # being far apart
         # todo: have distance score change based on self.turn of turns
         if self.turn < 20:
-            distance = self.get_distance_score(self.color, other_color) / (self.turn / 4)
-            print(distance)
-            score += distance
+            score += self.get_distance_score(self.color, other_color) / ( self.turn / 4)
 
         return score
 
