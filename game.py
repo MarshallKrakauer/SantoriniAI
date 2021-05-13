@@ -114,7 +114,6 @@ class Game:
                     self.board[x_1][y_1]['occupant'] == 'O'):
                 self.board[x_0][y_0]['occupant'] = color
                 self.board[x_1][y_1]['occupant'] = color
-                self.turn += 2
                 chose_spaces = True
 
     def get_minimax_score(self, color):
@@ -164,7 +163,7 @@ class Game:
         # being far apart
         # todo: have distance score change based on self.turn of turns
         if self.turn < 20:
-            score += self.get_distance_score(self.color, other_color) / ( self.turn / 4)
+            score += self.get_distance_score(self.color, other_color) / (self.turn)
 
         return score
 
@@ -322,7 +321,7 @@ class Game:
             self.message = "Occupied Space"
         else:
             self.board[x_val][y_val]['occupant'] = color
-            self.turn += 1
+            #self.turn += 1
             return True
         return False
 
@@ -448,8 +447,6 @@ class Game:
         tree_depth : int
             Depth of the tree. How far to look ahead for creating potential moves
         """
-        # self.color = move_color
-        # self.check_move_available()
         if self.end:
             return
 
@@ -489,7 +486,6 @@ class Game:
         self.board = best_node.game.board
         self.end = best_node.game.end
 
-        #self.check_move_available()
         if not self.end:
             self.sub_turn = 'switch'
 
@@ -556,6 +552,7 @@ class Game:
         new_game.col = game.col
         new_game.row = game.row
         new_game.color = color
+        new_game.turn = game.turn
 
         return new_game
 

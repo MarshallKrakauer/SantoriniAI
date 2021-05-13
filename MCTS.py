@@ -18,9 +18,6 @@ TURN_TIME = 30
 # Exists to save time from hefty potential moves process
 move_dict = {}
 
-with open('results.json') as json_file:
-    result_dict = json.load(json_file)
-
 random.seed(dt.datetime.now().microsecond)  # set seed
 
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -33,8 +30,6 @@ class MCTSNode:
         self.game = root_game
         self.parent = parent
         self.children = []
-        self.past_Q = 0
-        self.past_N = 0
         self.N = 0
         self.Q = 0
 
@@ -66,42 +61,39 @@ class MCTSNode:
         potential_move_li = []
         if node.game.end:
             return potential_move_li
-        try:
-            moves = move_dict[node.game.dict_key_rep]
-            temp_game = game.Game()
-            return [MCTSNode(temp_game.get_dict_repr(move), parent=node) for move in iter(moves)]
-        except KeyError:
+
             # Check both of the spaces occupied by the player
-            for spot in [(i, j) for i in range(5) for j in range(5) if
-                         node.game.board[i][j]['occupant'] == move_color]:
-                i, j = spot
-                # check each possible move
-                for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
-                    new_game = node.game.game_deep_copy(node.game, move_color)
-                    new_game.select_worker(move_color, i, j)
+            # Check both of the spaces occupied by the player
+        for spot in [(i, j) for i in range(5) for j in range(5) if
+                     node.game.board[i][j]['occupant'] == move_color]:
+            i, j = spot
+            # check each possible move
+            for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+                new_game = node.game.game_deep_copy(node.game, move_color)
+                new_game.select_worker(move_color, i, j)
 
-                    new_game.move_worker(space[0], space[1], auto=True)
+                new_game.move_worker(space[0], space[1], auto=True)
 
-                    # If we find a winning moves, return only that
-                    # As such, this assumes that a player will always make a winning move when possible
-                    if new_game.is_winning_move():
-                        potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
-                        move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
-                        return potential_move_li
-                    else:
-                        # given a legal move, check for each possible build
-                        for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
-                            build_game = new_game.game_deep_copy(new_game,
-                                                                 new_game.color)
+                # If we find a winning moves, return only that
+                # As such, this assumes that a player will always make a winning move when possible
+                if new_game.is_winning_move():
+                    potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
+                    move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
+                    return potential_move_li
+                else:
+                    # given a legal move, check for each possible build
+                    for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+                        build_game = new_game.game_deep_copy(new_game,
+                                                             new_game.color)
 
-                            build_game.build_level(build[0], build[1], auto=True)
+                        build_game.build_level(build[0], build[1], auto=True)
 
-                            potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
+                        potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
             move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
             return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.001):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=1):
         """Upper confidence bound for this node
 
         Attributes
@@ -112,9 +104,11 @@ class MCTSNode:
         if self.N == 0:  # what to do if node hasn't been visited
             return float('inf')
         else:
-            return (self.Q / self.N  # Exploration Factor (win %)
-                    + exploration_factor * sqrt(log(self.parent.N) / self.N)  # Exploitation Factor
-                    + min(1.0, heuristic_factor * (2 * self.past_Q - self.past_N)))  # Heuristic (past value) factor
+            # Exploration (win rate) + exploitation + heuristic
+            return (self.Q / self.N
+                    + exploration_factor * sqrt(log(self.parent.N) / self.N)
+                    + heuristic_factor * self.game.get_minimax_score(self.game.color) / self.game.turn
+                    )
 
     @staticmethod
     def choose_child_game(root_game, potential_game_list):
@@ -179,7 +173,6 @@ class TreeSearch:
 
     def choose_simulation_node(self):
         """Choose a node from which to simulate a game"""
-        global result_dict
         node = self.root
         root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
         max_child_list = []
@@ -188,15 +181,6 @@ class TreeSearch:
         while len(node.children) > 0:
             max_score = float('-inf')
             for child in node.children:
-
-                # See if we can get results from a previous game
-                try:
-                    # get past wins - losses
-                    memory = result_dict[child.game.dict_key_rep]
-                    child.past_Q, child.past_N = memory['Q'], memory['N']
-                except KeyError:
-                    # If move has not been played before, past_value can stay at 0
-                    pass
                 current_score = child.mcts_score
                 if current_score > max_score:
                     max_child_list = [child]
@@ -296,13 +280,10 @@ class TreeSearch:
 
     @staticmethod
     def update_node_info(node, outcome):
-        global result_dict
         reward = int(outcome == node.game.color)
         while node is not None:
 
             # Don't need to update if its been played 10M times
-            if node.N < 10_000_000:
-                result_dict[node.game.dict_key_rep] = {'N': node.N + node.past_N, 'Q': node.Q + node.past_Q}
             node.N += 1
             node.Q += reward
             node = node.parent  # traverse up the tree
@@ -316,7 +297,6 @@ class TreeSearch:
         -------
             Game : best move, ie highest N
         """
-        global result_dict
         max_node_list = []
         max_node_score = 0
         if self.root_game.end:
@@ -332,12 +312,7 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
-
-        if game_choice.game.end:
-            global result_dict
-            with open("results.json", "w") as outfile:
-                json.dump(result_dict, outfile)
-
+        print(game_choice, game_choice.game.turn)
         return game_choice
 
     def get_tree_size(self):
