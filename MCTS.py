@@ -8,10 +8,8 @@ import datetime as dt
 import random
 from math import sqrt, log
 from queue import Queue
-import game
-import json
 
-EXPLORATION_FACTOR = 1  # square root of 2
+EXPLORATION_FACTOR = 1.4  # square root of 2
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -87,13 +85,14 @@ class MCTSNode:
                                                              new_game.color)
 
                         build_game.build_level(build[0], build[1], auto=True)
+                        build_game.turn += 1
 
                         potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
             move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
             return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=1):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.1):
         """Upper confidence bound for this node
 
         Attributes
