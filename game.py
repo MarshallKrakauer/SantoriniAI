@@ -41,8 +41,9 @@ class Game:
                        for i in range(5)] for j in range(5)]
         self.row = 0
         self.col = 0
+        self.winner = None
         self.end = False
-        self.turn = 1
+        self.turn = 0
         self.sub_turn = 'place'
         self.message = ''
         self.color = 'W'
@@ -116,6 +117,16 @@ class Game:
                 self.board[x_1][y_1]['occupant'] = color
                 chose_spaces = True
 
+    def get_height_score(self, color):
+        score = 1
+        spaces = [(i, j) for i in range(5) for j in range(5)]
+        for i, j in spaces:
+            space = self.board[i][j]
+            if space['occupant'] == color:
+                score += space['level'] ** 2
+        return score
+
+
     def get_minimax_score(self, color):
         """
         Give numeric score to game.
@@ -163,7 +174,7 @@ class Game:
         # being far apart
         # todo: have distance score change based on self.turn of turns
         if self.turn < 20:
-            score += self.get_distance_score(self.color, other_color) / (self.turn)
+            score += self.get_distance_score(self.color, other_color) / (self.turn + 1)
 
         return score
 
@@ -321,7 +332,6 @@ class Game:
             self.message = "Occupied Space"
         else:
             self.board[x_val][y_val]['occupant'] = color
-            #self.turn += 1
             return True
         return False
 
@@ -409,6 +419,7 @@ class Game:
             if self.board[x_val][y_val]['level'] == 4:
                 self.board[x_val][y_val]['occupant'] = 'X'
             self.sub_turn = 'switch'
+            self.turn += 1
             return True
 
     def play_manual_turn(self, x_val, y_val):
@@ -485,6 +496,8 @@ class Game:
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
         self.end = best_node.game.end
+        self.turn = best_node.game.turn
+        self.winner = best_node.game.winner
 
         if not self.end:
             self.sub_turn = 'switch'

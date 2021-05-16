@@ -1,15 +1,12 @@
 """
 Implementation of Monte Carlo Tree Search. Currently working on improving early game moves.
-
-In process of being built, code will not currently run.
 """
 
 import datetime as dt
 import random
 from math import sqrt, log
-from queue import Queue
 
-EXPLORATION_FACTOR = 1.4  # square root of 2
+EXPLORATION_FACTOR = 0.5  # square root of 2
 TURN_TIME = 30
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -30,6 +27,11 @@ class MCTSNode:
         self.children = []
         self.N = 0
         self.Q = 0
+        self.deleted = False
+
+    @property
+    def heuristic_score(self):
+        return self.game.get_height_score(self.game.color)
 
     def __repr__(self):
         if self.N == 0 or self.parent is None:
@@ -40,42 +42,52 @@ class MCTSNode:
                 '%, score: ' + str(round(self.mcts_score, 6)))
 
     @staticmethod
-    def create_potential_moves(node, move_color):
+    def create_potential_moves(node):
         """
         Add list of possible moves to game state.
 
         Parameters
         ----------
-        node : MiniMaxNode
+        node : MCTSNode
             Parent node of all potential moves
-        move_color : char, optional
-            Player color, G or W
         Returns
         -------
         return_li : list
             Children of that node
         """
-        node.game.color = move_color
         potential_move_li = []
-        if node.game.end:
+
+        # If the game is over, produce no children
+        if node.game.winner is not None:
             return potential_move_li
 
-            # Check both of the spaces occupied by the player
-            # Check both of the spaces occupied by the player
+        # Set the correct mover
+        if (node.game.turn + 1) % 2 != 0:
+            move_color = 'W'
+        else:
+            move_color = 'G'
+
+        # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
                      node.game.board[i][j]['occupant'] == move_color]:
+
             i, j = spot
             # check each possible move
             for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+
+                # Move a copy of the game, as to not impact the game itself
                 new_game = node.game.game_deep_copy(node.game, move_color)
                 new_game.select_worker(move_color, i, j)
 
+                # Since we have at least one legal move, we can change the color and turn
+                new_game.color = move_color
                 new_game.move_worker(space[0], space[1], auto=True)
 
                 # If we find a winning moves, return only that
                 # As such, this assumes that a player will always make a winning move when possible
                 if new_game.is_winning_move():
                     potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
+                    new_game.winner = move_color
                     move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
                     return potential_move_li
                 else:
@@ -85,14 +97,17 @@ class MCTSNode:
                                                              new_game.color)
 
                         build_game.build_level(build[0], build[1], auto=True)
-                        build_game.turn += 1
 
                         potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
             move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
-            return potential_move_li
+
+        if len(potential_move_li) == 0:
+            node.game.winner = node.game.opponent_color
+
+        return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.1):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.0):
         """Upper confidence bound for this node
 
         Attributes
@@ -106,30 +121,8 @@ class MCTSNode:
             # Exploration (win rate) + exploitation + heuristic
             return (self.Q / self.N
                     + exploration_factor * sqrt(log(self.parent.N) / self.N)
-                    + heuristic_factor * self.game.get_minimax_score(self.game.color) / self.game.turn
+                    # + heuristic_factor * self.game.get_minimax_score(self.game.color) / (self.game.turn + 1)
                     )
-
-    @staticmethod
-    def choose_child_game(root_game, potential_game_list):
-        """Choose child game in node simulation"""
-        found_winning_move = False
-        move_num = 0
-        color = root_game.color
-        game_choice = root_game
-        while not found_winning_move and move_num < len(potential_game_list):
-            curr_game = potential_game_list[move_num].game
-            has_won = curr_game.is_winning_move(color)
-            if has_won:
-                found_winning_move = True
-                game_choice = potential_game_list[move_num].game
-                game_choice.end = True
-
-            move_num += 1
-
-        if not found_winning_move:
-            game_choice = random.choice(potential_game_list).game
-
-        return game_choice
 
     def get_winning_color(self):
         for i, j in SPACE_LIST:
@@ -161,8 +154,9 @@ class TreeSearch:
         global move_dict
         move_dict = {}  # global variable reset every time we look for best node
         while num_rollouts < 5000 and (current_time - start_time).total_seconds() < max_seconds:
-            node, root_game = self.choose_simulation_node()
-            winning_color = self.simulate_random_game(node, root_game)
+            node = self.choose_simulation_node()
+            simulation_game = node.game.game_deep_copy(node.game, node.game.color)
+            winning_color = self.simulate_random_game(simulation_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
@@ -173,7 +167,6 @@ class TreeSearch:
     def choose_simulation_node(self):
         """Choose a node from which to simulate a game"""
         node = self.root
-        root_game = self.root_game.game_deep_copy(self.root_game, self.root_game.color)
         max_child_list = []
 
         # loop through potential children until we find a leaf node that doesn't permit further turns
@@ -190,24 +183,16 @@ class TreeSearch:
             # If multiple nodes have the max score, we randomly select one
             node = random.choice(max_child_list)
 
-            # Switch to opponents turn
-            node.game.color = node.game.opponent_color
-            root_game = node.game.game_deep_copy(node.game, node.game.color)
-
             if node.N == 0:
-                return node, root_game
+                return node
 
-        if self.add_children_to_game_tree(node, root_game):
+        if self.add_children_to_game_tree(node):
             node = random.choice(node.children)
 
-        # switch to opponents turn again
-        node.game.color = node.game.opponent_color
-        root_game = node.game.game_deep_copy(node.game, node.game.color)
-
-        return node, root_game
+        return node
 
     @staticmethod
-    def add_children_to_game_tree(parent, root_game):
+    def add_children_to_game_tree(parent):
         """
         Create children of parent node, add them to game tree.
         "Expand" in MCTS terminology
@@ -217,14 +202,11 @@ class TreeSearch:
             bool: false if the game is over
         """
 
-        if root_game.end:
+        if parent.game.winner is not None:
             # don't expand a finished game
             return False
 
-        potential_moves = parent.create_potential_moves(parent, root_game.color)
-
-        if len(potential_moves) == 0:
-            return []
+        potential_moves = parent.create_potential_moves(parent)
 
         child_node_list = []
         for move in potential_moves:
@@ -234,7 +216,7 @@ class TreeSearch:
         return True
 
     @staticmethod
-    def simulate_random_game(node, root_game):
+    def simulate_random_game(simulation_game):
         """
         Find winner of simulated game
         Called 'rollout' in Monte Carlo Tree Search terminology
@@ -242,47 +224,34 @@ class TreeSearch:
         This function currently has an awful control structure. Will fix after further testing.
         Attributes
         ----------
-            root_game : Game object
+        simulation_game : Game object
+            starting position of game to simulate
 
         Returns
         -------
             char : color that won the game
         """
-
-        # Initialize variables pre-loop to avoid terminal node related errors
-        root_game.color = root_game.opponent_color
-        new_node = MCTSNode(root_game=root_game, parent=None)
-        potential_game_list = new_node.create_potential_moves(node, node.game.opponent_color)
-
+        move_num = 0
         # If no children, the game is done
-        if len(potential_game_list) == 0:
-            return node.game.color
+        while simulation_game.winner is None:
+            new_node = MCTSNode(root_game=simulation_game, parent=None)
+            potential_node_list = new_node.create_potential_moves(new_node)
+            list_len = len(potential_node_list)
 
-        if node.game.end:
-            return node.game.color
+            if list_len > 0:
+                node_choice = random.choices(population=potential_node_list,
+                                             weights=[x.heuristic_score for x in potential_node_list],
+                                             k=1)[0]
+                simulation_game = node_choice.game
+            move_num += 1
 
-        while not root_game.end:
-            list_size = len(potential_game_list)
-            if list_size == 0:  # this indicates we have reached the end of a game
-                return root_game.opponent_color
-            else:
-                game_choice = new_node.choose_child_game(root_game, potential_game_list)
-                if game_choice.end:
-                    return game_choice.color
-                else:
-                    root_game = root_game.game_deep_copy(game_choice, game_choice.color)
-                    root_game.color = root_game.get_opponent_color(root_game.color)
-                    new_node = MCTSNode(root_game=root_game, parent=node)
-                    potential_game_list = new_node.create_potential_moves(new_node, root_game.color)
-
-        return root_game.color
+        return simulation_game.winner
 
     @staticmethod
     def update_node_info(node, outcome):
         reward = int(outcome == node.game.color)
         while node is not None:
 
-            # Don't need to update if its been played 10M times
             node.N += 1
             node.Q += reward
             node = node.parent  # traverse up the tree
@@ -311,17 +280,5 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
-        print(game_choice, game_choice.game.turn)
+        print(game_choice, "turn:", game_choice.game.turn)
         return game_choice
-
-    def get_tree_size(self):
-        node_queue = Queue()
-        num_of_children = 0
-        node_queue.put(self.root_game)
-        while not node_queue.empty():
-            current_node = node_queue.get()
-            num_of_children += 1
-            for child in current_node.children:
-                node_queue.put(child)
-
-        return num_of_children
