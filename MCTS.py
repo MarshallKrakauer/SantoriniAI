@@ -7,7 +7,8 @@ import random
 from math import sqrt, log
 
 EXPLORATION_FACTOR = 1
-TURN_TIME = 45
+TURN_TIME = 60
+MAX_DISTANCE = sqrt(32) * 4
 
 # Global variable, stores list of moves with corresponding potential moves
 # Exists to save time from hefty potential moves process
@@ -30,7 +31,7 @@ class MCTSNode:
         self.deleted = False
 
     @property
-    def heuristic_score(self):
+    def height_score(self):
         return self.game.get_height_score(self.game.color)
 
     def __repr__(self):
@@ -64,8 +65,10 @@ class MCTSNode:
         # Set the correct mover
         if (node.game.turn + 1) % 2 != 0:
             move_color = 'W'
+            other_color = 'G'
         else:
             move_color = 'G'
+            other_color = 'W'
 
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
@@ -102,12 +105,12 @@ class MCTSNode:
             move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
 
         if len(potential_move_li) == 0:
-            node.game.winner = node.game.opponent_color
+            node.game.winner = other_color
 
         return potential_move_li
 
     @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR, heuristic_factor=0.0):
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
         """Upper confidence bound for this node
 
         Attributes
@@ -121,13 +124,15 @@ class MCTSNode:
             # Exploration (win rate) + exploitation + heuristic
             return (self.Q / self.N
                     + exploration_factor * sqrt(log(self.parent.N) / self.N)
-                    # + heuristic_factor * self.game.get_minimax_score(self.game.color) / (self.game.turn + 1)
+                    + self.distance_score
                     )
 
-    def get_winning_color(self):
-        for i, j in SPACE_LIST:
-            if self.game.board[i][j]['level'] == 3:
-                return self.game.board[i][j]['occupant']
+    @property
+    def distance_score(self):
+        if self.game.turn >= 8:
+            return 0
+        else:
+            return self.game.get_distance_score(self.game.color, self.game.opponent_color) / MAX_DISTANCE
 
 
 class TreeSearch:
@@ -240,7 +245,7 @@ class TreeSearch:
 
             if list_len > 0:
                 node_choice = random.choices(population=potential_node_list,
-                                             weights=[x.heuristic_score for x in potential_node_list],
+                                             weights=[x.height_score for x in potential_node_list],
                                              k=1)[0]
                 simulation_game = node_choice.game
             move_num += 1
