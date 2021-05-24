@@ -6,8 +6,9 @@ import datetime as dt
 import random
 from math import sqrt, log
 
-EXPLORATION_FACTOR = 1
-TURN_TIME = 60
+EXPLORATION_FACTOR = 1 / sqrt(2)
+TURN_TIME = 90
+MAX_ROLLOUT = 7500
 MAX_DISTANCE = sqrt(32) * 4
 
 # Global variable, stores list of moves with corresponding potential moves
@@ -158,7 +159,7 @@ class TreeSearch:
         num_rollouts = 0
         global move_dict
         move_dict = {}  # global variable reset every time we look for best node
-        while num_rollouts < 5000 and (current_time - start_time).total_seconds() < max_seconds:
+        while num_rollouts < MAX_ROLLOUT and (current_time - start_time).total_seconds() < max_seconds:
             node = self.choose_simulation_node()
             simulation_game = node.game.game_deep_copy(node.game, node.game.color)
             winning_color = self.simulate_random_game(simulation_game)
@@ -192,7 +193,10 @@ class TreeSearch:
                 return node
 
         if self.add_children_to_game_tree(node):
-            node = random.choice(node.children)
+            try:
+                node = random.choice(node.children)
+            except IndexError:
+                node.children = []
 
         return node
 
