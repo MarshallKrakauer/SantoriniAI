@@ -37,19 +37,37 @@ class MCTSNode:
 
     @property
     def early_game_score(self):
-        if self.game.turn >= 8:
-            return 0
-        else:
-            # 9 = max height height score
-            return (self.distance_score / MAX_DISTANCE) + (self.height_score / 9) / 2
+        this_game = self.game
+        color = this_game.color
+        opponent_color = this_game.opponent_color
+
+        player_spaces = []
+        opponent_spaces = []
+        height_score = 1
+        for col, row in [(i, j) for i in range(5) for j in range(5)]:
+            if this_game.board[col][row]['occupant'] == color:
+                height_score += int(this_game.board[col][row]['level'] > 0) * 5
+                player_spaces.append((col, row))
+            elif this_game.board[col][row]['occupant'] == opponent_color:
+                opponent_spaces.append((col, row))
+
+        player_col_0, player_row_0 = player_spaces[0]
+        player_col_1, player_row_1 = player_spaces[1]
+
+        opponent_col_0, opponent_row_0 = opponent_spaces[0]
+        opponent_col_1, opponent_row_1 = opponent_spaces[1]
+
+        distance_score = -1 * (distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
+                               distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
+                               distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
+                               distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+
+        # 11 being the maximum height score
+        return ((distance_score / MAX_DISTANCE) + (height_score / 11))/2
 
     @property
     def height_score(self):
         return self.game.get_height_score(self.game.color)
-
-    @property
-    def distance_score(self):
-        return self.game.get_distance_score(self.game.color, self.game.opponent_color)
 
     @staticmethod
     def create_potential_moves(node):
@@ -288,3 +306,7 @@ class TreeSearch:
         game_choice = random.choice(max_node_list)
         print(game_choice, "turn:", game_choice.game.turn)
         return game_choice
+
+
+def distance_between(col_0, row_0, col_1, row_1):
+    return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)
