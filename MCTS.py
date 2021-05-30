@@ -8,7 +8,7 @@ from math import sqrt, log
 
 EXPLORATION_FACTOR = 1 / sqrt(2)
 TURN_TIME = 90
-MAX_ROLLOUT = 7500
+MAX_ROLLOUT = 10000
 MAX_DISTANCE = sqrt(32) * 4
 
 random.seed(dt.datetime.now().microsecond)  # set seed
@@ -27,10 +27,6 @@ class MCTSNode:
         self.Q = 0
         self.deleted = False
 
-    @property
-    def height_score(self):
-        return self.game.get_height_score(self.game.color)
-
     def __repr__(self):
         if self.N == 0 or self.parent is None:
             return str(self.game) + self.game.color
@@ -38,6 +34,22 @@ class MCTSNode:
         return (str(self.game) + self.game.color + '\n' + str(self.Q) + '/' + str(self.N) + ' '
                 + str(round(100 * self.Q / self.N, 1)) +
                 '%, score: ' + str(round(self.mcts_score, 6)))
+
+    @property
+    def early_game_score(self):
+        if self.game.turn >= 8:
+            return 0
+        else:
+            # 9 = max height height score
+            return (self.distance_score / MAX_DISTANCE) + (self.height_score / 9) / 2
+
+    @property
+    def height_score(self):
+        return self.game.get_height_score(self.game.color)
+
+    @property
+    def distance_score(self):
+        return self.game.get_distance_score(self.game.color, self.game.opponent_color)
 
     @staticmethod
     def create_potential_moves(node):
@@ -100,7 +112,6 @@ class MCTSNode:
                         potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
 
         if len(potential_move_li) == 0:
-            print(node, node.game.winner)
             node.game.winner = other_color
 
         return potential_move_li
@@ -120,15 +131,8 @@ class MCTSNode:
             # Exploration (win rate) + exploitation + heuristic
             return (self.Q / self.N
                     + exploration_factor * sqrt(log(self.parent.N) / self.N)
-                    + self.distance_score
+                    + self.early_game_score
                     )
-
-    @property
-    def distance_score(self):
-        if self.game.turn >= 8:
-            return 0
-        else:
-            return self.game.get_distance_score(self.game.color, self.game.opponent_color) / MAX_DISTANCE
 
 
 class TreeSearch:
@@ -180,7 +184,10 @@ class TreeSearch:
                     max_child_list.append(child)
 
             # If multiple nodes have the max score, we randomly select one
-            node = random.choice(max_child_list)
+            node = random.choices(population=max_child_list,
+                                  weights=[x.height_score for x in max_child_list],
+                                  k=1)[0]
+            # node = random.choice(max_child_list)
 
             if node.N == 0:
                 return node
@@ -251,7 +258,6 @@ class TreeSearch:
     def update_node_info(node, outcome):
         reward = int(outcome == node.game.color)
         while node is not None:
-
             node.N += 1
             node.Q += reward
             node = node.parent  # traverse up the tree

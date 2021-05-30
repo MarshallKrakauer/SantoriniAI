@@ -119,8 +119,7 @@ class Game:
 
     def get_height_score(self, color):
         score = 1
-        spaces = [(i, j) for i in range(5) for j in range(5)]
-        for i, j in spaces:
+        for i, j in SPACE_LIST:
             space = self.board[i][j]
             if space['occupant'] == color:
                 score += space['level'] ** 2
