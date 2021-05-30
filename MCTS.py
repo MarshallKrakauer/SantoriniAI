@@ -11,10 +11,6 @@ TURN_TIME = 90
 MAX_ROLLOUT = 7500
 MAX_DISTANCE = sqrt(32) * 4
 
-# Global variable, stores list of moves with corresponding potential moves
-# Exists to save time from hefty potential moves process
-move_dict = {}
-
 random.seed(dt.datetime.now().microsecond)  # set seed
 
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
@@ -90,9 +86,8 @@ class MCTSNode:
                 # If we find a winning moves, return only that
                 # As such, this assumes that a player will always make a winning move when possible
                 if new_game.is_winning_move():
-                    potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
                     new_game.winner = move_color
-                    move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
+                    potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
                     return potential_move_li
                 else:
                     # given a legal move, check for each possible build
@@ -103,9 +98,9 @@ class MCTSNode:
                         build_game.build_level(build[0], build[1], auto=True)
 
                         potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
-            move_dict[node.game.dict_key_rep] = [move.game.dict_repr for move in potential_move_li]
 
         if len(potential_move_li) == 0:
+            print(node, node.game.winner)
             node.game.winner = other_color
 
         return potential_move_li
@@ -157,8 +152,6 @@ class TreeSearch:
         start_time = dt.datetime.now()
         current_time = dt.datetime.now()
         num_rollouts = 0
-        global move_dict
-        move_dict = {}  # global variable reset every time we look for best node
         while num_rollouts < MAX_ROLLOUT and (current_time - start_time).total_seconds() < max_seconds:
             node = self.choose_simulation_node()
             simulation_game = node.game.game_deep_copy(node.game, node.game.color)
@@ -166,7 +159,7 @@ class TreeSearch:
             self.update_node_info(node, winning_color)
             num_rollouts += 1
             current_time = dt.datetime.now()
-        print("rollouts:", num_rollouts, 'moves', len(move_dict))
+        print("rollouts:", num_rollouts)
         self.run_time_seconds = (current_time - start_time).total_seconds()
         self.num_rollouts = num_rollouts
 
@@ -193,10 +186,8 @@ class TreeSearch:
                 return node
 
         if self.add_children_to_game_tree(node):
-            try:
+            if len(node.children) > 0:
                 node = random.choice(node.children)
-            except IndexError:
-                node.children = []
 
         return node
 
