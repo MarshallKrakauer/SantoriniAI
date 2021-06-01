@@ -12,8 +12,8 @@ METHOD = 'MINIMAX'
 
 class Game:
     """
-    Implentation of the board game Santorini using Pygame.
-    White player chooses actions, while gray turns are automated.
+    Implementation of the board game Santorini using Pygame.
+
     Attributes
     ----------
     board : list
@@ -670,4 +670,5 @@ def is_valid_num(num):
     return -1 < num < 5
 
 def distance_between(col_0, row_0, col_1, row_1):
+    """Geometrics distance between two points"""
     return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)

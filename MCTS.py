@@ -6,18 +6,35 @@ import datetime as dt
 import random
 from math import sqrt, log
 
-EXPLORATION_FACTOR = 1 / sqrt(2)
-TURN_TIME = 90
-MAX_ROLLOUT = 10000
-MAX_DISTANCE = sqrt(32) * 4
+EXPLORATION_FACTOR = 1 / sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
+TURN_TIME = 90  # Max amount of time MCTS agent can search for best move
+MAX_ROLLOUT = 10000  # Max number of rollouts MCTS agent can have before choosing best move
+MAX_DISTANCE = sqrt(32) * 4  # Max possible distance score
 
 random.seed(dt.datetime.now().microsecond)  # set seed
 
-SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
+SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
 
 class MCTSNode:
+    """
+    Node used to create game tree for MCTS.
 
+    Attributes
+    ----------
+    game : Game
+        Santorini game of this node
+    parent : MCTSNode
+       Parent node, ie previous game state
+    children : list
+        Legal moves following this node. Empty if game is over.
+    N : int
+        # of times node has been visited in a search
+    Q : int
+        # of times node has won when simulated
+    deleted : bool
+        Not currently in use, could be used to prune trees in the future
+    """
     def __init__(self, root_game, parent):
 
         self.game = root_game
@@ -28,6 +45,7 @@ class MCTSNode:
         self.deleted = False
 
     def __repr__(self):
+        """ASCII representation of MCTS Node."""
         if self.N == 0 or self.parent is None:
             return str(self.game) + self.game.color
 
@@ -37,16 +55,20 @@ class MCTSNode:
 
     @property
     def early_game_score(self):
+        """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
         this_game = self.game
+        if this_game.turn > 8:
+            return 0
+
         color = this_game.color
+        height_score = 1  # to make height score somewhat match the height score property
         opponent_color = this_game.opponent_color
 
         player_spaces = []
         opponent_spaces = []
-        height_score = 1
         for col, row in [(i, j) for i in range(5) for j in range(5)]:
             if this_game.board[col][row]['occupant'] == color:
-                height_score += int(this_game.board[col][row]['level'] > 0) * 5
+                height_score += this_game.board[col][row]['level'] ** 2
                 player_spaces.append((col, row))
             elif this_game.board[col][row]['occupant'] == opponent_color:
                 opponent_spaces.append((col, row))
@@ -62,11 +84,13 @@ class MCTSNode:
                                distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
                                distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
 
+        # Arithmetic mean of distance and height score
         # 11 being the maximum height score
-        return ((distance_score / MAX_DISTANCE) + (height_score / 11))/2
+        return (distance_score / MAX_DISTANCE) * 0.7 + (height_score / 9) * 0.3
 
     @property
     def height_score(self):
+        """Height (aka level) of player pieces."""
         return self.game.get_height_score(self.game.color)
 
     @staticmethod
@@ -206,7 +230,6 @@ class TreeSearch:
                                   weights=[x.height_score for x in max_child_list],
                                   k=1)[0]
             # node = random.choice(max_child_list)
-
             if node.N == 0:
                 return node
 
@@ -256,7 +279,7 @@ class TreeSearch:
         -------
             char : color that won the game
         """
-        move_num = 0
+
         # If no children, the game is done
         while simulation_game.winner is None:
             new_node = MCTSNode(root_game=simulation_game, parent=None)
@@ -268,7 +291,6 @@ class TreeSearch:
                                              weights=[x.height_score for x in potential_node_list],
                                              k=1)[0]
                 simulation_game = node_choice.game
-            move_num += 1
 
         return simulation_game.winner
 
@@ -304,9 +326,10 @@ class TreeSearch:
                 max_node_list.append(child)
 
         game_choice = random.choice(max_node_list)
-        print(game_choice, "turn:", game_choice.game.turn)
+        print(game_choice, "turn:", game_choice.parent.game.turn)
         return game_choice
 
 
 def distance_between(col_0, row_0, col_1, row_1):
+    """Geometrics distance between two points"""
     return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)
