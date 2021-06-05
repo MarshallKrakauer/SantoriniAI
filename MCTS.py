@@ -61,7 +61,7 @@ class MCTSNode:
             return 0
 
         color = this_game.color
-        height_score = 1  # to make height score somewhat match the height score property
+        height_score = 0  # to make height score somewhat match the height score property
         opponent_color = this_game.opponent_color
 
         player_spaces = []
@@ -71,6 +71,8 @@ class MCTSNode:
                 height_score += this_game.board[col][row]['level'] ** 2
                 player_spaces.append((col, row))
             elif this_game.board[col][row]['occupant'] == opponent_color:
+                for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
+                    height_score -= this_game.board[col_][row_]['level']
                 opponent_spaces.append((col, row))
 
         player_col_0, player_row_0 = player_spaces[0]
@@ -85,8 +87,8 @@ class MCTSNode:
                                distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
 
         # Arithmetic mean of distance and height score
-        # 11 being the maximum height score
-        return (distance_score / MAX_DISTANCE) * 0.7 + (height_score / 9) * 0.3
+        # 8 being the maximum height score
+        return (distance_score / MAX_DISTANCE) * 0.7 + (height_score / 8) * 0.3
 
     @property
     def height_score(self):
@@ -173,8 +175,7 @@ class MCTSNode:
             # Exploration (win rate) + exploitation + heuristic
             return (self.Q / self.N
                     + exploration_factor * sqrt(log(self.parent.N) / self.N)
-                    + self.early_game_score
-                    )
+                    + self.early_game_score)
 
 
 class TreeSearch:
