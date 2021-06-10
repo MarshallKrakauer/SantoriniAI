@@ -118,11 +118,11 @@ class Game:
                 chose_spaces = True
 
     def get_height_score(self, color):
-        score = 1
+        score = 0
         for i, j in SPACE_LIST:
             space = self.board[i][j]
             if space['occupant'] == color:
-                score += space['level'] ** 2
+                score += 2 ** space['level']
         return score
 
 
@@ -625,9 +625,9 @@ def get_adjacent(x_val, y_val):
     Parameters
     ----------
     x_val : int
-        x_valdinate ie column value
+        x_coordinate ie column value
     y_val : int
-        y_valdinate ie row value
+        y_coordinate ie row value
     when : string
         Not currently used. Idea is to use function to get adjacent
         values base on phase of the game. eg account for height during build

@@ -7,8 +7,8 @@ import random
 from math import sqrt, log
 
 EXPLORATION_FACTOR = 1 / sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
-TURN_TIME = 90  # Max amount of time MCTS agent can search for best move
-MAX_ROLLOUT = 10000  # Max number of rollouts MCTS agent can have before choosing best move
+TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
+MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 MAX_DISTANCE = sqrt(32) * 4  # Max possible distance score
 
 random.seed(dt.datetime.now().microsecond)  # set seed
@@ -43,6 +43,7 @@ class MCTSNode:
         self.N = 0
         self.Q = 0
         self.deleted = False
+        self.early_game_score = 0
 
     def __repr__(self):
         """ASCII representation of MCTS Node."""
@@ -53,8 +54,7 @@ class MCTSNode:
                 + str(round(100 * self.Q / self.N, 1)) +
                 '%, score: ' + str(round(self.mcts_score, 6)))
 
-    @property
-    def early_game_score(self):
+    def establish_early_game_score(self):
         """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
         this_game = self.game
         if this_game.turn > 8:
@@ -68,11 +68,11 @@ class MCTSNode:
         opponent_spaces = []
         for col, row in [(i, j) for i in range(5) for j in range(5)]:
             if this_game.board[col][row]['occupant'] == color:
-                height_score += this_game.board[col][row]['level'] ** 2
+                height_score += 2 ** this_game.board[col][row]['level']
                 player_spaces.append((col, row))
             elif this_game.board[col][row]['occupant'] == opponent_color:
                 for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
-                    height_score -= this_game.board[col_][row_]['level']
+                    height_score -= this_game.board[col_][row_]['level'] // 2
                 opponent_spaces.append((col, row))
 
         player_col_0, player_row_0 = player_spaces[0]
@@ -88,7 +88,7 @@ class MCTSNode:
 
         # Arithmetic mean of distance and height score
         # 8 being the maximum height score
-        return (distance_score / MAX_DISTANCE) * 0.7 + (height_score / 8) * 0.3
+        return (distance_score / MAX_DISTANCE) * 0.4 + (height_score / 8) * 0.2
 
     @property
     def height_score(self):
@@ -170,6 +170,7 @@ class MCTSNode:
             Tradeoff between exploring new nodes and exploring those with high win rates
         """
         if self.N == 0:  # what to do if node hasn't been visited
+            self.early_game_score = self.establish_early_game_score()
             return float('inf')
         else:
             # Exploration (win rate) + exploitation + heuristic
