@@ -102,14 +102,13 @@ test_game.board[2][2]['level'] = 2
 test_game.board[3][3]['level'] = 3
 test_game.board[4][4]['occupant'] = 'W'
 test_game.board[4][4]['level'] = 1
+# </editor-fold>
 
 our_color = []
 other_color = []
 
 player_space = []
-player_space_adj = []
 other_space = []
-other_space_adj = []
 
 for i, j in SPACE_LIST:
     if test_game.board[i][j]['occupant'] == test_game.color:
@@ -125,8 +124,6 @@ for i, j in SPACE_LIST:
         adj.sort()
         other_color.extend(adj)
 
-
-
 player_col_0, player_row_0 = player_space[0]
 player_col_1, player_row_1 = player_space[1]
 
@@ -140,13 +137,19 @@ opponent_distance = [distance_between(player_col_0, player_row_0, opponent_col_0
 
 self_distance = distance_between(player_col_0, player_row_0, player_col_1, player_row_0)
 
+turn = test_game.turn
+
 our_color = worker_level_sort(our_color)
 other_color = worker_level_sort(other_color)
 our_color.extend(other_color)
-# </editor-fold>
+
 
 new_li = []
 for x in our_color:
     new_li.extend(make_list(x))
 
-print(len(make_columns()), len(new_li))
+new_li.append(turn)
+new_li.extend(opponent_distance)
+new_li.append(self_distance)
+#print(len(make_columns()), len(new_li))
+print(new_li)
