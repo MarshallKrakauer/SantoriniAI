@@ -10,10 +10,9 @@ EXPLORATION_FACTOR = 1 / sqrt(2)  # Parameter that decides tradeoff between expl
 TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 MAX_DISTANCE = sqrt(32) * 4  # Max possible distance score
+SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
 random.seed(dt.datetime.now().microsecond)  # set seed
-
-SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
 
 class MCTSNode:
@@ -35,6 +34,7 @@ class MCTSNode:
     deleted : bool
         Not currently in use, could be used to prune trees in the future
     """
+
     def __init__(self, root_game, parent):
 
         self.game = root_game
