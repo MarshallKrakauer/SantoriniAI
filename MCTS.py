@@ -4,9 +4,9 @@ Implementation of Monte Carlo Tree Search. Currently working on improving early 
 
 import datetime as dt
 import random
-from math import sqrt, log
+from math import sqrt, log, exp
 
-EXPLORATION_FACTOR = 1 / sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
+EXPLORATION_FACTOR = sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 MAX_DISTANCE = sqrt(32) * 4  # Max possible distance score
@@ -57,8 +57,8 @@ class MCTSNode:
     def establish_early_game_score(self):
         """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
         this_game = self.game
-        if this_game.turn > 8:
-            return 0
+        if this_game.turn > 12:
+            return 1
 
         color = this_game.color
         height_score = 0  # to make height score somewhat match the height score property
@@ -88,7 +88,9 @@ class MCTSNode:
 
         # Arithmetic mean of distance and height score
         # 8 being the maximum height score
-        return (distance_score / MAX_DISTANCE) * 0.4 + (height_score / 8) * 0.2
+        score = distance_score / sqrt(32) + height_score
+        transform_score = 1 / (1 + exp(score * -1))
+        return transform_score
 
     @property
     def height_score(self):
@@ -175,8 +177,7 @@ class MCTSNode:
         else:
             # Exploration (win rate) + exploitation + heuristic
             return (self.Q / self.N
-                    + exploration_factor * sqrt(log(self.parent.N) / self.N)
-                    + self.early_game_score)
+                    + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
 
 
 class TreeSearch:
@@ -238,6 +239,9 @@ class TreeSearch:
         if self.add_children_to_game_tree(node):
             if len(node.children) > 0:
                 node = random.choice(node.children)
+            else:
+                print("exception")
+                print(node, node.game.winner, node.game.turn)
 
         return node
 
