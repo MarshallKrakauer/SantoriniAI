@@ -161,6 +161,7 @@ train_game.board[3][3]['level'] = 0
 train_game.board[4][4]['occupant'] = 'W'
 train_game.board[4][4]['level'] = 1
 
+
 # </editor-fold>
 
 
@@ -171,6 +172,47 @@ def append_list_as_row(file_name, list_of_elem):
         csv_writer = csv.writer(write_obj)
         # Add contents of list as last row in the csv file
         csv_writer.writerow(list_of_elem)
+
+
+def setup_game():
+    train_game = game.Game()
+    train_game.randomize_placement('W')
+    train_game.randomize_placement('G')
+    train_game = train_game.game_deep_copy(train_game, 'W')
+    return train_game
+
+
+def create_game_data(train_game):
+    while not train_game.end:
+        mcts_game_tree = MCTS.TreeSearch(train_game)
+        mcts_game_tree.search_tree(15)
+        best_node = mcts_game_tree.get_best_move()
+        train_game.board = best_node.game.board
+        train_game.end = best_node.game.end
+        train_game.winner = best_node.game.winner
+
+        if not train_game.end:
+            train_game.turn = best_node.game.turn
+        else:
+            train_game.turn = best_node.game.turn + 1
+
+        li.append(train_game.game_deep_copy(train_game, train_game.color))
+
+        return li, train_game
+
+
+def send_game_data_to_csv(game_list, final_game):
+    winner = final_game.winner
+    for idx, elem in enumerate(game_list):
+        if idx % 2 == 0:
+            color = 'W'
+        else:
+            color = 'G'
+        win = color == winner
+        santorini_data = SantoriniData(elem, win).data
+        append_list_as_row('game_list.csv', santorini_data)
+        print(idx, ':\n', elem, '\n', santorini_data)
+
 
 if __name__ == '__main__':
     train_game = game.Game()
@@ -196,7 +238,7 @@ if __name__ == '__main__':
 
     winner = train_game.winner
     for idx, elem in enumerate(li):
-        if idx % 2 == 0:
+        if idx % 2 == 1:
             color = 'W'
         else:
             color = 'G'
