@@ -145,26 +145,6 @@ def distance_between(col_0, row_0, col_1, row_1):
     return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)
 
 
-# <editor-fold desc="Creating test game">
-train_game = game.Game()
-train_game.color = 'W'
-train_game.turn = 10
-train_game.board[2][0]['occupant'] = 'G'
-train_game.board[2][2]['level'] = 2
-train_game.board[2][1]['level'] = 0
-train_game.board[0][3]['occupant'] = 'G'
-train_game.board[1][3]['level'] = 1
-
-train_game.board[2][2]['occupant'] = 'W'
-train_game.board[2][2]['level'] = 2
-train_game.board[3][3]['level'] = 0
-train_game.board[4][4]['occupant'] = 'W'
-train_game.board[4][4]['level'] = 1
-
-
-# </editor-fold>
-
-
 def append_list_as_row(file_name, list_of_elem):
     # Open file in append mode
     with open(file_name, 'a+', newline='') as write_obj:
@@ -175,74 +155,50 @@ def append_list_as_row(file_name, list_of_elem):
 
 
 def setup_game():
-    train_game = game.Game()
-    train_game.randomize_placement('W')
-    train_game.randomize_placement('G')
-    train_game = train_game.game_deep_copy(train_game, 'W')
-    return train_game
+    init_game = game.Game()
+    init_game.randomize_placement('W')
+    init_game.randomize_placement('G')
+    init_game = init_game.game_deep_copy(init_game, 'W')
+    return init_game
 
 
-def create_game_data(train_game):
-    while not train_game.end:
-        mcts_game_tree = MCTS.TreeSearch(train_game)
+def create_game_data(new_game):
+    return_li = []
+
+    while not new_game.end:
+        mcts_game_tree = MCTS.TreeSearch(new_game)
         mcts_game_tree.search_tree(15)
         best_node = mcts_game_tree.get_best_move()
-        train_game.board = best_node.game.board
-        train_game.end = best_node.game.end
-        train_game.winner = best_node.game.winner
+        new_game.board = best_node.game.board
+        new_game.end = best_node.game.end
+        new_game.winner = best_node.game.winner
 
-        if not train_game.end:
-            train_game.turn = best_node.game.turn
+        if not new_game.end:
+            new_game.turn = best_node.game.turn
         else:
-            train_game.turn = best_node.game.turn + 1
+            new_game.turn = best_node.game.turn + 1
 
-        li.append(train_game.game_deep_copy(train_game, train_game.color))
+        return_li.append(new_game.game_deep_copy(new_game, new_game.color))
 
-        return li, train_game
+    return return_li, new_game
 
 
-def send_game_data_to_csv(game_list, final_game):
-    winner = final_game.winner
+def send_game_data_to_csv(game_list, final_move):
+    game_winner = final_move.winner
     for idx, elem in enumerate(game_list):
         if idx % 2 == 0:
             color = 'W'
         else:
             color = 'G'
-        win = color == winner
+        win = color == game_winner
         santorini_data = SantoriniData(elem, win).data
         append_list_as_row('game_list.csv', santorini_data)
         print(idx, ':\n', elem, '\n', santorini_data)
 
 
 if __name__ == '__main__':
-    train_game = game.Game()
-    train_game.randomize_placement('W')
-    train_game.randomize_placement('G')
-    train_game = train_game.game_deep_copy(train_game, 'W')
-    print(train_game)
-    li = []
-    while not train_game.end:
-        mcts_game_tree = MCTS.TreeSearch(train_game)
-        mcts_game_tree.search_tree(15)
-        best_node = mcts_game_tree.get_best_move()
-        train_game.board = best_node.game.board
-        train_game.end = best_node.game.end
-        train_game.winner = best_node.game.winner
-
-        if not train_game.end:
-            train_game.turn = best_node.game.turn
-        else:
-            train_game.turn = best_node.game.turn + 1
-
-        li.append(train_game.game_deep_copy(train_game, train_game.color))
-
-    winner = train_game.winner
-    for idx, elem in enumerate(li):
-        if idx % 2 == 1:
-            color = 'W'
-        else:
-            color = 'G'
-        win = color == winner
-        santorini_data = SantoriniData(elem, win).data
-        append_list_as_row('game_list.csv', santorini_data)
-        print(idx, ':\n', elem, '\n', santorini_data)
+    for i in range(10):
+        train_game = setup_game()
+        new_game_list, final_game = create_game_data(train_game)
+        winner = final_game.winner
+        send_game_data_to_csv(new_game_list, final_game)

@@ -122,7 +122,7 @@ class Game:
         for i, j in SPACE_LIST:
             space = self.board[i][j]
             if space['occupant'] == color:
-                score += 2 ** space['level']
+                score += 2 * space['level'] + 1
         return score
 
 
