@@ -9,7 +9,6 @@ from math import sqrt, log, exp
 EXPLORATION_FACTOR = sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
-MAX_DISTANCE = sqrt(32) * 4  # Max possible distance score
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
 random.seed(dt.datetime.now().microsecond)  # set seed

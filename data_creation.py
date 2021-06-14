@@ -1,20 +1,23 @@
 """Gather data from a Santorini Game. Will be used to make predictive model"""
 
 import game
-import pandas as pd
-from time import time
+# import pandas as pd
+# from time import time
 from math import sqrt
+import csv
+import MCTS
 
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 
 
 class SantoriniData:
 
-    def __init__(self, santorini_game):
+    def __init__(self, santorini_game, won_game):
+        self.win = int(won_game)
         self.data = self.get_board_data(santorini_game)
 
     def get_board_data(self, santorini_game):
-        santorini_game_data = []
+        santorini_game_data = [self.win, santorini_game.turn]
         our_color_levels = []
         other_color_levels = []
 
@@ -48,8 +51,6 @@ class SantoriniData:
         opponent_distance.sort()
         self_distance = distance_between(player_col_0, player_row_0, player_col_1, player_row_0)
 
-        turn = santorini_game.turn
-
         our_color_levels = self.worker_level_sort(our_color_levels)
         other_color_levels = self.worker_level_sort(other_color_levels)
         our_color_levels.extend(other_color_levels)
@@ -57,7 +58,6 @@ class SantoriniData:
         for x in our_color_levels:
             santorini_game_data.extend(self.make_list(x))
 
-        santorini_game_data.append(turn)
         santorini_game_data.extend(opponent_distance)
         santorini_game_data.append(self_distance)
 
@@ -127,9 +127,9 @@ class SantoriniData:
 
         self_cols.extend(opp_cols)
 
-        for elem in self_cols:
+        for col in self_cols:
             for num in [0, 1, 2, 3, 4]:
-                col_list.append(elem + '_' + str(num))
+                col_list.append(col + '_' + str(num))
 
         return col_list
 
@@ -146,30 +146,61 @@ def distance_between(col_0, row_0, col_1, row_1):
 
 
 # <editor-fold desc="Creating test game">
-test_game = game.Game()
-test_game.color = 'W'
-test_game.board[2][0]['occupant'] = 'G'
-test_game.board[2][2]['level'] = 2
-test_game.board[2][1]['level'] = 3
-test_game.board[0][3]['occupant'] = 'G'
-test_game.board[1][3]['level'] = 2
+train_game = game.Game()
+train_game.color = 'W'
+train_game.turn = 10
+train_game.board[2][0]['occupant'] = 'G'
+train_game.board[2][2]['level'] = 2
+train_game.board[2][1]['level'] = 0
+train_game.board[0][3]['occupant'] = 'G'
+train_game.board[1][3]['level'] = 1
 
-test_game.board[2][2]['occupant'] = 'W'
-test_game.board[2][2]['level'] = 2
-test_game.board[3][3]['level'] = 3
-test_game.board[4][4]['occupant'] = 'W'
-test_game.board[4][4]['level'] = 1
+train_game.board[2][2]['occupant'] = 'W'
+train_game.board[2][2]['level'] = 2
+train_game.board[3][3]['level'] = 0
+train_game.board[4][4]['occupant'] = 'W'
+train_game.board[4][4]['level'] = 1
 
 # </editor-fold>
 
 
-if __name__=='__main__':
-    t0 = time()
-    for i in range(10 ** 5):  # 100k runs
-        test_li = SantoriniData(test_game).data
-    t1 = time()
-    print(t1 - t0)
+def append_list_as_row(file_name, list_of_elem):
+    # Open file in append mode
+    with open(file_name, 'a+', newline='') as write_obj:
+        # Create a writer object from csv module
+        csv_writer = csv.writer(write_obj)
+        # Add contents of list as last row in the csv file
+        csv_writer.writerow(list_of_elem)
 
+if __name__ == '__main__':
+    train_game = game.Game()
+    train_game.randomize_placement('W')
+    train_game.randomize_placement('G')
+    train_game = train_game.game_deep_copy(train_game, 'W')
+    print(train_game)
+    li = []
+    while not train_game.end:
+        mcts_game_tree = MCTS.TreeSearch(train_game)
+        mcts_game_tree.search_tree(15)
+        best_node = mcts_game_tree.get_best_move()
+        train_game.board = best_node.game.board
+        train_game.end = best_node.game.end
+        train_game.winner = best_node.game.winner
 
+        if not train_game.end:
+            train_game.turn = best_node.game.turn
+        else:
+            train_game.turn = best_node.game.turn + 1
 
+        li.append(train_game.game_deep_copy(train_game, train_game.color))
 
+    winner = train_game.winner
+    for idx, elem in enumerate(li):
+        if idx % 2 == 0:
+            color = 'W'
+        else:
+            color = 'G'
+        win = color == winner
+        santorini_data = SantoriniData(elem, win).data
+        append_list_as_row('game_list.csv', santorini_data)
+        print(idx, ':\n', elem, '\n', santorini_data)
