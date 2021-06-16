@@ -63,6 +63,23 @@ class SantoriniData:
 
         return santorini_game_data
 
+    def get_board_data_convolutional(self, santorini_game):
+        list_of_lists = []
+        player_list = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+        opponent_list = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+        height_list = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
+        for i, j in SPACE_LIST:
+            height_list[i][j] = santorini_game.board[i][j]['level']
+
+            if santorini_game.board[i][j]['occupant'] == santorini_game.color:
+                player_list[i][j] = 1
+            elif santorini_game.board[i][j]['occupant'] == santorini_game.opponent_color:
+                opponent_list[i][j] = 1
+
+        list_of_lists.extend([player_list, opponent_list, height_list])
+
+        return list_of_lists
+
     @staticmethod
     def worker_level_sort(worker_list):
         if worker_list[0] > worker_list[9]:
