@@ -17,7 +17,7 @@ class SantoriniData:
         self.data = self.get_board_data(santorini_game)
 
     def get_board_data(self, santorini_game):
-        santorini_game_data = [self.win, santorini_game.turn]
+        santorini_game_data = [self.win, santorini_game.turn / 60]
         our_color_levels = []
         other_color_levels = []
 
@@ -44,12 +44,12 @@ class SantoriniData:
         opponent_col_0, opponent_row_0 = other_space_li[0]
         opponent_col_1, opponent_row_1 = other_space_li[1]
 
-        opponent_distance = [distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0),
-                             distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1),
-                             distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1),
-                             distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0)]
+        opponent_distance = [distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) / sqrt(32),
+                             distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) / sqrt(32),
+                             distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) / sqrt(32),
+                             distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0) / sqrt(32)]
         opponent_distance.sort()
-        self_distance = distance_between(player_col_0, player_row_0, player_col_1, player_row_0)
+        self_distance = distance_between(player_col_0, player_row_0, player_col_1, player_row_0) / sqrt(32)
 
         our_color_levels = self.worker_level_sort(our_color_levels)
         other_color_levels = self.worker_level_sort(other_color_levels)
