@@ -22,7 +22,6 @@ class NNDataset(Dataset):
     def __init__(self):
         # load the csv file as a dataframe
         df = pd.read_csv('game_list.csv', header=None)
-        # df = df.loc[df.iloc[:, 1] * 60 <= 12, :]
         # store the inputs and outputs
         self.features = df.values[:, 1:]
         self.target = df.values[:, 0]
@@ -44,6 +43,7 @@ class NNDataset(Dataset):
     def get_splits(self, test_proportion=0.2):
         # determine sizes
         test_size = round(test_proportion * len(self.features))
+        print(test_size)
         train_size = len(self.features) - test_size
         # calculate the split
         return random_split(self, [train_size, test_size])
@@ -88,8 +88,8 @@ def prepare_data():
     # calculate split
     train, test = dataset.get_splits()
     # prepare data loaders
-    train_dl = DataLoader(train, batch_size=32, shuffle=True)
-    test_dl = DataLoader(test, batch_size=32, shuffle=False)
+    train_dl = DataLoader(train, batch_size=8, shuffle=True)
+    test_dl = DataLoader(test, batch_size=8, shuffle=False)
     return train_dl, test_dl
 
 
@@ -97,7 +97,7 @@ def prepare_data():
 def train_nn_model(train_dl, model):
     # define the optimization
     criterion = BCELoss()  # binary cross entropy
-    #optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
+    # optimizer = SGD(model.parameters(), lr=0.01, momentum=0.9)
     optimizer = Adam(params=model.parameters(), lr=0.001)
     # enumerate epochs
     for epoch in range(100):
@@ -126,7 +126,7 @@ def evaluate_model(test_dl, model):
         yhat = yhat.detach().numpy()
         actual = targets.numpy()
         actual = actual.reshape((len(actual), 1))
-        probs.append([np.round(yhat.astype(float)[0][0],2), actual.astype(float)[0][0]])
+        probs.append([np.round(yhat.astype(float)[0][0], 4), actual.astype(float)[0][0]])
         # round to class values
         yhat = yhat.round()
         # store
@@ -137,8 +137,10 @@ def evaluate_model(test_dl, model):
     acc = accuracy_score(actuals, predictions)
     return acc, probs
 
+
 def get_values():
     pass
+
 
 # make a class prediction for one row of data
 def predict(row, model):
@@ -150,9 +152,13 @@ def predict(row, model):
     y_hat = y_hat.detach().numpy()
     return y_hat
 
+
+# print(len(test_dl))
+
 # Initial Neural Network RUn
 model = NeuralNetwork(186)
 train_dl, test_dl = prepare_data()
+
 train_nn_model(train_dl, model)
 
 acc, predictions = evaluate_model(test_dl, model)
