@@ -34,7 +34,7 @@ class MCTSNode:
         Not currently in use, could be used to prune trees in the future
     """
 
-    def __init__(self, root_game, parent):
+    def __init__(self, root_game, parent, winning_cap=False):
 
         self.game = root_game
         self.parent = parent
@@ -43,6 +43,7 @@ class MCTSNode:
         self.Q = 0
         self.deleted = False
         self.early_game_score = 0
+        self.winning_cap = winning_cap
 
     def __repr__(self):
         """ASCII representation of MCTS Node."""
@@ -53,25 +54,42 @@ class MCTSNode:
                 + str(round(100 * self.Q / self.N, 1)) +
                 '%, score: ' + str(round(self.mcts_score, 6)))
 
+    def cap_opponent_win(self, other_color):
+        win_space_list = []
+
+        for i, j in SPACE_LIST:
+            if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
+                for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
+                    if self.game.board[col][row]['level'] == 3:
+                        win_space_list.append((col, row))
+
+        # only worth checking for blocked moves if only once space exists
+        # If none, we can ignore. If multiple, we can't block it anyway
+        if len(win_space_list) == 1:
+            return win_space_list[0]
+        else:
+            return -1, -1  # impossible move space
+
     def establish_early_game_score(self):
         """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
         this_game = self.game
-        if this_game.turn > 12:
+        if this_game.turn > 20:
             return 1
 
         color = this_game.color
-        height_score = 0  # to make height score somewhat match the height score property
+        player_height_score = 0  # to make height score somewhat match the height score property
         opponent_color = this_game.opponent_color
-
+        opponent_height = 1
         player_spaces = []
         opponent_spaces = []
         for col, row in [(i, j) for i in range(5) for j in range(5)]:
             if this_game.board[col][row]['occupant'] == color:
-                height_score += 2 ** this_game.board[col][row]['level']
+                player_height_score += 2 ** this_game.board[col][row]['level']
                 player_spaces.append((col, row))
             elif this_game.board[col][row]['occupant'] == opponent_color:
+                opponent_height += this_game.board[col][row]['level']
                 for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
-                    height_score -= this_game.board[col_][row_]['level'] // 2
+                    player_height_score -= this_game.board[col_][row_]['level'] // 2
                 opponent_spaces.append((col, row))
 
         player_col_0, player_row_0 = player_spaces[0]
@@ -80,21 +98,25 @@ class MCTSNode:
         opponent_col_0, opponent_row_0 = opponent_spaces[0]
         opponent_col_1, opponent_row_1 = opponent_spaces[1]
 
-        distance_score = -1 * (distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
-                               distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
-                               distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
-                               distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+        distance_score = -1 * opponent_height // 2 * (
+                distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
+                distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
+                distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
+                distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
 
         # Arithmetic mean of distance and height score
         # 8 being the maximum height score
-        score = distance_score / sqrt(32) + height_score
+        score = distance_score / sqrt(32) + player_height_score
         transform_score = 1 / (1 + exp(score * -1))
         return transform_score
 
     @property
     def height_score(self):
         """Height (aka level) of player pieces."""
-        return self.game.get_height_score(self.game.color)
+        if not self.winning_cap:
+            return self.game.get_height_score(self.game.color)
+        else:
+            return 200
 
     @staticmethod
     def create_potential_moves(node):
@@ -124,6 +146,8 @@ class MCTSNode:
             move_color = 'G'
             other_color = 'W'
 
+        winning_move = node.cap_opponent_win(other_color)
+
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
                      node.game.board[i][j]['occupant'] == move_color]:
@@ -149,12 +173,14 @@ class MCTSNode:
                 else:
                     # given a legal move, check for each possible build
                     for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+
                         build_game = new_game.game_deep_copy(new_game,
                                                              new_game.color)
 
                         build_game.build_level(build[0], build[1], auto=True)
-
-                        potential_move_li.append(MCTSNode(root_game=build_game, parent=node))
+                        potential_move_li.append(MCTSNode(root_game=build_game,
+                                                          parent=node,
+                                                          winning_cap=build == winning_move))
 
         if len(potential_move_li) == 0:
             node.game.winner = other_color

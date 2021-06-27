@@ -386,6 +386,7 @@ class Game:
         else:
             self.board[x_val][y_val]['occupant'] = self.color
             self.board[prev_col][prev_row]['occupant'] = 'O'
+            #self.turn += 1
             if self.board[x_val][y_val]['level'] == 3:
                 self.end_game()
             self.col = x_val
