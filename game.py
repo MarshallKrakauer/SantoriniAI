@@ -485,7 +485,6 @@ class Game:
         move_color : char
             Whose turn is it is. This will be the color moved
         """
-        self.color = move_color
         self.check_move_available()
         if self.end:
             return

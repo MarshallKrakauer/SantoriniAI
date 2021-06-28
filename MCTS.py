@@ -105,7 +105,7 @@ class MCTSNode:
         opponent_col_0, opponent_row_0 = opponent_spaces[0]
         opponent_col_1, opponent_row_1 = opponent_spaces[1]
 
-        distance_score = -1 * opponent_height // 2 * (
+        distance_score = -1 * (
                 distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
                 distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
                 distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
