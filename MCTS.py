@@ -55,20 +55,27 @@ class MCTSNode:
                 '%, score: ' + str(round(self.mcts_score, 6)))
 
     def cap_opponent_win(self, other_color):
-        win_space_list = []
+        win_space = (-1, -1)  # default if no space is found
 
-        for i, j in SPACE_LIST:
+        i = 0  # column value in outer loop
+        j = 0  # row value in outer loop
+        found_space = False
+
+        while not found_space and i <= 4 and j <= 4:
             if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
                 for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
                     if self.game.board[col][row]['level'] == 3:
-                        win_space_list.append((col, row))
+                        win_space = (col, row)
+                        found_space = True
+            # iterate to next column. If we finish a column, go to next row
+            i += 1
+            if i == 5:
+                i = 0
+                j += 1
 
         # only worth checking for blocked moves if only once space exists
         # If none, we can ignore. If multiple, we can't block it anyway
-        if len(win_space_list) == 1:
-            return win_space_list[0]
-        else:
-            return -1, -1  # impossible move space
+        return win_space
 
     def establish_early_game_score(self):
         """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
