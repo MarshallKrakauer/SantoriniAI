@@ -86,7 +86,7 @@ class MCTSNode:
         color = this_game.color
         player_height_score = 0  # to make height score somewhat match the height score property
         opponent_color = this_game.opponent_color
-        opponent_height = 1
+        opponent_height = 0
         player_spaces = []
         opponent_spaces = []
         for col, row in [(i, j) for i in range(5) for j in range(5)]:
@@ -105,7 +105,7 @@ class MCTSNode:
         opponent_col_0, opponent_row_0 = opponent_spaces[0]
         opponent_col_1, opponent_row_1 = opponent_spaces[1]
 
-        distance_score = -1 * (
+        distance_score = -1 * max(opponent_height, 1) * (
                 distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
                 distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
                 distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
@@ -113,7 +113,7 @@ class MCTSNode:
 
         # Arithmetic mean of distance and height score
         # 8 being the maximum height score
-        score = distance_score / sqrt(32) + player_height_score
+        score = distance_score / sqrt(16) + player_height_score
         transform_score = 1 / (1 + exp(score * -1))
         return transform_score
 
