@@ -219,3 +219,44 @@ if __name__ == '__main__':
         new_game_list, final_game = create_game_data(train_game)
         winner = final_game.winner
         send_game_data_to_csv(new_game_list, final_game)
+
+"""
+New data format:
+my height 0, 0
+my height 0, 1
+my height 0, 2
+# of Adj 0
+# of Adj 1
+# of Adj 2
+# of Adj 3
+# of Adj X
+my height 1, 0
+my height 1, 1
+my height 1, 2
+# of Adj 0
+# of Adj 1
+# of Adj 2
+# of Adj 3
+# of Adj X
+opp height 0, 0
+opp height 0, 1
+opp height 0, 2
+# of Adj 0
+# of Adj 1
+# of Adj 2
+# of Adj 3
+# of Adj X
+opp height 1, 0
+opp height 1, 1
+opp height 1, 2
+# of Adj 0
+# of Adj 1
+# of Adj 2
+# of Adj 3
+# of Adj X
+Self Distance
+Dist 0
+Dist 1
+Dist 2
+Dist 3
+"""
