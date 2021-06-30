@@ -54,15 +54,15 @@ class NeuralNetwork(Module):
     def __init__(self, n_inputs):
         super(NeuralNetwork, self).__init__()
         # input to first hidden layer
-        self.hidden1 = Linear(n_inputs, 100)
+        self.hidden1 = Linear(n_inputs, 20)
         kaiming_uniform_(self.hidden1.weight, nonlinearity='relu')
         self.act1 = ReLU()
         # second hidden layer
-        self.hidden2 = Linear(100, 50)
+        self.hidden2 = Linear(20, 10)
         kaiming_uniform_(self.hidden2.weight, nonlinearity='relu')
         self.act2 = ReLU()
         # third hidden layer and output
-        self.hidden3 = Linear(50, 1)
+        self.hidden3 = Linear(10, 1)
         xavier_uniform_(self.hidden3.weight)
         self.act3 = Sigmoid()
 
@@ -156,10 +156,10 @@ def predict(row, model):
 # print(len(test_dl))
 
 # Initial Neural Network RUn
-model = NeuralNetwork(186)
+model = NeuralNetwork(38)
 train_dl, test_dl = prepare_data()
 
 train_nn_model(train_dl, model)
 
 acc, predictions = evaluate_model(test_dl, model)
-print(predictions)
+print(acc)
