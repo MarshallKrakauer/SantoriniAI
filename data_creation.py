@@ -42,7 +42,6 @@ class SantoriniData:
             elif santorini_game.board[i][j]['occupant'] == santorini_game.opponent_color:
                 other_space_li.append((i, j))
                 if is_first_other_color:
-                    print(santorini_game.board[i][j]['level'])
                     other_color_levels_0[santorini_game.board[i][j]['level']] += 1
                     other_color_levels_0.extend(self.get_adjacent(i, j, santorini_game))
                     is_first_other_color = False
@@ -206,7 +205,7 @@ def send_game_data_to_csv(game_list, final_move):
 
 
 if __name__ == '__main__':
-    for i in range(1):
+    for i in range(10):
         train_game = setup_game()
         new_game_list, final_game = create_game_data(train_game)
         winner = final_game.winner
