@@ -72,7 +72,8 @@ class SantoriniData:
 
         return santorini_game_data
 
-    def get_board_data_convolutional(self, santorini_game):
+    @staticmethod
+    def get_board_data_convolutional(santorini_game):
         list_of_lists = []
         player_list = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
         opponent_list = [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
@@ -173,7 +174,7 @@ def create_game_data(new_game):
 
     while not new_game.end:
         mcts_game_tree = MCTS.TreeSearch(new_game)
-        mcts_game_tree.search_tree(10)
+        mcts_game_tree.search_tree(15)
         best_node = mcts_game_tree.get_best_move()
         new_game.board = best_node.game.board
         new_game.end = best_node.game.end

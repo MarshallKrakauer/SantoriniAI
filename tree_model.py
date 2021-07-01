@@ -1,5 +1,5 @@
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from xgboost import XGBClassifier
@@ -39,14 +39,22 @@ def plot_calibration(y_test_calibration, y_prob_calibration):
 
 if __name__ == '__main__':
     rf = RandomForestClassifier(n_estimators=200, random_state=0)
-    xgb = XGBClassifier(booster='gbtree', random_state=0, use_label_encoder=False, eval_metric='logloss')
+    xgb = XGBClassifier(booster='gbtree', random_state=0, use_label_encoder=False,
+                        eval_metric='logloss', n_estimators=200, max_depth=3, gamma=0.1, colsample_bytree=1,
+                        subsample=1, min_child_weight=3)
     df = pd.read_csv('game_list.csv', header=None)
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-    rf.fit(X_train, y_train)
+    # params = {'max_depth': [3], 'gamma': [0.1], 'colsample_bytree': [1.0], 'subsample': [1.0],
+    #           'min_child_weight': [3]}
+    # xgb_cv = GridSearchCV(xgb, param_grid=params, cv=5, verbose=-1)
 
-    rf_sigmoid = CalibratedClassifierCV(rf, method='sigmoid')
-    y_class, y_prob = get_predictions(rf_sigmoid, X_train, y_train, X_test)
+    xgb.fit(X_train, y_train)
+    #print("best estimator:", xgb_cv.best_estimator_)
+    xgb_sigmoid = CalibratedClassifierCV(xgb, method='sigmoid')
+    y_class, y_prob = get_predictions(xgb_sigmoid, X_train, y_train, X_test)
+    for i in y_prob:
+        print(i)
     analyze_accuracy(y_test, y_prob, y_class)
     plot_calibration(y_test, y_prob)
