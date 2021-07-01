@@ -5,6 +5,7 @@ from sklearn.calibration import CalibratedClassifierCV, calibration_curve
 from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
 import pandas as pd
+import joblib
 
 
 def get_predictions(model, X_train_orig, y_train_orig, X_test_orig):
@@ -46,15 +47,12 @@ if __name__ == '__main__':
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
-    # params = {'max_depth': [3], 'gamma': [0.1], 'colsample_bytree': [1.0], 'subsample': [1.0],
-    #           'min_child_weight': [3]}
-    # xgb_cv = GridSearchCV(xgb, param_grid=params, cv=5, verbose=-1)
 
     xgb.fit(X_train, y_train)
-    #print("best estimator:", xgb_cv.best_estimator_)
     xgb_sigmoid = CalibratedClassifierCV(xgb, method='sigmoid')
-    y_class, y_prob = get_predictions(xgb_sigmoid, X_train, y_train, X_test)
-    for i in y_prob:
-        print(i)
+    joblib.dump(xgb_sigmoid, 'xgb_classifier.joblib')
+    clf = joblib.load('xgb_classifier.joblib')
+
+    y_class, y_prob = get_predictions(clf, X_train, y_train, X_test)
     analyze_accuracy(y_test, y_prob, y_class)
     plot_calibration(y_test, y_prob)
