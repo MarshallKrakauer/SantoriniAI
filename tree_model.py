@@ -6,7 +6,10 @@ from xgboost import XGBClassifier
 import matplotlib.pyplot as plt
 import pandas as pd
 import joblib
+import game
+from data_creation import SantoriniData
 
+XGB_MODEL = clf = joblib.load('xgb_classifier.joblib')
 
 def get_predictions(model, X_train_orig, y_train_orig, X_test_orig):
     model.fit(X_train_orig, y_train_orig)
@@ -39,20 +42,52 @@ def plot_calibration(y_test_calibration, y_prob_calibration):
 
 
 if __name__ == '__main__':
-    rf = RandomForestClassifier(n_estimators=200, random_state=0)
+    rf = RandomForestClassifier(n_estimators=100, random_state=0)
     xgb = XGBClassifier(booster='gbtree', random_state=0, use_label_encoder=False,
                         eval_metric='logloss', n_estimators=200, max_depth=3, gamma=0.1, colsample_bytree=1,
-                        subsample=1, min_child_weight=3)
+                        subsample=1, min_child_weight=3, n_jobs=-1)
+    params = {'booster' }
+
     df = pd.read_csv('game_list.csv', header=None)
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
     xgb.fit(X_train, y_train)
-    xgb_sigmoid = CalibratedClassifierCV(xgb, method='sigmoid')
+    xgb_sigmoid = CalibratedClassifierCV(xgb, method='sigmoid', cv=3)
+    xgb_sigmoid.fit(X_train, y_train)
     joblib.dump(xgb_sigmoid, 'xgb_classifier.joblib')
     clf = joblib.load('xgb_classifier.joblib')
 
-    y_class, y_prob = get_predictions(clf, X_train, y_train, X_test)
-    analyze_accuracy(y_test, y_prob, y_class)
-    plot_calibration(y_test, y_prob)
+    import time
+
+    test_game = game.Game()
+    test_game.board[1][1]['occupant'] = 'W'
+    test_game.board[2][1]['occupant'] = 'W'
+
+    test_game.board[3][1]['occupant'] = 'G'
+    test_game.board[3][3]['occupant'] = 'G'
+
+    test_game.board[1][2]['level'] = 2
+    test_game.board[0][2]['level'] = 1
+    test_game.board[4][3]['level'] = 1
+    test_game.board[4][4]['level'] = 1
+    test_game.board[4][0]['level'] = 3
+
+    test_game.board[2][2]['occupant'] = 'X'
+    test_game.board[2][2]['level'] = 4
+
+    start = time.time()
+    # for i in range(10000):
+    #     temp = SantoriniData(test_game, False).data
+
+    data = SantoriniData(test_game, False).data
+    data = data[1:]
+    for i in range(100):
+        win_prob = XGB_MODEL.predict_proba([data])[0][0]
+    end = time.time()
+    print(end - start)
+
+    # y_class, y_prob = get_predictions(clf, X_train, y_train, X_test)
+    # analyze_accuracy(y_test, y_prob, y_class)
+    # plot_calibration(y_test, y_prob)
