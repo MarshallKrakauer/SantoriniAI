@@ -5,14 +5,14 @@ Implementation of Monte Carlo Tree Search. Currently working on improving early 
 import datetime as dt
 import random
 from data_creation import SantoriniData
-from tree_model import XGB_MODEL
+from tree_model import GBM_MODEL
 from math import sqrt, log, exp
 
 EXPLORATION_FACTOR = sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
-MODEL = XGB_MODEL
+MODEL = GBM_MODEL
 
 random.seed(dt.datetime.now().microsecond)  # set seed
 
@@ -87,8 +87,8 @@ class MCTSNode:
 
         data = SantoriniData(this_game, False).data
         data = data[1:]
-        win_prob = XGB_MODEL.predict_proba([data])[0][0]
-        #print(win_prob)
+        win_prob = MODEL.predict_proba([data])[0][0]
+
         return win_prob
 
     def establish_early_game_score(self):

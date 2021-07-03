@@ -1,15 +1,18 @@
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split, GridSearchCV
-from sklearn.metrics import roc_curve, roc_auc_score
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
-from xgboost import XGBClassifier
+import time
+
+import joblib
 import matplotlib.pyplot as plt
 import pandas as pd
-import joblib
-import game
-from data_creation import SantoriniData
+import xgboost as xgb
+from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.ensemble import GradientBoostingClassifier
+from sklearn.metrics import roc_curve, roc_auc_score
+from sklearn.model_selection import train_test_split
 
-XGB_MODEL = clf = joblib.load('xgb_classifier.joblib')
+import game
+
+GBM_MODEL = joblib.load('gbm_classifier.joblib')
+
 
 def get_predictions(model, X_train_orig, y_train_orig, X_test_orig):
     model.fit(X_train_orig, y_train_orig)
@@ -42,25 +45,36 @@ def plot_calibration(y_test_calibration, y_prob_calibration):
 
 
 if __name__ == '__main__':
-    rf = RandomForestClassifier(n_estimators=100, random_state=0)
-    xgb = XGBClassifier(booster='gbtree', random_state=0, use_label_encoder=False,
-                        eval_metric='logloss', n_estimators=200, max_depth=3, gamma=0.1, colsample_bytree=1,
-                        subsample=1, min_child_weight=3, n_jobs=-1)
-    params = {'booster' }
 
-    df = pd.read_csv('game_list.csv', header=None)
+    # Setup Data for Prediction Modeling
+    df = pd.read_csv('game_list.csv')
+    df = df.loc[df.iloc[:, 1] <= (20/60), :]
+    print(df.shape)
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
 
-    xgb.fit(X_train, y_train)
-    xgb_sigmoid = CalibratedClassifierCV(xgb, method='sigmoid', cv=3)
-    xgb_sigmoid.fit(X_train, y_train)
-    joblib.dump(xgb_sigmoid, 'xgb_classifier.joblib')
-    clf = joblib.load('xgb_classifier.joblib')
+    # Set up GBM Model
+    gbm = GradientBoostingClassifier(loss='deviance', random_state=0, n_estimators=100,
+                                     max_depth=3, subsample=1, min_impurity_decrease=0)
 
-    import time
+    # Aside, build XGBoost model. Poorly calibrated, so it's not used
+    params = {'booster': 'gbtree', 'eval_metric': 'logloss', 'max_depth': 3,
+              'gamma': 0.1, 'colsample_bytree': 1, 'subsample': 1, 'min_child_weight': 3, 'n_jobs': -1,
+              'objective': 'binary:logistic'}
+    xgb_matrix = xgb.DMatrix(X_train, label=y_train)
+    gbm.fit(X_train, y_train)
+    booster = xgb.train(params=params, dtrain=xgb_matrix, num_boost_round=100)
+    # </editor-fold>
 
+    gbm_sigmoid = CalibratedClassifierCV(gbm, method='sigmoid', cv=3)
+    gbm_sigmoid.fit(X_train, y_train)
+    y_class, y_prob = get_predictions(gbm_sigmoid, X_train, y_train, X_test)
+
+    joblib.dump(gbm, 'gbm_classifier.joblib')
+    clf = joblib.load('gbm_classifier.joblib')
+
+    # <editor-fold desc="Create Test Game">
     test_game = game.Game()
     test_game.board[1][1]['occupant'] = 'W'
     test_game.board[2][1]['occupant'] = 'W'
@@ -76,18 +90,4 @@ if __name__ == '__main__':
 
     test_game.board[2][2]['occupant'] = 'X'
     test_game.board[2][2]['level'] = 4
-
-    start = time.time()
-    # for i in range(10000):
-    #     temp = SantoriniData(test_game, False).data
-
-    data = SantoriniData(test_game, False).data
-    data = data[1:]
-    for i in range(100):
-        win_prob = XGB_MODEL.predict_proba([data])[0][0]
-    end = time.time()
-    print(end - start)
-
-    # y_class, y_prob = get_predictions(clf, X_train, y_train, X_test)
-    # analyze_accuracy(y_test, y_prob, y_class)
-    # plot_calibration(y_test, y_prob)
+    # </editor-fold>
