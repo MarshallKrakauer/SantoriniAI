@@ -43,6 +43,15 @@ def plot_calibration(y_test_calibration, y_prob_calibration):
     plt.plot(mpv, fop, marker='.')
     plt.show()
 
+    # Aside, build XGBoost model. Poorly calibrated, so it's not used
+    params = {'booster': 'gbtree', 'eval_metric': 'logloss', 'max_depth': 3,
+              'gamma': 0.1, 'colsample_bytree': 1, 'subsample': 1, 'min_child_weight': 3, 'n_jobs': -1,
+              'objective': 'binary:logistic'}
+    xgb_matrix = xgb.DMatrix(X_train, label=y_train)
+    gbm.fit(X_train, y_train)
+    booster = xgb.train(params=params, dtrain=xgb_matrix, num_boost_round=100)
+    # </editor-fold>
+
 
 if __name__ == '__main__':
 
@@ -57,15 +66,6 @@ if __name__ == '__main__':
     # Set up GBM Model
     gbm = GradientBoostingClassifier(loss='deviance', random_state=0, n_estimators=100,
                                      max_depth=3, subsample=1, min_impurity_decrease=0)
-
-    # Aside, build XGBoost model. Poorly calibrated, so it's not used
-    params = {'booster': 'gbtree', 'eval_metric': 'logloss', 'max_depth': 3,
-              'gamma': 0.1, 'colsample_bytree': 1, 'subsample': 1, 'min_child_weight': 3, 'n_jobs': -1,
-              'objective': 'binary:logistic'}
-    xgb_matrix = xgb.DMatrix(X_train, label=y_train)
-    gbm.fit(X_train, y_train)
-    booster = xgb.train(params=params, dtrain=xgb_matrix, num_boost_round=100)
-    # </editor-fold>
 
     gbm_sigmoid = CalibratedClassifierCV(gbm, method='sigmoid', cv=3)
     gbm_sigmoid.fit(X_train, y_train)
