@@ -58,7 +58,6 @@ if __name__ == '__main__':
     # Setup Data for Prediction Modeling
     df = pd.read_csv('game_list.csv')
     df = df.loc[df.iloc[:, 1] <= (20/60), :]
-    print(df.shape)
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
