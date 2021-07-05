@@ -69,6 +69,7 @@ if __name__ == '__main__':
     gbm_sigmoid = CalibratedClassifierCV(gbm, method='sigmoid', cv=3)
     gbm_sigmoid.fit(X_train, y_train)
     y_class, y_prob = get_predictions(gbm_sigmoid, X_train, y_train, X_test)
+    gbm.fit(X_train, y_train)
 
     joblib.dump(gbm, 'gbm_classifier.joblib')
     clf = joblib.load('gbm_classifier.joblib')

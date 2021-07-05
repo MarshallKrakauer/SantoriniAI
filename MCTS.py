@@ -153,9 +153,9 @@ class MCTSNode:
     def simulation_score(self):
         """Probability to give to move in simulation decision"""
         if self.simulation_exception == 'block_win':
-            return 50
-        elif self.simulation_exception == 'create_win':
             return 200
+        elif self.simulation_exception == 'create_win':
+            return self.game.get_height_score(self.game.color) + 20
         else:
             return self.game.get_height_score(self.game.color)
 
