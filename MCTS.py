@@ -4,11 +4,12 @@ Implementation of Monte Carlo Tree Search. Currently working on improving early 
 
 import datetime as dt
 import random
-from data_creation import SantoriniData
-from tree_model import GBM_MODEL
 from math import sqrt, log, exp
 
-EXPLORATION_FACTOR = sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
+from data_creation import SantoriniData
+from tree_model import GBM_MODEL
+
+EXPLORATION_FACTOR = 1 / sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
@@ -37,7 +38,7 @@ class MCTSNode:
         Not currently in use, could be used to prune trees in the future
     """
 
-    def __init__(self, root_game, parent, winning_cap=False):
+    def __init__(self, root_game, parent, simulation_exception=None):
 
         self.game = root_game
         self.parent = parent
@@ -46,7 +47,7 @@ class MCTSNode:
         self.Q = 0
         self.deleted = False
         self.early_game_score = 0
-        self.winning_cap = winning_cap
+        self.simulation_exception = simulation_exception
 
     def __repr__(self):
         """ASCII representation of MCTS Node."""
@@ -57,28 +58,106 @@ class MCTSNode:
                 + str(round(100 * self.Q / self.N, 1)) +
                 '%, score: ' + str(round(self.mcts_score, 6)))
 
-    def cap_opponent_win(self, other_color):
-        win_space = (-1, -1)  # default if no space is found
+    @property
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
+        """Upper confidence bound for this node
 
-        i = 0  # column value in outer loop
-        j = 0  # row value in outer loop
-        found_space = False
+        Attributes
+        ----------
+        exploration_factor : float
+            Tradeoff between exploring new nodes and exploring those with high win rates
+        """
+        if self.N == 0:  # what to do if node hasn't been visited
+            self.early_game_score = self.establish_model_score()
+            return float('inf')
+        else:
+            # Exploration (win rate) + exploitation + heuristic
+            return (self.Q / self.N
+                    + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
 
-        while not found_space and i <= 4 and j <= 4:
-            if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
-                for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
-                    if self.game.board[col][row]['level'] == 3:
-                        win_space = (col, row)
-                        found_space = True
-            # iterate to next column. If we finish a column, go to next row
-            i += 1
-            if i == 5:
-                i = 0
-                j += 1
+    @staticmethod
+    def create_potential_moves(node):
+        """
+        Add list of possible moves to game state.
 
-        # only worth checking for blocked moves if only once space exists
-        # If none, we can ignore. If multiple, we can't block it anyway
-        return win_space
+        Parameters
+        ----------
+        node : MCTSNode
+            Parent node of all potential moves
+        Returns
+        -------
+        return_li : list
+            Children of that node
+        """
+        potential_move_li = []  # list of legal moves from current game state
+        simulation_exception = None  # extra weight to put on simulation score
+
+        # If the game is over, produce no children
+        if node.game.winner is not None:
+            return potential_move_li
+
+        # Set the correct mover
+        if (node.game.turn + 1) % 2 != 0:
+            move_color = 'W'
+            other_color = 'G'
+        else:
+            move_color = 'G'
+            other_color = 'W'
+
+        winning_move = node.cap_opponent_win(other_color)
+
+        # Check both of the spaces occupied by the player
+        for spot in [(i, j) for i in range(5) for j in range(5) if
+                     node.game.board[i][j]['occupant'] == move_color]:
+
+            i, j = spot
+            # check each possible move
+            for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
+
+                # Move a copy of the game, as to not impact the game itself
+                new_game = node.game.game_deep_copy(node.game, move_color)
+                new_game.select_worker(move_color, i, j)
+
+                # Since we have at least one legal move, we can change the color and turn
+                new_game.color = move_color
+                new_game.move_worker(space[0], space[1], auto=True)
+
+                # If we find a winning moves, return only that
+                # As such, this assumes that a player will always make a winning move when possible
+                if new_game.is_winning_move():
+                    new_game.winner = move_color
+                    potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
+                    return potential_move_li
+                else:
+                    # given a legal move, check for each possible build
+                    for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
+
+                        if build == winning_move:
+                            simulation_exception = 'block_win'  # block opponent from winning
+                        elif (new_game.board[new_game.col][new_game.row]['level'] == 2 and
+                              new_game.board[build[0]][build[1]]['level'] == 3):
+                            simulation_exception = 'create_win'  # create winning move
+                        build_game = new_game.game_deep_copy(new_game,
+                                                             new_game.color)
+                        build_game.build_level(build[0], build[1], auto=True)
+                        potential_move_li.append(MCTSNode(root_game=build_game,
+                                                          parent=node,
+                                                          simulation_exception=simulation_exception))
+
+        if len(potential_move_li) == 0:
+            node.game.winner = other_color
+
+        return potential_move_li
+
+    @property
+    def simulation_score(self):
+        """Probability to give to move in simulation decision"""
+        if self.simulation_exception == 'block_win':
+            return 50
+        elif self.simulation_exception == 'create_win':
+            return 200
+        else:
+            return self.game.get_height_score(self.game.color)
 
     def establish_model_score(self):
         this_game = self.game
@@ -87,8 +166,11 @@ class MCTSNode:
 
         data = SantoriniData(this_game, False).data
         data = data[1:]
+        # distance = data[-5: -1]
+        # distance_score = 1 - sum(distance) / 4
         win_prob = MODEL.predict_proba([data])[0][0]
 
+        # score = sqrt(distance_score * win_prob)
         return win_prob
 
     def establish_early_game_score(self):
@@ -131,99 +213,28 @@ class MCTSNode:
         transform_score = 1 / (1 + exp(score * -1))
         return transform_score
 
-    @property
-    def height_score(self):
-        """Height (aka level) of player pieces."""
-        if not self.winning_cap:
-            return self.game.get_height_score(self.game.color)
-        else:
-            return 200
+    def cap_opponent_win(self, other_color):
+        win_space = (-1, -1)  # default if no space is found
 
-    @staticmethod
-    def create_potential_moves(node):
-        """
-        Add list of possible moves to game state.
+        i = 0  # column value in outer loop
+        j = 0  # row value in outer loop
+        found_space = False
 
-        Parameters
-        ----------
-        node : MCTSNode
-            Parent node of all potential moves
-        Returns
-        -------
-        return_li : list
-            Children of that node
-        """
-        potential_move_li = []
+        while not found_space and i <= 4 and j <= 4:
+            if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
+                for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
+                    if self.game.board[col][row]['level'] == 3:
+                        win_space = (col, row)
+                        found_space = True
+            # iterate to next column. If we finish a column, go to next row
+            i += 1
+            if i == 5:
+                i = 0
+                j += 1
 
-        # If the game is over, produce no children
-        if node.game.winner is not None:
-            return potential_move_li
-
-        # Set the correct mover
-        if (node.game.turn + 1) % 2 != 0:
-            move_color = 'W'
-            other_color = 'G'
-        else:
-            move_color = 'G'
-            other_color = 'W'
-
-        winning_move = node.cap_opponent_win(other_color)
-
-        # Check both of the spaces occupied by the player
-        for spot in [(i, j) for i in range(5) for j in range(5) if
-                     node.game.board[i][j]['occupant'] == move_color]:
-
-            i, j = spot
-            # check each possible move
-            for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
-
-                # Move a copy of the game, as to not impact the game itself
-                new_game = node.game.game_deep_copy(node.game, move_color)
-                new_game.select_worker(move_color, i, j)
-
-                # Since we have at least one legal move, we can change the color and turn
-                new_game.color = move_color
-                new_game.move_worker(space[0], space[1], auto=True)
-
-                # If we find a winning moves, return only that
-                # As such, this assumes that a player will always make a winning move when possible
-                if new_game.is_winning_move():
-                    new_game.winner = move_color
-                    potential_move_li = [MCTSNode(root_game=new_game, parent=node)]
-                    return potential_move_li
-                else:
-                    # given a legal move, check for each possible build
-                    for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
-
-                        build_game = new_game.game_deep_copy(new_game,
-                                                             new_game.color)
-
-                        build_game.build_level(build[0], build[1], auto=True)
-                        potential_move_li.append(MCTSNode(root_game=build_game,
-                                                          parent=node,
-                                                          winning_cap=build == winning_move))
-
-        if len(potential_move_li) == 0:
-            node.game.winner = other_color
-
-        return potential_move_li
-
-    @property
-    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
-        """Upper confidence bound for this node
-
-        Attributes
-        ----------
-        exploration_factor : float
-            Tradeoff between exploring new nodes and exploring those with high win rates
-        """
-        if self.N == 0:  # what to do if node hasn't been visited
-            self.early_game_score = self.establish_model_score()
-            return float('inf')
-        else:
-            # Exploration (win rate) + exploitation + heuristic
-            return (self.Q / self.N
-                    + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
+        # only worth checking for blocked moves if only once space exists
+        # If none, we can ignore. If multiple, we can't block it anyway
+        return win_space
 
 
 class TreeSearch:
@@ -276,7 +287,7 @@ class TreeSearch:
 
             # If multiple nodes have the max score, we randomly select one
             node = random.choices(population=max_child_list,
-                                  weights=[x.height_score for x in max_child_list],
+                                  weights=[x.simulation_score for x in max_child_list],
                                   k=1)[0]
             # node = random.choice(max_child_list)
             if node.N == 0:
@@ -337,7 +348,7 @@ class TreeSearch:
 
             if list_len > 0:
                 node_choice = random.choices(population=potential_node_list,
-                                             weights=[x.height_score for x in potential_node_list],
+                                             weights=[x.simulation_score for x in potential_node_list],
                                              k=1)[0]
                 simulation_game = node_choice.game
 
