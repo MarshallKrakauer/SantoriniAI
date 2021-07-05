@@ -356,6 +356,17 @@ class TreeSearch:
 
     @staticmethod
     def update_node_info(node, outcome):
+        """
+        Update the node and its parents with its winning percentage.
+
+        Attributes
+        ----------
+        node : MCTSNode
+            Node from which simulation was run
+
+        outcome : char
+            W or G, winner of the simulation game
+        """
         reward = int(outcome == node.game.color)
         while node is not None:
             node.N += 1
