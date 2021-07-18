@@ -32,18 +32,6 @@ pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
 
 
-def main():
-    """Play game including title screen."""
-    # Get game board
-    player_dict = title_screen()
-    this_game = Game()
-
-    white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
-    gray_player = SantoriniPlayer(this_game, player_dict['G'], 'G')
-
-    play_game(white_player, gray_player)
-
-
 def map_numbers(x_val, y_val):
     """
     Convert coordinates to board spaces.
@@ -71,12 +59,12 @@ def check_valid(num):
     return -1 < num < 5
 
 
-def end_fanfare():
+def end_fanfare(color='W'):
     """Produce visual showing who won the game."""
 
     pygame.draw.rect(SCREEN, BLUE,
                      BUTTON_MEASURES, 0)
-    text = font.render("WINNER!!!", True, BLACK)
+    text = font.render("WINNER: " + color, True, BLACK)
     SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
 
 
@@ -98,15 +86,23 @@ def make_undo_button(player):
     undo_button.draw()
 
 
-def thinking(player):
+def show_thinking_message(player, show_board=True):
     """Show a "THINKING..." box when AI plays turn."""
     if player.color == 'W':
         button_color = WHITE
     else:
         button_color = GRAY
-    undo_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
-                         "THINKING...", 40, button_color, BLUE, 1)
-    undo_button.draw()
+    thinking_message = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
+                              "THINKING...", 40, button_color, BLUE, 1)
+    thinking_message.draw()
+
+    if show_board:
+        player.play_turn()
+        show_board = False
+    else:
+        show_board = True
+
+    return show_board
 
 
 def draw_board(board):
@@ -347,6 +343,10 @@ def title_screen():
     return {'W': white_player, 'G': gray_player}
 
 
+def ai_turn():
+    pass
+
+
 def play_game(white_player, gray_player):
     """
     Create and run UI to play Santorini.
@@ -383,14 +383,11 @@ def play_game(white_player, gray_player):
 
         # Special conditions
 
+        ai_player = current_player.player_type != 'human'
+
         # AI player plays game
-        if not stop_game and (current_player.player_type == 'alphabeta' or current_player.player_type == 'MCTS'):
-            thinking(current_player)
-            if show_board:
-                current_player.play_turn()
-                show_board = False
-            else:
-                show_board = True
+        if not stop_game and ai_player:
+            show_board = show_thinking_message(current_player, show_board)
 
             # Switches control to opponent
             if current_player.should_switch_turns():
@@ -399,7 +396,7 @@ def play_game(white_player, gray_player):
                 current_player.update_game()
 
         # Human player plays game
-        elif not stop_game and current_player.player_type == 'human':
+        elif not stop_game and not ai_player:
             if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
                 pos = pygame.mouse.get_pos()
                 x, y = map_numbers(pos[0], pos[1])
@@ -423,7 +420,7 @@ def play_game(white_player, gray_player):
         # Check for end of game
         if game.end:
             game.end_game(False)
-            end_fanfare()
+            end_fanfare(game.color)
             stop_game = True
 
         # Update the screen
@@ -436,6 +433,18 @@ def play_game(white_player, gray_player):
 
     # Close the window and quit.
     pygame.quit()
+
+
+def main():
+    """Play game including title screen."""
+    # Get game board
+    player_dict = title_screen()
+    this_game = Game()
+
+    white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
+    gray_player = SantoriniPlayer(this_game, player_dict['G'], 'G')
+
+    play_game(white_player, gray_player)
 
 
 if __name__ == '__main__':
