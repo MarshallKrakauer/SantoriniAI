@@ -86,9 +86,9 @@ def make_undo_button(player):
     undo_button.draw()
 
 
-def show_thinking_message(player, show_board=True):
+def show_thinking_message(current_player, player_num, players, show_board=True):
     """Show a "THINKING..." box when AI plays turn."""
-    if player.color == 'W':
+    if current_player.color == 'W':
         button_color = WHITE
     else:
         button_color = GRAY
@@ -97,12 +97,17 @@ def show_thinking_message(player, show_board=True):
     thinking_message.draw()
 
     if show_board:
-        player.play_turn()
+        current_player.play_turn()
         show_board = False
     else:
         show_board = True
 
-    return show_board
+    if current_player.should_switch_turns():
+        player_num = (player_num + 1) % 2
+        current_player = players[player_num]
+        current_player.update_game()
+
+    return current_player, player_num, players, show_board
 
 
 def draw_board(board):
@@ -343,8 +348,44 @@ def title_screen():
     return {'W': white_player, 'G': gray_player}
 
 
-def ai_turn():
-    pass
+def play_human_turn(event, current_player, game, player_num, players):
+    """
+    Converts human click into play on the board
+
+    Attributes
+    ----------
+    event : Pygame event
+        Pygame interpretation of click or keyboard stroke
+
+    current_player : Player object
+        White or gray player based on current turn
+
+    game : Game object
+        Game that is currently being played
+
+    player_num : int
+        0 or 1 value corresponding to white or gray_player
+
+    players : list
+        list containing 2 player objects
+    """
+    if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
+        pos = pygame.mouse.get_pos()
+        x, y = map_numbers(pos[0], pos[1])
+
+        if check_valid(x) and check_valid(y):
+            current_player.play_turn(x, y)
+            if current_player.should_switch_turns():
+                player_num = (player_num + 1) % 2
+                current_player = players[player_num]
+                current_player.update_game()
+
+        # Undo selection if chosen
+        if check_undo(pos[0], pos[1]) and \
+                current_player.can_player_undo():
+            game.undo()
+
+    return current_player, player_num, players
 
 
 def play_game(white_player, gray_player):
@@ -361,7 +402,6 @@ def play_game(white_player, gray_player):
     """
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
-    counter = 0  # not in use, holder if something shows every other frame
     game_is_done = False  # ends pygame when true
     show_board = False  # Used to show board when AI is playing
     stop_game = False
@@ -381,37 +421,16 @@ def play_game(white_player, gray_player):
             if event.type == pygame.QUIT:
                 game_is_done = True
 
-        # Special conditions
-
         ai_player = current_player.player_type != 'human'
 
         # AI player plays game
         if not stop_game and ai_player:
-            show_board = show_thinking_message(current_player, show_board)
-
-            # Switches control to opponent
-            if current_player.should_switch_turns():
-                player_num = (player_num + 1) % 2
-                current_player = players[player_num]
-                current_player.update_game()
+            current_player, player_num, players, show_board = show_thinking_message(current_player, player_num,
+                                                                                    players, show_board)
 
         # Human player plays game
         elif not stop_game and not ai_player:
-            if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
-                pos = pygame.mouse.get_pos()
-                x, y = map_numbers(pos[0], pos[1])
-
-                if check_valid(x) and check_valid(y):
-                    current_player.play_turn(x, y)
-                    if current_player.should_switch_turns():
-                        player_num = (player_num + 1) % 2
-                        current_player = players[player_num]
-                        current_player.update_game()
-
-                # Undo selection if chosen
-                if check_undo(pos[0], pos[1]) and \
-                        current_player.can_player_undo():
-                    game.undo()
+            current_player, player_num, players = play_human_turn(event, current_player, game, player_num, players)
 
         # Allow undo during a select action
         if current_player.can_player_undo():
@@ -428,7 +447,6 @@ def play_game(white_player, gray_player):
         pygame.display.flip()
 
         # Run at 30 frames per second
-        counter += 1
         clock.tick(30)
 
     # Close the window and quit.

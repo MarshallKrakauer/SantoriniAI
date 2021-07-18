@@ -207,7 +207,6 @@ class MCTSNode:
                     distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
 
             # Arithmetic mean of distance and height score
-            # 8 being the maximum height score
             score = distance_score / sqrt(16) + player_height_score
             transform_score = 1 / (1 + exp(score * -1))
             return transform_score
