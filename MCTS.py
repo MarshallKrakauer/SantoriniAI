@@ -156,7 +156,7 @@ class MCTSNode:
         if self.simulation_exception == 'block_win':
             return 200
         elif self.simulation_exception == 'create_win':
-            return self.game.get_height_score(self.game.color) + 20
+            return self.game.get_height_score(self.game.color) + 10
         else:
             return self.game.get_height_score(self.game.color)
 
