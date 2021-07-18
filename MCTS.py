@@ -104,13 +104,14 @@ class MCTSNode:
             move_color = 'G'
             other_color = 'W'
 
-        winning_move = node.cap_opponent_win(other_color)
+        winning_move = node.find_losing_spaces(other_color)
 
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
                      node.game.board[i][j]['occupant'] == move_color]:
 
             i, j = spot
+
             # check each possible move
             for space in node.game.get_movable_spaces(game=node.game, space=(i, j)):
 
@@ -159,61 +160,59 @@ class MCTSNode:
         else:
             return self.game.get_height_score(self.game.color)
 
-    def establish_model_score(self):
+    def establish_model_score(self, how='heuristic'):
         this_game = self.game
         if this_game.turn > 20:
             return 1
 
-        data = SantoriniData(this_game, False).data
-        data = data[1:]
-        # distance = data[-5: -1]
-        # distance_score = 1 - sum(distance) / 4
-        win_prob = MODEL.predict_proba([data])[0][0]
+        # Use ML Model
+        if how == 'model':
+            data = SantoriniData(this_game, False).data
+            data = data[1:]
+            distance = data[-5: -1]
+            distance_score = 1 - sum(distance) / 4
+            win_prob = MODEL.predict_proba([data])[0][0]
 
-        # score = sqrt(distance_score * win_prob)
-        return win_prob
+            score = sqrt(distance_score * win_prob)
+            return score
 
-    def establish_early_game_score(self):
-        """Heuristic score used to prune first 8 moves of MCTS agent's turn."""
-        this_game = self.game
-        if this_game.turn > 20:
-            return 1
+        # Use handcrafted heuristic
+        elif how == 'heuristic':
+            color = this_game.color
+            player_height_score = 0  # to make height score somewhat match the height score property
+            opponent_color = this_game.opponent_color
+            opponent_height = 0
+            player_spaces = []
+            opponent_spaces = []
+            for col, row in [(i, j) for i in range(5) for j in range(5)]:
+                if this_game.board[col][row]['occupant'] == color:
+                    player_height_score += 2 ** this_game.board[col][row]['level']
+                    player_spaces.append((col, row))
+                elif this_game.board[col][row]['occupant'] == opponent_color:
+                    opponent_height += this_game.board[col][row]['level']
+                    for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
+                        player_height_score -= this_game.board[col_][row_]['level'] // 2
+                    opponent_spaces.append((col, row))
 
-        color = this_game.color
-        player_height_score = 0  # to make height score somewhat match the height score property
-        opponent_color = this_game.opponent_color
-        opponent_height = 0
-        player_spaces = []
-        opponent_spaces = []
-        for col, row in [(i, j) for i in range(5) for j in range(5)]:
-            if this_game.board[col][row]['occupant'] == color:
-                player_height_score += 2 ** this_game.board[col][row]['level']
-                player_spaces.append((col, row))
-            elif this_game.board[col][row]['occupant'] == opponent_color:
-                opponent_height += this_game.board[col][row]['level']
-                for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
-                    player_height_score -= this_game.board[col_][row_]['level'] // 2
-                opponent_spaces.append((col, row))
+            player_col_0, player_row_0 = player_spaces[0]
+            player_col_1, player_row_1 = player_spaces[1]
 
-        player_col_0, player_row_0 = player_spaces[0]
-        player_col_1, player_row_1 = player_spaces[1]
+            opponent_col_0, opponent_row_0 = opponent_spaces[0]
+            opponent_col_1, opponent_row_1 = opponent_spaces[1]
 
-        opponent_col_0, opponent_row_0 = opponent_spaces[0]
-        opponent_col_1, opponent_row_1 = opponent_spaces[1]
+            distance_score = -1 * max(opponent_height, 1) * (
+                    distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
+                    distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
+                    distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
+                    distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
 
-        distance_score = -1 * max(opponent_height, 1) * (
-                distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
-                distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
-                distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
-                distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+            # Arithmetic mean of distance and height score
+            # 8 being the maximum height score
+            score = distance_score / sqrt(16) + player_height_score
+            transform_score = 1 / (1 + exp(score * -1))
+            return transform_score
 
-        # Arithmetic mean of distance and height score
-        # 8 being the maximum height score
-        score = distance_score / sqrt(16) + player_height_score
-        transform_score = 1 / (1 + exp(score * -1))
-        return transform_score
-
-    def cap_opponent_win(self, other_color):
+    def find_losing_spaces(self, other_color):
         win_space = (-1, -1)  # default if no space is found
 
         i = 0  # column value in outer loop
@@ -285,7 +284,7 @@ class TreeSearch:
                 elif current_score == max_score:
                     max_child_list.append(child)
 
-            # If multiple nodes have the max score, we randomly select one
+            # If multiple nodes have the max score, we select one according to the simulation score
             node = random.choices(population=max_child_list,
                                   weights=[x.simulation_score for x in max_child_list],
                                   k=1)[0]
