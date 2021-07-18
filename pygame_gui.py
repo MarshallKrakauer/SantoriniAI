@@ -86,30 +86,6 @@ def make_undo_button(player):
     undo_button.draw()
 
 
-def show_thinking_message(current_player, player_num, players, show_board=True):
-    """Show a "THINKING..." box when AI plays turn."""
-    if current_player.color == 'W':
-        button_color = WHITE
-    else:
-        button_color = GRAY
-    thinking_message = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
-                              "THINKING...", 40, button_color, BLUE, 1)
-    thinking_message.draw()
-
-    if show_board:
-        current_player.play_turn()
-        show_board = False
-    else:
-        show_board = True
-
-    if current_player.should_switch_turns():
-        player_num = (player_num + 1) % 2
-        current_player = players[player_num]
-        current_player.update_game()
-
-    return current_player, player_num, players, show_board
-
-
 def draw_board(board):
     """Draw the 5x5 game board with player pieces."""
     for i in range(5):
@@ -388,6 +364,47 @@ def play_human_turn(event, current_player, game, player_num, players):
     return current_player, player_num, players
 
 
+def play_ai_turn(current_player, player_num, players, show_board=True):
+    """
+    Plays the AI's turn
+
+    Attributes
+    ----------
+    current_player : Player object
+        White or gray player based on current turn
+
+    player_num : int
+        0 or 1 value corresponding to white or gray_player
+
+    players : list
+        list containing 2 player objects
+
+    show_board : bool
+        alternates between true and false every function call, needed to show board while function
+        is thinking
+    """
+    if current_player.color == 'W':
+        button_color = WHITE
+    else:
+        button_color = GRAY
+    thinking_message = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
+                              "THINKING...", 40, button_color, BLUE, 1)
+    thinking_message.draw()
+
+    if show_board:
+        current_player.play_turn()
+        show_board = False
+    else:
+        show_board = True
+
+    if current_player.should_switch_turns():
+        player_num = (player_num + 1) % 2
+        current_player = players[player_num]
+        current_player.update_game()
+
+    return current_player, player_num, players, show_board
+
+
 def play_game(white_player, gray_player):
     """
     Create and run UI to play Santorini.
@@ -402,9 +419,9 @@ def play_game(white_player, gray_player):
     """
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
-    game_is_done = False  # ends pygame when true
+    game_is_done = False  # ends pygame input when true
     show_board = False  # Used to show board when AI is playing
-    stop_game = False
+    stop_game = False  # keeps game board on screen
     player_num = 0
     players = [white_player, gray_player]
     current_player = players[0]
@@ -425,8 +442,8 @@ def play_game(white_player, gray_player):
 
         # AI player plays game
         if not stop_game and ai_player:
-            current_player, player_num, players, show_board = show_thinking_message(current_player, player_num,
-                                                                                    players, show_board)
+            current_player, player_num, players, show_board = play_ai_turn(current_player, player_num,
+                                                                           players, show_board)
 
         # Human player plays game
         elif not stop_game and not ai_player:
