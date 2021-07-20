@@ -9,8 +9,8 @@ from math import sqrt, log, exp
 from data_creation import SantoriniData
 from tree_model import GBM_MODEL
 
-EXPLORATION_FACTOR = sqrt(2)  # Parameter that decides tradeoff between exploration and exploitation
-TURN_TIME = 75  # Max amount of time MCTS agent can search for best move
+EXPLORATION_FACTOR = 3  # Parameter that decides tradeoff between exploration and exploitation
+TURN_TIME = 60  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 MODEL = GBM_MODEL
