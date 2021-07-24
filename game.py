@@ -475,7 +475,7 @@ class Game:
         if not self.end:
             self.sub_turn = 'switch'
 
-    def play_mcts_turn(self, move_color, rave=True):
+    def play_mcts_turn(self, move_color, rave=False):
         """
         Select turn for AI player
         Uses alpha-beta pruning to selection best turn
