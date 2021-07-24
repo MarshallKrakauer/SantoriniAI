@@ -1,5 +1,6 @@
 import random
 import MCTS
+import MCTS_RAVE
 import minimax_node
 from math import sqrt
 
@@ -386,7 +387,6 @@ class Game:
         else:
             self.board[x_val][y_val]['occupant'] = self.color
             self.board[prev_col][prev_row]['occupant'] = 'O'
-            #self.turn += 1
             if self.board[x_val][y_val]['level'] == 3:
                 self.end_game()
             self.col = x_val
@@ -475,7 +475,7 @@ class Game:
         if not self.end:
             self.sub_turn = 'switch'
 
-    def play_mcts_turn(self, move_color):
+    def play_mcts_turn(self, move_color, rave=True):
         """
         Select turn for AI player
         Uses alpha-beta pruning to selection best turn
@@ -490,7 +490,10 @@ class Game:
             return
 
         game_copy = self.game_deep_copy(self, move_color)
-        mcts_game_tree = MCTS.TreeSearch(game_copy)
+        if not rave:
+            mcts_game_tree = MCTS.TreeSearch(game_copy)
+        elif rave:
+            mcts_game_tree = MCTS_RAVE.TreeSearchRave(game_copy)
         mcts_game_tree.search_tree()
         best_node = mcts_game_tree.get_best_move()
         self.board = best_node.game.board
