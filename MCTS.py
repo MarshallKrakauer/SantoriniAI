@@ -9,7 +9,7 @@ from math import sqrt, log, exp
 from data_creation import SantoriniData
 from tree_model import GBM_MODEL
 
-EXPLORATION_FACTOR = 3  # Parameter that decides tradeoff between exploration and exploitation
+EXPLORATION_FACTOR = 2.5  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 60  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
@@ -67,6 +67,10 @@ class MCTSNode:
         exploration_factor : float
             Tradeoff between exploring new nodes and exploring those with high win rates
         """
+
+        if self.game.turn > 16:
+            exploration_factor = 1.5
+
         if self.N == 0:  # what to do if node hasn't been visited
             self.early_game_score = self.establish_model_score()
             return float('inf')
@@ -162,7 +166,7 @@ class MCTSNode:
 
     def establish_model_score(self, how='heuristic'):
         this_game = self.game
-        if this_game.turn > 20:
+        if this_game.turn > 16:
             return 1
 
         # Use ML Model
