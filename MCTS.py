@@ -291,7 +291,7 @@ class TreeSearch:
             node = random.choices(population=max_child_list,
                                   weights=[x.simulation_score for x in max_child_list],
                                   k=1)[0]
-            # node = random.choice(max_child_list)
+
             if node.N == 0:
                 return node
 
