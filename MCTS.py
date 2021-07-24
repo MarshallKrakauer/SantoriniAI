@@ -9,7 +9,7 @@ from math import sqrt, log, exp
 from data_creation import SantoriniData
 from tree_model import GBM_MODEL
 
-EXPLORATION_FACTOR = 2.5  # Parameter that decides tradeoff between exploration and exploitation
+EXPLORATION_FACTOR = 3  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 60  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
@@ -70,12 +70,14 @@ class MCTSNode:
 
         if self.game.turn > 16:
             exploration_factor = 1.5
+        elif self.game.turn > 8:
+            exploration_factor = 2.25
 
         if self.N == 0:  # what to do if node hasn't been visited
             self.early_game_score = self.establish_model_score()
             return float('inf')
         else:
-            # Exploration (win rate) + exploitation + heuristic
+            # (win_rate) + (constant * heuristic_score * exploitation)
             return (self.Q / self.N
                     + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
 
@@ -198,24 +200,48 @@ class MCTSNode:
                         player_height_score -= this_game.board[col_][row_]['level'] // 2
                     opponent_spaces.append((col, row))
 
-            player_col_0, player_row_0 = player_spaces[0]
-            player_col_1, player_row_1 = player_spaces[1]
-
-            opponent_col_0, opponent_row_0 = opponent_spaces[0]
-            opponent_col_1, opponent_row_1 = opponent_spaces[1]
-
-            distance_score = -1 * max(opponent_height, 1) * (
-                    distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
-                    distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
-                    distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
-                    distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+            distance_score = -1 * max(opponent_height, 1) * self.calculate_distance(player_spaces, opponent_spaces)
 
             # Arithmetic mean of distance and height score
             score = distance_score / sqrt(16) + player_height_score
             transform_score = 1 / (1 + exp(score * -1))
             return transform_score
 
+    @staticmethod
+    def calculate_distance(player_spaces, opponent_spaces):
+        """
+        Calculate total difference between player pieces and opponent pieces
+
+        Attributes
+        ----------
+
+        player_spaces : list
+            X and Y coordinates of two player pieces
+
+        opponent_spaces : list
+            X and Y coordinates of two opponent pieces
+        """
+        player_col_0, player_row_0 = player_spaces[0]
+        player_col_1, player_row_1 = player_spaces[1]
+
+        opponent_col_0, opponent_row_0 = opponent_spaces[0]
+        opponent_col_1, opponent_row_1 = opponent_spaces[1]
+
+        return (distance_between(player_col_0, player_row_0, opponent_col_0, opponent_row_0) +
+                distance_between(player_col_0, player_row_0, opponent_col_1, opponent_row_1) +
+                distance_between(player_col_1, player_row_1, opponent_col_1, opponent_row_1) +
+                distance_between(player_col_1, player_row_1, opponent_col_0, opponent_row_0))
+
     def find_losing_spaces(self, other_color):
+        """
+        Check if opponent has space they can win at next turn
+
+        Attributes
+        ----------
+
+        other_color : char
+            Color of opponent pieces
+        """
         win_space = (-1, -1)  # default if no space is found
 
         i = 0  # column value in outer loop
@@ -316,13 +342,13 @@ class TreeSearch:
             # don't expand a finished game
             return False
 
-        potential_moves = parent.create_potential_moves(parent)
+        # potential_moves = parent.create_potential_moves(parent)
 
-        child_node_list = []
-        for move in potential_moves:
-            child_node_list.append(MCTSNode(root_game=move.game, parent=parent))
+        # child_node_list = []
+        # for move in potential_moves:
+        #     child_node_list.append(MCTSNode(root_game=move.game, parent=parent))
 
-        parent.children = child_node_list
+        parent.children = parent.create_potential_moves(parent)
         return True
 
     @staticmethod
