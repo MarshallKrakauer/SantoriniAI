@@ -69,9 +69,9 @@ class MCTSNode:
         """
 
         if self.game.turn > 16:
-            exploration_factor = 1.5
+            exploration_factor = EXPLORATION_FACTOR * 0.50
         elif self.game.turn > 8:
-            exploration_factor = 2.25
+            exploration_factor = EXPLORATION_FACTOR * 0.75
 
         if self.N == 0:  # what to do if node hasn't been visited
             self.early_game_score = self.establish_model_score()

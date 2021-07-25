@@ -4,16 +4,12 @@ Currently testing new code. As of right now, the logic is identical to standard 
 """
 
 import random
-from math import sqrt
+from math import sqrt, log
 
 from MCTS import MCTSNode, TreeSearch
-from tree_model import GBM_MODEL
 
-EXPLORATION_FACTOR = 2.5  # Parameter that decides tradeoff between exploration and exploitation
-TURN_TIME = 30  # Max amount of time MCTS agent can search for best move
-MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
-SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
-MODEL = GBM_MODEL
+EXPLORATION_FACTOR_RAVE = 2.5  # Parameter that decides tradeoff between exploration and exploitation
+RAVE_EQUILIBRIUM = 50  # Number of moves after which RAVE and MCTS have equal value
 
 
 class RAVENode(MCTSNode):
@@ -23,6 +19,17 @@ class RAVENode(MCTSNode):
         self.RAVE_N = 0
         self.RAVE_Q = 0
         self.RAVE_id = rave_id
+
+    def __repr__(self):
+        """ASCII representation of MCTS Node."""
+        if self.N == 0 or self.parent is None:
+            return str(self.game) + self.game.color
+
+        return (str(self.game) + self.game.color + '\n'
+                + str(self.Q) + '/' + str(self.N)
+                + ': ' + str(round(100 * self.Q / self.N, 1)) + '%'
+                + ' (' + str(self.RAVE_Q) + '/' + str(self.RAVE_N) + ')'
+                + ' score: ' + str(round(self.mcts_score, 3)))
 
     @staticmethod
     def create_potential_moves(node):
@@ -38,7 +45,7 @@ class RAVENode(MCTSNode):
         return_li : list
             Children of that node
         """
-        rave_id = 0
+        rave_id = -1  # initialize rave id
         potential_move_li = []  # list of legal moves from current game state
         simulation_exception = None  # extra weight to put on simulation score
 
@@ -103,12 +110,72 @@ class RAVENode(MCTSNode):
 
         return potential_move_li
 
+    @property
+    def mcts_score(self, exploration_factor=EXPLORATION_FACTOR_RAVE, rave_equilibrium=RAVE_EQUILIBRIUM):
+        """Upper confidence bound for this node
+
+        Attributes
+        ----------
+        exploration_factor : float
+            Tradeoff between exploring new nodes and exploring those with high win rates
+        """
+
+        # Set exploration factor, want to exploit less earlier in the game
+        if self.game.turn > 16:
+            exploration_factor = EXPLORATION_FACTOR_RAVE * 0.50
+        elif self.game.turn > 8:
+            exploration_factor = EXPLORATION_FACTOR_RAVE * 0.75
+
+        if self.N == 0:  # what to do if node hasn't been visited
+            self.early_game_score = self.establish_model_score()
+            return float('inf')
+        else:
+            rave_weight = sqrt(RAVE_EQUILIBRIUM / (3 * self.parent.N + RAVE_EQUILIBRIUM))
+            mcts_weight = (1-rave_weight)
+
+            # (win_rate) + (constant * heuristic_score * exploitation)
+            return ((self.Q / self.N) * mcts_weight + (self.RAVE_Q/self.RAVE_N) * rave_weight
+                    + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
+
 
 class TreeSearchRave(TreeSearch):
 
     def __init__(self, root_game):
         super().__init__(root_game)
         self.root = RAVENode(self.root_game, None)
+
+    @staticmethod
+    def update_node_info(node, outcome):
+        """
+        Update the node and its parents with its winning percentage.
+
+        Attributes
+        ----------
+        node : MCTSNode
+            Node from which simulation was run
+
+        outcome : char
+            W or G, winner of the simulation game
+        """
+        reward = int(outcome == node.game.color)
+
+        while node is not None:
+            node.N += 1
+            node.Q += reward
+
+            # See if child node has siblings to loop through
+            if node.parent is None:
+                siblings = []
+            else:
+                siblings = node.parent.children
+
+            for child in siblings:
+                if child.RAVE_id == node.RAVE_id:
+                    child.RAVE_N += 1
+                    child.RAVE_Q += reward
+
+            node = node.parent  # traverse up the tree
+            reward = int(not reward)  # switch reward for other color
 
     @staticmethod
     def add_children_to_game_tree(parent):
@@ -124,12 +191,6 @@ class TreeSearchRave(TreeSearch):
         if parent.game.winner is not None:
             # don't expand a finished game
             return False
-
-        potential_moves = parent.create_potential_moves(parent)
-
-        # child_node_list = []
-        # for move in potential_moves:
-        #     child_node_list.append(RAVENode(root_game=move.game, parent=parent))
 
         parent.children = parent.create_potential_moves(parent)
         return True
@@ -180,7 +241,6 @@ class TreeSearchRave(TreeSearch):
 
         # Find child that was visited the most
         for child in self.root.children:
-            print(child.RAVE_id)
             current_score = child.N
             if current_score > max_node_score:
                 max_node_list = [child]
