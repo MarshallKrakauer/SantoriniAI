@@ -5,12 +5,16 @@ This code seeks to implement the abstract board game Santorini with Python. The 
 ## Getting Started
 
 I run this on Pycharm in Python 3.9. Users need pygame installed, and a computer with some graphics inferface. Some virtual environments (like Google Colab) lack the visual capability to show the pygame interface.
+
 To play the game, run "pygame_gui.py" This will import all the relevant classes from other files.
-To have an AI play against itself, run "ascii_game.py" Note that this file will eventually support human players.
+
+If one is unable to use pygame, run the "ascii_game.py" file. This will alow the player to use keyboard commands to play.
 
 ### Prerequisites
 
-Users must have some environment to run Python, with pygame installed. Note that pypy does not support pygame.
+The following packages must be installed: pygame, random, math, pandas, numpy, sklearn, joblib
+
+Note: pypy does not support pygame.
 
 ## Built With
 
