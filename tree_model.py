@@ -1,10 +1,6 @@
-import time
-
 import joblib
-import matplotlib.pyplot as plt
 import pandas as pd
-import xgboost as xgb
-from sklearn.calibration import CalibratedClassifierCV, calibration_curve
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.metrics import roc_curve, roc_auc_score
 from sklearn.model_selection import train_test_split
@@ -33,24 +29,6 @@ def analyze_accuracy(y_test_acc, y_pred_prob_acc, y_pred_class_acc):
 
     ns_fpr, ns_tpr, _ = roc_curve(y_test_acc, naive_prediction)
     lr_fpr, lr_tpr, _ = roc_curve(y_test_acc, y_pred_prob_acc)
-
-
-def plot_calibration(y_test_calibration, y_prob_calibration):
-    fop, mpv = calibration_curve(y_test_calibration, y_prob_calibration, n_bins=10, normalize=True)
-    # plot perfectly calibrated
-    plt.plot([0, 1], [0, 1], linestyle='--')
-    # plot model reliability
-    plt.plot(mpv, fop, marker='.')
-    plt.show()
-
-    # Aside, build XGBoost model. Poorly calibrated, so it's not used
-    params = {'booster': 'gbtree', 'eval_metric': 'logloss', 'max_depth': 3,
-              'gamma': 0.1, 'colsample_bytree': 1, 'subsample': 1, 'min_child_weight': 3, 'n_jobs': -1,
-              'objective': 'binary:logistic'}
-    xgb_matrix = xgb.DMatrix(X_train, label=y_train)
-    gbm.fit(X_train, y_train)
-    booster = xgb.train(params=params, dtrain=xgb_matrix, num_boost_round=100)
-    # </editor-fold>
 
 
 if __name__ == '__main__':
