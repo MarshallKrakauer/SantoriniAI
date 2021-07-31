@@ -7,9 +7,6 @@ from math import sqrt
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 DEPTH = 4
-METHOD = 'MINIMAX'
-
-# Todo - add tensorflow reinforcement learning
 
 class Game:
     """
