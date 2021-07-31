@@ -158,7 +158,15 @@ class RAVENode(MCTSNode):
 
 
 class TreeSearchRave(TreeSearch):
+    """
+    Runs the MCTS RAVE algorithm given a starting position.
 
+    Attributes
+    ----------
+    root : RAVENode
+        Node containing the root game
+
+    """
     def __init__(self, root_game):
         super().__init__(root_game)
         self.root = RAVENode(self.root_game, None)

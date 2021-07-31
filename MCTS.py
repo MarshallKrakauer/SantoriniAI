@@ -293,12 +293,28 @@ class MCTSNode:
 
 
 class TreeSearch:
+    """
+    Runs the MCTS algorithm given a starting position.
 
+    Attributes
+    ----------
+    root_game : Game
+        Starting position of the game in the tree. All other moves are descendants of this move
+
+    root : MCTSNode
+        Node containing the root game
+
+    run_time_seconds : int
+        Maximum amount of time tree can spend searching for the best move
+
+    num_rollouts : int
+        Number of times a move has been simulated
+
+    """
     def __init__(self, root_game):
         self.root_game = root_game.game_deep_copy(root_game, root_game.color)
         self.root = MCTSNode(self.root_game, None)
         self.run_time_seconds = 0
-        self.num_nodes = 0
         self.num_rollouts = 0
 
     def search_tree(self, max_seconds=TURN_TIME):
