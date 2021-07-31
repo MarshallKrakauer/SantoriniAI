@@ -11,6 +11,25 @@ GBM_MODEL = joblib.load('gbm_classifier.joblib')
 
 
 def get_predictions(model, X_train_orig, y_train_orig, X_test_orig):
+    """
+    Obtain probability and class predictions for a given dataset and model
+
+    Parameters
+    ----------
+    model : object with a fit, predict, and predict_proba method function
+        Machine learning model from which to produce predictions
+    X_test_orig : pandas DataFrame
+        Dataframe with features from which to produce a prediction
+    y_train_orig : list or pandas series
+        Target variables to train model on
+    X_train_orig : pandas DataFrame
+        Testing values from which to validate model
+
+    Returns
+    -------
+    Tuple
+        Two lists: the class (1 or 0) predictions and the probability predictions
+    """
     model.fit(X_train_orig, y_train_orig)
     y_pred_class = model.predict(X_test_orig)
     y_pred_prob = model.predict_proba(X_test_orig)
@@ -20,6 +39,22 @@ def get_predictions(model, X_train_orig, y_train_orig, X_test_orig):
 
 
 def analyze_accuracy(y_test_acc, y_pred_prob_acc, y_pred_class_acc):
+    """
+    Show AUC curve and confusion matrix for model predictions
+
+    Parameters
+    ----------
+    y_test_acc : list or pandas series
+        True values that are attempting to be predicted
+
+    y_pred_class_acc : list
+        Probability predictions for each row
+
+    y_pred_prob_acc : list
+        Class predictions (1 or 0) for each row
+
+
+    """
     naive_prediction = [0.5] * len(y_pred_class_acc)
 
     naive_auc = roc_auc_score(y_test_acc, naive_prediction)
@@ -32,10 +67,9 @@ def analyze_accuracy(y_test_acc, y_pred_prob_acc, y_pred_class_acc):
 
 
 if __name__ == '__main__':
-
     # Setup Data for Prediction Modeling
     df = pd.read_csv('game_list.csv')
-    df = df.loc[df.iloc[:, 1] <= (20/60), :]
+    df = df.loc[df.iloc[:, 1] <= (20 / 60), :]
     y = df.iloc[:, 0]
     X = df.iloc[:, 1:]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
