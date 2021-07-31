@@ -376,12 +376,6 @@ class TreeSearch:
             # don't expand a finished game
             return False
 
-        # potential_moves = parent.create_potential_moves(parent)
-
-        # child_node_list = []
-        # for move in potential_moves:
-        #     child_node_list.append(MCTSNode(root_game=move.game, parent=parent))
-
         parent.children = parent.create_potential_moves(parent)
         return True
 

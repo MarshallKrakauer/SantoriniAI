@@ -10,7 +10,20 @@ RAVE_EQUILIBRIUM = 50  # Number of moves after which RAVE and MCTS have equal va
 
 
 class RAVENode(MCTSNode):
+    """
+    MCTS Node altered to account for all moves as first heuristic.
 
+    Attributes
+    ----------
+    RAVE_N : int
+        Number of times node with same parent move has been chosen.
+
+    RAVE_Q : int
+        Number of times node with same parent has won a simulation game.
+
+    RAVE_id : int
+        Index of parent node. Used to determine if node is sibling of another node.
+    """
     def __init__(self, root_game, parent, simulation_exception=None, rave_id=0):
         super().__init__(root_game, parent, simulation_exception)
         self.RAVE_N = 0
@@ -111,10 +124,19 @@ class RAVENode(MCTSNode):
     def mcts_score(self, exploration_factor=EXPLORATION_FACTOR_RAVE, rave_equilibrium=RAVE_EQUILIBRIUM):
         """Upper confidence bound for this node
 
-        Attributes
+        Parameters
         ----------
         exploration_factor : float
             Tradeoff between exploring new nodes and exploring those with high win rates
+
+        rave_equilibrium : int
+            Number of turns in which AMAF and MCTS attribute equal value to the score. Before this number,
+            AMAF holds more value. Afterwards, MCTS does
+
+        Returns
+        -------
+        float
+            Score of given game, highest is chosen for next simulation
         """
 
         # Set exploration factor, want to exploit less earlier in the game
@@ -182,7 +204,8 @@ class TreeSearchRave(TreeSearch):
 
         Returns
         -------
-            bool: false if the game is over
+        bool
+            false if the game is over
         """
 
         if parent.game.winner is not None:
@@ -206,7 +229,8 @@ class TreeSearchRave(TreeSearch):
 
         Returns
         -------
-            char : color that won the game
+        char
+            color that won the game
         """
 
         # If no children, the game is done
@@ -225,11 +249,12 @@ class TreeSearchRave(TreeSearch):
 
     def get_best_move(self):
         """
-        Get the best move in the current tree
+        Get the best move (ie, one chosen the most) in the current tree
 
         Returns
         -------
-            Game : best move, ie highest N
+        Game
+            best move, ie highest N
         """
         max_node_list = []
         max_node_score = 0
