@@ -1,7 +1,4 @@
-"""Addition of the All Moves as First (AMAF) algorithm to MCTS
-
-Currently testing new code. As of right now, the logic is identical to standard MCTS
-"""
+"""Simplified addition of the All Moves as First (AMAF) algorithm to MCTS"""
 
 import random
 from math import sqrt, log
@@ -131,10 +128,10 @@ class RAVENode(MCTSNode):
             return float('inf')
         else:
             rave_weight = sqrt(RAVE_EQUILIBRIUM / (3 * self.parent.N + RAVE_EQUILIBRIUM))
-            mcts_weight = (1-rave_weight)
+            mcts_weight = (1 - rave_weight)
 
             # (win_rate) + (constant * heuristic_score * exploitation)
-            return ((self.Q / self.N) * mcts_weight + (self.RAVE_Q/self.RAVE_N) * rave_weight
+            return ((self.Q / self.N) * mcts_weight + (self.RAVE_Q / self.RAVE_N) * rave_weight
                     + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
 
 

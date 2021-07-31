@@ -62,10 +62,15 @@ class MCTSNode:
     def mcts_score(self, exploration_factor=EXPLORATION_FACTOR):
         """Upper confidence bound for this node
 
-        Attributes
+        Parameters
         ----------
         exploration_factor : float
             Tradeoff between exploring new nodes and exploring those with high win rates
+
+        Returns
+        -------
+        float
+            Score of given game, highest is chosen for next simulation
         """
 
         if self.game.turn > 16:
@@ -167,12 +172,25 @@ class MCTSNode:
             return self.game.get_height_score(self.game.color)
 
     def establish_model_score(self, how='heuristic'):
+        """
+        Provide heuristic score early in the game to check more fruitful moves first.
+
+        Parameters
+        ----------
+        how : string
+            What methodology to use for model score. Heuristic model or ML model
+
+        Returns
+        -------
+        score: float
+            Win probability of game based on chosen model
+        """
         this_game = self.game
         if this_game.turn > 16:
             return 1
 
         # Use ML Model
-        if how == 'model':
+        if how == 'ml':
             data = SantoriniData(this_game, False).data
             data = data[1:]
             distance = data[-5: -1]
@@ -212,14 +230,18 @@ class MCTSNode:
         """
         Calculate total difference between player pieces and opponent pieces
 
-        Attributes
+        Parameters
         ----------
-
         player_spaces : list
             X and Y coordinates of two player pieces
 
         opponent_spaces : list
             X and Y coordinates of two opponent pieces
+
+        Returns
+        -------
+        float
+            Total distance between player workers and opponent workers
         """
         player_col_0, player_row_0 = player_spaces[0]
         player_col_1, player_row_1 = player_spaces[1]
@@ -236,11 +258,16 @@ class MCTSNode:
         """
         Check if opponent has space they can win at next turn
 
-        Attributes
+        Parameters
         ----------
-
         other_color : char
             Color of opponent pieces
+
+        Returns
+        -------
+        tuple
+            Coordinate of winning space that must be blocked. If no such space exists
+            returns (-1,-1)
         """
         win_space = (-1, -1)  # default if no space is found
 
@@ -298,7 +325,13 @@ class TreeSearch:
         self.num_rollouts = num_rollouts
 
     def choose_simulation_node(self):
-        """Choose a node from which to simulate a game"""
+        """Choose a node from which to simulate a game
+
+        Returns
+        -------
+        MCTSNode
+            Node from which to simulate a game and retrieve results
+        """
         node = self.root
         max_child_list = []
 
@@ -335,7 +368,8 @@ class TreeSearch:
 
         Returns
         -------
-            bool: false if the game is over
+        bool
+            false if the game is over
         """
 
         if parent.game.winner is not None:
@@ -365,7 +399,8 @@ class TreeSearch:
 
         Returns
         -------
-            char : color that won the game
+        char
+            color that won the game
         """
 
         # If no children, the game is done
@@ -387,7 +422,7 @@ class TreeSearch:
         """
         Update the node and its parents with its winning percentage.
 
-        Attributes
+        Parameters
         ----------
         node : MCTSNode
             Node from which simulation was run
@@ -404,11 +439,12 @@ class TreeSearch:
 
     def get_best_move(self):
         """
-        Get the best move in the current tree
+        Get the best move (ie, one chosen the most) in the current tree
 
         Returns
         -------
-            Game : best move, ie highest N
+        Game
+            best move, ie highest N
         """
         max_node_list = []
         max_node_score = 0
