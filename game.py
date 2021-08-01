@@ -6,7 +6,6 @@ from math import sqrt
 
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
-DEPTH = 4
 
 class Game:
     """
@@ -43,7 +42,6 @@ class Game:
         self.end = False
         self.turn = 0
         self.sub_turn = 'place'
-        self.message = ''
         self.color = 'W'
 
     def __str__(self):
@@ -67,26 +65,8 @@ class Game:
         return return_val[:-1]
 
     @property
-    def dict_key_rep(self):
-        """Creates representation of game that can act as key in dictionary"""
-        game_str = str(int(self.end)) + str(self.color)
-        for i, j in SPACE_LIST:
-            game_str += self.board[i][j]['occupant'] + str(self.board[i][j]['level'])
-        return game_str
-
-    @property
-    def dict_repr(self):
-        return {'board':self.board, 'color' : self.color, 'end': self.end}
-
-    @property
     def opponent_color(self):
         return self.get_opponent_color(self.color)
-
-    def get_dict_repr(self, game_dict):
-        self.board = game_dict['board']
-        self.color = game_dict['color']
-        self.end = game_dict['end']
-        return self
 
     def randomize_placement(self, color):
         """Randomly place the two gray pieces on the board."""
@@ -326,7 +306,7 @@ class Game:
             player color that will be placed on the board
         """
         if self.board[x_val][y_val]['occupant'] != 'O':
-            self.message = "Occupied Space"
+            pass
         else:
             self.board[x_val][y_val]['occupant'] = color
             return True
@@ -349,7 +329,7 @@ class Game:
             True/false if move is valid
         """
         if self.board[x_val][y_val]['occupant'] != color:
-            self.message = "You don't own that piece"
+            pass
         else:
             self.col = x_val
             self.row = y_val
@@ -441,7 +421,7 @@ class Game:
         elif self.sub_turn == 'build':
             self.build_level(x_val, y_val)
 
-    def play_minimax_turn(self, move_color, eval_color=None, tree_depth=DEPTH):
+    def play_minimax_turn(self, move_color, eval_color=None, tree_depth=4):
         """
         Select turn for AI player
         Uses alpha-beta pruning to selection best turn
@@ -561,6 +541,7 @@ class Game:
 
         new_game.board = new_board
         new_game.end = game.end
+        new_game.winner = game.winner
         new_game.col = game.col
         new_game.row = game.row
         new_game.color = color

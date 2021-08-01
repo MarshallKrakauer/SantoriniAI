@@ -344,6 +344,15 @@ def play_human_turn(event, current_player, game, player_num, players):
 
     players : list
         list containing 2 player objects
+
+    Returns
+    -------
+    current_player: char
+        W or G, representing who shall make the next term
+    player_num : int
+        0 or 1, for the index of the current player
+    players : list
+        list containing both player objects
     """
     if event.type == pygame.MOUSEBUTTONDOWN and not game.end:
         pos = pygame.mouse.get_pos()
@@ -382,6 +391,17 @@ def play_ai_turn(current_player, player_num, players, show_board=True):
     show_board : bool
         alternates between true and false every function call, needed to show board while function
         is thinking
+
+    Returns
+    -------
+    current_player: char
+        W or G, representing who shall make the next term
+    player_num : int
+        0 or 1, for the index of the current player
+    players : list
+        list containing both player objects
+    show_board : bool
+        Controls switch between updating board and showing the "thinking" tile
     """
     if current_player.color == 'W':
         button_color = WHITE
