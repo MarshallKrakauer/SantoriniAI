@@ -6,14 +6,10 @@ import datetime as dt
 import random
 from math import sqrt, log, exp
 
-from data_creation import SantoriniData
-from tree_model import GBM_MODEL
-
 EXPLORATION_FACTOR = 3  # Parameter that decides tradeoff between exploration and exploitation
 TURN_TIME = 60  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
-MODEL = GBM_MODEL
 
 random.seed(dt.datetime.now().microsecond)  # set seed
 
@@ -191,14 +187,8 @@ class MCTSNode:
 
         # Use ML Model
         if how == 'ml':
-            data = SantoriniData(this_game, False).data
-            data = data[1:]
-            distance = data[-5: -1]
-            distance_score = 1 - sum(distance) / 4
-            win_prob = MODEL.predict_proba([data])[0][0]
-
-            score = sqrt(distance_score * win_prob)
-            return score
+            # Not currently in use. Heuristic performs better
+            pass
 
         # Use handcrafted heuristic
         elif how == 'heuristic':
