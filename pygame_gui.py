@@ -145,55 +145,67 @@ def get_title_screen_buttons():
         dict: Container of all buttons needed to make title screen selection
     """
     return {'start': Button(
-        center_position=(400, 475),  # left,top
+        center_position=(400, 520),
         font_size=75,
         bg_rgb=GREEN,
         text_rgb=BLACK,
         text="CLICK TO START",
         multiplier=1), 'white header': Button(
-        center_position=(200, 100),
+        center_position=(200, 80),
         font_size=72,
         bg_rgb=BLUE,
         text_rgb=WHITE,
         text='WHITE',
         multiplier=1), 'gray header': Button(
-        center_position=(600, 100),
+        center_position=(600, 80),
         font_size=72,
         bg_rgb=BLUE,
         text_rgb=GRAY,
         text='GRAY',
         multiplier=1.2), 'white human': Button(
-        center_position=(200, 200),
+        center_position=(200, 160),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
         multiplier=1.2), 'gray human': Button(
-        center_position=(600, 200),
+        center_position=(600, 160),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Human',
         multiplier=1.2), 'white minimax': Button(
-        center_position=(200, 300),
+        center_position=(200, 235),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Minimax',
         multiplier=1.2), 'gray minimax': Button(
-        center_position=(600, 300),
+        center_position=(600, 235),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='Minimax',
+        multiplier=1.2), 'white MCTS+RAVE': Button(
+        center_position=(200, 310),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='RAVE',
+        multiplier=1.2), 'gray MCTS+RAVE': Button(
+        center_position=(600, 310),
+        font_size=40,
+        bg_rgb=BLACK,
+        text_rgb=WHITE,
+        text='RAVE',
         multiplier=1.2), 'white MCTS': Button(
-        center_position=(200, 400),
+        center_position=(200, 385),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
         text='MCTS',
         multiplier=1.2), 'gray MCTS': Button(
-        center_position=(600, 400),
+        center_position=(600, 385),
         font_size=40,
         bg_rgb=BLACK,
         text_rgb=WHITE,
@@ -203,28 +215,32 @@ def get_title_screen_buttons():
 
 def draw_title_screen_material(arrow_dict, button_dict, counter):
     # Choose where to show red arrow for white piece
-    if arrow_dict['white minimax']:
-        choose_arrow_location(30, 200 - 24)
-    elif arrow_dict['white human']:
-        choose_arrow_location(30, 100 - 24)
+    if arrow_dict['white human']:
+        choose_arrow_location(30, 160 - 124)
+    elif arrow_dict['white minimax']:
+        choose_arrow_location(30, 235 - 124)
+    elif arrow_dict['white MCTS+RAVE']:
+        choose_arrow_location(30, 310 - 124)
     elif arrow_dict['white MCTS']:
-        choose_arrow_location(30, 300 - 24)
+        choose_arrow_location(30, 385 - 124)
 
     # Choose where to show red arrow for gray piece
-    if arrow_dict['gray minimax']:
-        choose_arrow_location(410, 200 - 24)
-    elif arrow_dict['gray human']:
-        choose_arrow_location(410, 100 - 24)
+    if arrow_dict['gray human']:
+        choose_arrow_location(410, 160 - 124)
+    elif arrow_dict['gray minimax']:
+        choose_arrow_location(410, 235 - 124)
+    elif arrow_dict['gray MCTS+RAVE']:
+        choose_arrow_location(410, 310 - 124)
     elif arrow_dict['gray MCTS']:
-        choose_arrow_location(410, 300 - 24)
+        choose_arrow_location(410, 385 - 124)
 
     # Show start button if all choices have been made
-    if ((arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS']) and
-            (arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS']) and
-            counter % 2500 < 1500):
+    white_chosen = arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS+RAVE'] | arrow_dict['white MCTS']
+    gray_chosen = arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS+RAVE'] | arrow_dict['gray MCTS']
+    if white_chosen and gray_chosen and counter % 2500 < 1500:
         button_dict['start'].draw()
 
-    # Draw all four buttons
+    # Draw all buttons
     for button in button_dict.keys():
         if button != 'start':
             button_dict[button].draw()
@@ -235,8 +251,8 @@ def title_screen():
     counter = 0
 
     button_dict = get_title_screen_buttons()
-    arrow_dict = {'white human': False, 'white minimax': False, 'white MCTS': False,
-                  'gray human': False, 'gray minimax': False, 'gray MCTS': False}
+    arrow_dict = {'white human': False, 'white minimax': False, 'white MCTS+RAVE': False, 'white MCTS': False,
+                  'gray human': False, 'gray minimax': False, 'gray MCTS+RAVE': False, 'gray MCTS': False}
     end_loop = False
 
     while not end_loop:
@@ -254,42 +270,29 @@ def title_screen():
                     button_dict[button].update(pos)
 
             # Move red arrow based on selection for white
-            if (button_dict['white human'].check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['white human'] = True
-                arrow_dict['white minimax'] = False
-                arrow_dict['white MCTS'] = False
-            elif (button_dict['white minimax'].check_press(pos) and
-                  event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['white human'] = False
-                arrow_dict['white minimax'] = True
-                arrow_dict['white MCTS'] = False
-            elif (button_dict['white MCTS'].check_press(pos) and
-                  event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['white human'] = False
-                arrow_dict['white minimax'] = False
-                arrow_dict['white MCTS'] = True
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if button_dict['white human'].check_press(pos):
+                    arrow_dict.update({'white human': True, 'white minimax': False, 'white MCTS+RAVE': False, 'white MCTS': False})
+                elif button_dict['white minimax'].check_press(pos):
+                    arrow_dict.update({'white human': False, 'white minimax': True, 'white MCTS+RAVE': False, 'white MCTS': False})
+                elif button_dict['white MCTS+RAVE'].check_press(pos):
+                    arrow_dict.update({'white human': False, 'white minimax': False, 'white MCTS+RAVE': True, 'white MCTS': False})
+                elif button_dict['white MCTS'].check_press(pos):
+                    arrow_dict.update({'white human': False, 'white minimax': False, 'white MCTS+RAVE': False, 'white MCTS': True})
 
-            # Move red arrow based on selection for white
-            if (button_dict['gray human'].check_press(pos) and
-                    event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['gray human'] = True
-                arrow_dict['gray minimax'] = False
-                arrow_dict['gray MCTS'] = False
-            elif (button_dict['gray minimax'].check_press(pos) and
-                  event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['gray human'] = False
-                arrow_dict['gray minimax'] = True
-                arrow_dict['gray MCTS'] = False
-            elif (button_dict['gray MCTS'].check_press(pos) and
-                  event.type == pygame.MOUSEBUTTONDOWN):
-                arrow_dict['gray human'] = False
-                arrow_dict['gray minimax'] = False
-                arrow_dict['gray MCTS'] = True
+                if button_dict['gray human'].check_press(pos):
+                    arrow_dict.update({'gray human': True, 'gray minimax': False, 'gray MCTS+RAVE': False, 'gray MCTS': False})
+                elif button_dict['gray minimax'].check_press(pos):
+                    arrow_dict.update({'gray human': False, 'gray minimax': True, 'gray MCTS+RAVE': False, 'gray MCTS': False})
+                elif button_dict['gray MCTS+RAVE'].check_press(pos):
+                    arrow_dict.update({'gray human': False, 'gray minimax': False, 'gray MCTS+RAVE': True, 'gray MCTS': False})
+                elif button_dict['gray MCTS'].check_press(pos):
+                    arrow_dict.update({'gray human': False, 'gray minimax': False, 'gray MCTS+RAVE': False, 'gray MCTS': True})
 
             # If both choices have been made, show the start button
-            if ((arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS']) and
-                    (arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS'])):
+            white_chosen = arrow_dict['white human'] | arrow_dict['white minimax'] | arrow_dict['white MCTS+RAVE'] | arrow_dict['white MCTS']
+            gray_chosen = arrow_dict['gray human'] | arrow_dict['gray minimax'] | arrow_dict['gray MCTS+RAVE'] | arrow_dict['gray MCTS']
+            if white_chosen and gray_chosen:
                 button_dict['start'].update(pos)
 
             # If person clicks start, start the game!
@@ -311,6 +314,8 @@ def title_screen():
         white_player = 'human'
     elif arrow_dict['white minimax']:
         white_player = 'alphabeta'
+    elif arrow_dict['white MCTS+RAVE']:
+        white_player = 'MCTS+RAVE'
     elif arrow_dict['white MCTS']:
         white_player = 'MCTS'
 
@@ -318,6 +323,8 @@ def title_screen():
         gray_player = 'human'
     elif arrow_dict['gray minimax']:
         gray_player = 'alphabeta'
+    elif arrow_dict['gray MCTS+RAVE']:
+        gray_player = 'MCTS+RAVE'
     elif arrow_dict['gray MCTS']:
         gray_player = 'MCTS'
 
@@ -453,9 +460,9 @@ def play_game(white_player, gray_player):
     while not game_is_done:
         # --- Main event loop
         SCREEN.fill(LIGHT_GREEN)
-        event = pygame.event.wait()  # event queue
+        event = pygame.event.poll()  # non-blocking event poll
 
-        # Check all events including the one consumed by event.wait()
+        # Check all events
         for event in [event] + pygame.event.get():
             if event.type == pygame.QUIT:
                 game_is_done = True
