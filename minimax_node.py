@@ -59,7 +59,7 @@ class MiniMaxNode:
         return_li = []
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
-                     node.game.board[i][j]['occupant'] == move_color]:
+                     node.game.occupants[i*5+j] == move_color]:
             i, j = spot
             # check each possible move
 

@@ -96,7 +96,13 @@ class Button(pygame.sprite.Sprite):
         SCREEN.blit(self.image, self.rect)
 
 def create_surface_with_text(text, font_size, text_rgb, bg_rgb):
-    """Return surface with text written on."""
+    """Return surface with text written on, with padding around the text."""
     font = pygame.freetype.SysFont("Courier", font_size, bold=True)
-    surface, _ = font.render(text=text, fgcolor=text_rgb, bgcolor=bg_rgb)
-    return surface.convert_alpha()
+    text_surface, _ = font.render(text=text, fgcolor=text_rgb, bgcolor=bg_rgb)
+    padding = 10
+    padded = pygame.Surface(
+        (text_surface.get_width() + padding * 2, text_surface.get_height() + padding * 2)
+    )
+    padded.fill(bg_rgb)
+    padded.blit(text_surface, (padding, padding))
+    return padded.convert_alpha()

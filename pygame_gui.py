@@ -14,7 +14,7 @@ WHITE = (255, 255, 255)
 GREEN = (0, 200, 0)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
-GRAY = (100, 100, 100)
+GRAY = (190, 190, 190)
 GOLD = (100, 84.3, 0)
 LIGHT_GREEN = (30, 250, 150)
 
@@ -61,11 +61,10 @@ def check_valid(num):
 
 def end_fanfare(color='W'):
     """Produce visual showing who won the game."""
-
-    pygame.draw.rect(SCREEN, BLUE,
-                     BUTTON_MEASURES, 0)
-    text = font.render("WINNER: " + color, True, BLACK)
-    SCREEN.blit(text, (BUTTON_MEASURES[0] + 20, BUTTON_MEASURES[1] + 20))
+    text_color = WHITE if color == 'W' else GRAY
+    winner_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
+                           "WINNER: " + color, 40, BLUE, text_color, 1)
+    winner_button.draw()
 
 
 def check_undo(x_val, y_val):

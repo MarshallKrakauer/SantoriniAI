@@ -75,7 +75,7 @@ class RAVENode(MCTSNode):
 
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
-                     node.game.board[i][j]['occupant'] == move_color]:
+                     node.game.occupants[i*5+j] == move_color]:
 
             i, j = spot
 
@@ -104,8 +104,8 @@ class RAVENode(MCTSNode):
                         simulation_exception = None
                         if build == winning_move:
                             simulation_exception = 'block_win'  # block opponent from winning
-                        elif (new_game.board[new_game.col][new_game.row]['level'] == 2 and
-                              new_game.board[build[0]][build[1]]['level'] == 3):
+                        elif (new_game.levels[new_game.col*5+new_game.row] == 2 and
+                              new_game.levels[build[0]*5+build[1]] == 3):
                             simulation_exception = 'create_win'  # create winning move
                         build_game = new_game.game_deep_copy(new_game,
                                                              new_game.color)

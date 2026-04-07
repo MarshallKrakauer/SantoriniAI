@@ -115,7 +115,7 @@ class MCTSNode:
 
         # Check both of the spaces occupied by the player
         for spot in [(i, j) for i in range(5) for j in range(5) if
-                     node.game.board[i][j]['occupant'] == move_color]:
+                     node.game.occupants[i*5+j] == move_color]:
 
             i, j = spot
 
@@ -143,8 +143,8 @@ class MCTSNode:
                         simulation_exception = None
                         if build == winning_move:
                             simulation_exception = 'block_win'  # block opponent from winning
-                        elif (new_game.board[new_game.col][new_game.row]['level'] == 2 and
-                              new_game.board[build[0]][build[1]]['level'] == 3):
+                        elif (new_game.levels[new_game.col*5+new_game.row] == 2 and
+                              new_game.levels[build[0]*5+build[1]] == 3):
                             simulation_exception = 'create_win'  # create winning move
                         build_game = new_game.game_deep_copy(new_game,
                                                              new_game.color)
@@ -200,13 +200,14 @@ class MCTSNode:
             player_spaces = []
             opponent_spaces = []
             for col, row in [(i, j) for i in range(5) for j in range(5)]:
-                if this_game.board[col][row]['occupant'] == color:
-                    player_height_score += 2 ** this_game.board[col][row]['level']
+                occ = this_game.occupants[col*5+row]
+                if occ == color:
+                    player_height_score += 2 ** this_game.levels[col*5+row]
                     player_spaces.append((col, row))
-                elif this_game.board[col][row]['occupant'] == opponent_color:
-                    opponent_height += this_game.board[col][row]['level']
+                elif occ == opponent_color:
+                    opponent_height += this_game.levels[col*5+row]
                     for col_, row_ in this_game.get_movable_spaces(game=this_game, space=(col, row)):
-                        player_height_score -= this_game.board[col_][row_]['level'] // 2
+                        player_height_score -= this_game.levels[col_*5+row_] // 2
                     opponent_spaces.append((col, row))
 
             distance_score = -1 * max(opponent_height, 1) * self.calculate_distance(player_spaces, opponent_spaces)
@@ -265,9 +266,9 @@ class MCTSNode:
 
         for i in range(5):
             for j in range(5):
-                if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
+                if self.game.occupants[i*5+j] == other_color and self.game.levels[i*5+j] == 2:
                     for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
-                        if self.game.board[col][row]['level'] == 3:
+                        if self.game.levels[col*5+row] == 3:
                             threat_count += 1
                             win_space = (col, row)
                             if threat_count > 1:
