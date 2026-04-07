@@ -2,7 +2,7 @@
 Implementation of Monte Carlo Tree Search. Currently working on improving early game moves.
 """
 
-import datetime as dt
+import time
 import random
 from math import sqrt, log, exp
 
@@ -11,7 +11,7 @@ TURN_TIME = 30  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
-random.seed(dt.datetime.now().microsecond)  # set seed
+random.seed(int(time.time() * 1e6) % 2**32)  # set seed
 
 
 class MCTSNode:
@@ -313,18 +313,18 @@ class TreeSearch:
         max_seconds : int
             Amount of seconds MCTS algorithm searches for the best move.
         """
-        start_time = dt.datetime.now()
-        current_time = dt.datetime.now()
+        start_time = time.perf_counter()
+        current_time = start_time
         num_rollouts = 0
-        while num_rollouts < MAX_ROLLOUT and (current_time - start_time).total_seconds() < max_seconds:
+        while num_rollouts < MAX_ROLLOUT and (current_time - start_time) < max_seconds:
             node = self.choose_simulation_node()
             simulation_game = node.game.game_deep_copy(node.game, node.game.color)
             winning_color = self.simulate_random_game(simulation_game)
             self.update_node_info(node, winning_color)
             num_rollouts += 1
-            current_time = dt.datetime.now()
+            current_time = time.perf_counter()
         print("rollouts:", num_rollouts)
-        self.run_time_seconds = (current_time - start_time).total_seconds()
+        self.run_time_seconds = current_time - start_time
         self.num_rollouts = num_rollouts
 
     def choose_simulation_node(self):

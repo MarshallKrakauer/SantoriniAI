@@ -7,6 +7,14 @@ from math import sqrt
 SYS_RANDOM = random.SystemRandom()
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]
 
+# Precomputed adjacency list for all 25 squares — avoids recomputing on every call
+ADJACENT = {
+    (i, j): [(i+di, j+dj)
+              for di in (-1, 0, 1) for dj in (-1, 0, 1)
+              if (di != 0 or dj != 0) and 0 <= i+di <= 4 and 0 <= j+dj <= 4]
+    for i in range(5) for j in range(5)
+}
+
 class Game:
     """
     Implementation of the board game Santorini using Pygame.
@@ -170,10 +178,8 @@ class Game:
             true if move is valid, false if move is invalid
         """
         height = self.levels[x_val*5+y_val]
-        space_list = get_adjacent(x_val, y_val)
-        for i, j in space_list:
-            if (is_valid_num(i) and is_valid_num(j) and
-                    self.occupants[i*5+j] == 'O' and
+        for i, j in ADJACENT[(x_val, y_val)]:
+            if (self.occupants[i*5+j] == 'O' and
                     self.levels[i*5+j] - height <= 1):
                 return True
         return False
@@ -186,10 +192,8 @@ class Game:
         bool
             true if player can build there, false otherwise
         """
-        space_list = get_adjacent(x_val, y_val)
-        for i, j in space_list:
-            if (is_valid_num(i) and is_valid_num(j) and
-                    self.occupants[i*5+j] == 'O'):
+        for i, j in ADJACENT[(x_val, y_val)]:
+            if self.occupants[i*5+j] == 'O':
                 return True
         return False
 
@@ -224,14 +228,10 @@ class Game:
 
     def highlight_movable_spaces(self):
         """Mark buildable spaces after a player moves."""
-        for j in range(5):
-            for i in range(5):
-                self.actives[i*5+j] = (
-                    abs(i - self.col) <= 1 and
-                    abs(j - self.row) <= 1 and
-                    not (i == self.col and j == self.row) and
-                    self.occupants[i*5+j] == 'O'
-                )
+        self.actives = [False] * 25
+        for i, j in ADJACENT[(self.col, self.row)]:
+            if self.occupants[i*5+j] == 'O':
+                self.actives[i*5+j] = True
 
     def check_move_available(self):
         """End game if player has no available moves."""
@@ -429,8 +429,7 @@ class Game:
         return_li = []
         x_val, y_val = space
         height = game.levels[x_val*5+y_val]
-        for spot in get_adjacent(x_val, y_val):
-            x_adj, y_adj = spot
+        for x_adj, y_adj in ADJACENT[(x_val, y_val)]:
             idx = x_adj*5+y_adj
             if (game.occupants[idx] == 'O' and
                     (game.levels[idx] - height) <= 1):
@@ -444,8 +443,7 @@ class Game:
     def get_buildable_spaces(game, space):
         return_li = []
         x_val, y_val = space
-        for spot in get_adjacent(x_val, y_val):
-            x_adj, y_adj = spot
+        for x_adj, y_adj in ADJACENT[(x_val, y_val)]:
             if game.occupants[x_adj*5+y_adj] == 'O':
                 return_li.append((x_adj, y_adj))
         return iter(return_li)
