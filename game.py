@@ -529,15 +529,13 @@ class Game:
         new_game : Game
             new game with same info as others and a new color
         """
-        new_game = Game()
+        new_game = object.__new__(Game)
         other_board = game.board
 
-        new_board = [[{'level': 0, 'occupant': 'O', 'active': False}
-                      for i in range(5)] for j in range(5)]
-
-        for i, j in SPACE_LIST:
-            new_board[i][j]['occupant'] = other_board[i][j]['occupant']
-            new_board[i][j]['level'] = other_board[i][j]['level']
+        new_board = [[{'level': other_board[i][j]['level'],
+                       'occupant': other_board[i][j]['occupant'],
+                       'active': False}
+                      for j in range(5)] for i in range(5)]
 
         new_game.board = new_board
         new_game.end = game.end
@@ -546,6 +544,7 @@ class Game:
         new_game.row = game.row
         new_game.color = color
         new_game.turn = game.turn
+        new_game.sub_turn = game.sub_turn
 
         return new_game
 

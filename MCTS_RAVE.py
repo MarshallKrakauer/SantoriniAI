@@ -101,6 +101,7 @@ class RAVENode(MCTSNode):
                     rave_id += 1
                     for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
 
+                        simulation_exception = None
                         if build == winning_move:
                             simulation_exception = 'block_win'  # block opponent from winning
                         elif (new_game.board[new_game.col][new_game.row]['level'] == 2 and
@@ -152,8 +153,10 @@ class RAVENode(MCTSNode):
             rave_weight = sqrt(RAVE_EQUILIBRIUM / (3 * self.parent.N + RAVE_EQUILIBRIUM))
             mcts_weight = (1 - rave_weight)
 
+            rave_score = (self.RAVE_Q / self.RAVE_N) if self.RAVE_N > 0 else 0
+
             # (win_rate) + (constant * heuristic_score * exploitation)
-            return ((self.Q / self.N) * mcts_weight + (self.RAVE_Q / self.RAVE_N) * rave_weight
+            return ((self.Q / self.N) * mcts_weight + rave_score * rave_weight
                     + self.early_game_score * exploration_factor * sqrt(log(self.parent.N) / self.N))
 
 
@@ -281,8 +284,3 @@ class TreeSearchRave(TreeSearch):
         game_choice = random.choice(max_node_list)
         print(game_choice, "turn:", game_choice.parent.game.turn)
         return game_choice
-
-
-def distance_between(col_0, row_0, col_1, row_1):
-    """Geometrics distance between two points"""
-    return sqrt((col_0 - col_1) ** 2 + (row_0 - row_1) ** 2)

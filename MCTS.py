@@ -7,7 +7,7 @@ import random
 from math import sqrt, log, exp
 
 EXPLORATION_FACTOR = 3  # Parameter that decides tradeoff between exploration and exploitation
-TURN_TIME = 60  # Max amount of time MCTS agent can search for best move
+TURN_TIME = 30  # Max amount of time MCTS agent can search for best move
 MAX_ROLLOUT = 15000  # Max number of rollouts MCTS agent can have before choosing best move
 SPACE_LIST = [(i, j) for i in range(5) for j in range(5)]  # List of spaces in board, used with for loops
 
@@ -140,6 +140,7 @@ class MCTSNode:
                     # given a legal move, check for each possible build
                     for build in new_game.get_buildable_spaces(new_game, (new_game.col, new_game.row)):
 
+                        simulation_exception = None
                         if build == winning_move:
                             simulation_exception = 'block_win'  # block opponent from winning
                         elif (new_game.board[new_game.col][new_game.row]['level'] == 2 and
@@ -186,12 +187,12 @@ class MCTSNode:
             return 1
 
         # Use ML Model
-        if how == 'ml':
-            # Not currently in use. Heuristic performs better
-            pass
+        # TODO: old code, needs reimplementation — returning None here causes a TypeError in mcts_score
+        # if how == 'ml':
+        #     pass
 
         # Use handcrafted heuristic
-        elif how == 'heuristic':
+        if how == 'heuristic':
             color = this_game.color
             player_height_score = 0  # to make height score somewhat match the height score property
             opponent_color = this_game.opponent_color
@@ -260,24 +261,19 @@ class MCTSNode:
             returns (-1,-1)
         """
         win_space = (-1, -1)  # default if no space is found
+        threat_count = 0
 
-        i = 0  # column value in outer loop
-        j = 0  # row value in outer loop
-        found_space = False
+        for i in range(5):
+            for j in range(5):
+                if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
+                    for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
+                        if self.game.board[col][row]['level'] == 3:
+                            threat_count += 1
+                            win_space = (col, row)
+                            if threat_count > 1:
+                                return (-1, -1)  # multiple threats, can't block either
 
-        while not found_space and i <= 4 and j <= 4:
-            if self.game.board[i][j]['occupant'] == other_color and self.game.board[i][j]['level'] == 2:
-                for col, row in self.game.get_movable_spaces(game=self.game, space=(i, j)):
-                    if self.game.board[col][row]['level'] == 3:
-                        win_space = (col, row)
-                        found_space = True
-            # iterate to next column. If we finish a column, go to next row
-            i += 1
-            if i == 5:
-                i = 0
-                j += 1
-
-        # only worth checking for blocked moves if only once space exists
+        # only worth checking for blocked moves if only one space exists
         # If none, we can ignore. If multiple, we can't block it anyway
         return win_space
 
