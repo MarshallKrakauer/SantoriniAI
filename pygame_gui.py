@@ -60,11 +60,12 @@ def check_valid(num):
 
 
 def end_fanfare(color='W'):
-    """Produce visual showing who won the game."""
+    """Produce visual showing who won the game. Returns the winner button for click detection."""
     text_color = WHITE if color == 'W' else GRAY
     winner_button = Button((BUTTON_MEASURES[0] + 50, BUTTON_MEASURES[1] + 20),
-                           "WINNER: " + color, 40, BLUE, text_color, 1)
+                           "WINNER: " + color, 40, BLUE, text_color, 1.2)
     winner_button.draw()
+    return winner_button
 
 
 def check_undo(x_val, y_val):
@@ -439,8 +440,10 @@ def play_game(white_player, gray_player):
     # Used to manage how fast the screen updates
     clock = pygame.time.Clock()
     game_is_done = False  # ends pygame input when true
+    return_to_menu = False  # true when winner button is clicked
     show_board = False  # Used to show board when AI is playing
     stop_game = False  # keeps game board on screen
+    winner_button = None
     player_num = 0
     players = [white_player, gray_player]
     current_player = players[0]
@@ -452,10 +455,14 @@ def play_game(white_player, gray_player):
         SCREEN.fill(LIGHT_GREEN)
         event = pygame.event.wait()  # event queue
 
-        # Check if someone clicked x
-        for event in pygame.event.get():
+        # Check all events including the one consumed by event.wait()
+        for event in [event] + pygame.event.get():
             if event.type == pygame.QUIT:
                 game_is_done = True
+            if stop_game and event.type == pygame.MOUSEBUTTONDOWN:
+                if winner_button and winner_button.check_press(pygame.mouse.get_pos()):
+                    return_to_menu = True
+                    game_is_done = True
 
         ai_player = current_player.player_type != 'human'
 
@@ -475,8 +482,13 @@ def play_game(white_player, gray_player):
         # Check for end of game
         if game.end:
             game.end_game(False)
-            end_fanfare(game.color)
+            winner_button = end_fanfare(game.color)
             stop_game = True
+
+        # Update and redraw winner button on hover
+        if stop_game and winner_button:
+            winner_button.update(pygame.mouse.get_pos())
+            winner_button.draw()
 
         # Update the screen
         draw_board(game.board)
@@ -485,20 +497,21 @@ def play_game(white_player, gray_player):
         # Run at 30 frames per second
         clock.tick(30)
 
-    # Close the window and quit.
-    pygame.quit()
+    return return_to_menu
 
 
 def main():
-    """Play game including title screen."""
-    # Get game board
-    player_dict = title_screen()
-    this_game = Game()
+    """Play game including title screen. Loops back to menu if winner button is clicked."""
+    while True:
+        player_dict = title_screen()
+        this_game = Game()
 
-    white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
-    gray_player = SantoriniPlayer(this_game, player_dict['G'], 'G')
+        white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
+        gray_player = SantoriniPlayer(this_game, player_dict['G'], 'G')
 
-    play_game(white_player, gray_player)
+        return_to_menu = play_game(white_player, gray_player)
+        if not return_to_menu:
+            break
 
 
 if __name__ == '__main__':
