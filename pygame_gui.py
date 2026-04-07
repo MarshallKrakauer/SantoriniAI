@@ -86,6 +86,15 @@ def make_undo_button(player):
     undo_button.draw()
 
 
+def draw_player_info(white_player, gray_player):
+    """Draw player type labels above the board."""
+    type_display = {'human': 'Human', 'alphabeta': 'Minimax', 'MCTS+RAVE': 'RAVE', 'MCTS': 'MCTS'}
+    white_label = Button((100, 50), 'WHITE: ' + type_display.get(white_player.player_type, ''), 30, BLUE, WHITE, 1)
+    gray_label = Button((700, 50), 'GRAY: ' + type_display.get(gray_player.player_type, ''), 30, BLUE, GRAY, 1)
+    white_label.draw()
+    gray_label.draw()
+
+
 def draw_board(board):
     """Draw the 5x5 game board with player pieces."""
     for i in range(5):
@@ -489,13 +498,16 @@ def play_game(white_player, gray_player):
         # Check for end of game
         if game.end:
             game.end_game(False)
-            winner_button = end_fanfare(game.color)
+            winner_button = end_fanfare(game.winner if game.winner is not None else game.color)
             stop_game = True
 
         # Update and redraw winner button on hover
         if stop_game and winner_button:
             winner_button.update(pygame.mouse.get_pos())
             winner_button.draw()
+
+        # Draw player info labels
+        draw_player_info(white_player, gray_player)
 
         # Update the screen
         draw_board(game.board)
