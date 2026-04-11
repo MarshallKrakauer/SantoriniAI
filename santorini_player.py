@@ -13,6 +13,7 @@ class SantoriniPlayer:
         self.color = color
         self.player_type = player_type
         self.placements = 0
+        self.ai_stats = None
 
     def __str__(self):
         """Show string representation of player."""
@@ -39,8 +40,11 @@ class SantoriniPlayer:
             self.game.play_manual_turn(x_val, y_val)
             if self.game.occupants != prev_occupants:
                 self.placements += 1
+        elif self.color == 'W':
+            self.game.hardcode_placement(self.color)
+            self.placements = 2
         else:
-            self.game.randomize_placement(self.color)
+            self.game.search_placement(self.color)
             self.placements = 2
 
     def play_regular_turn(self, x_val=-1, y_val=-1):
@@ -51,10 +55,10 @@ class SantoriniPlayer:
             self.game.play_minimax_turn(move_color=self.color, eval_color=self.color)
             self.game.sub_turn = 'switch'
         elif self.player_type == 'MCTS+RAVE':
-            self.game.play_mcts_turn(self.color, rave=True)
+            self.ai_stats = self.game.play_mcts_turn(self.color, rave=True)
             self.game.sub_turn = 'switch'
         elif self.player_type == 'MCTS':
-            self.game.play_mcts_turn(self.color, rave=False)
+            self.ai_stats = self.game.play_mcts_turn(self.color, rave=False)
             self.game.sub_turn = 'switch'
 
     def update_game(self):

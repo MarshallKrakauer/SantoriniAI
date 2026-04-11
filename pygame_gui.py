@@ -31,6 +31,7 @@ SIZE = (800, 600)  # (width <-->, height)
 SCREEN = pygame.display.set_mode(SIZE)
 pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
+stats_font = pygame.font.SysFont('Calibri', 15, False, False)
 
 
 def map_numbers(x_val, y_val):
@@ -87,6 +88,33 @@ def make_undo_button(player):
     undo_button.draw()
 
 
+def draw_ai_stats(player, center_x, start_y):
+    """Draw AI thinking stats below the player label. No-op for human players."""
+    if player.player_type == 'human' or player.ai_stats is None:
+        return
+    stats = player.ai_stats
+    lines = [
+        f"Rollouts: {stats['rollouts']:,}",
+        f"Win:      {stats['win_rate']}%",
+    ]
+    win_color = RED if stats['win_rate'] > 90 else BLACK
+    line_colors = [BLACK, win_color]
+    padding = 4
+    line_height = 20
+    max_width = max(stats_font.size(line)[0] for line in lines)
+    box_width = max_width + padding * 2
+    box_height = len(lines) * line_height + padding * 2
+    box_rect = pygame.Rect(0, 0, box_width, box_height)
+    box_rect.centerx = center_x
+    box_rect.top = start_y
+    pygame.draw.rect(SCREEN, WHITE, box_rect)
+    pygame.draw.rect(SCREEN, BLACK, box_rect, 1)
+    for i, (line, color) in enumerate(zip(lines, line_colors)):
+        surf = stats_font.render(line, True, color)
+        rect = surf.get_rect(centerx=center_x, top=start_y + padding + i * line_height)
+        SCREEN.blit(surf, rect)
+
+
 def draw_player_info(white_player, gray_player):
     """Draw player type labels above the board."""
     type_display = {'human': 'Human', 'alphabeta': 'Minimax', 'MCTS+RAVE': 'RAVE', 'MCTS': 'MCTS'}
@@ -94,6 +122,8 @@ def draw_player_info(white_player, gray_player):
     gray_label = Button((650, 50), 'GRAY: ' + type_display.get(gray_player.player_type, ''), 30, BLUE, GRAY, 1)
     white_label.draw()
     gray_label.draw()
+    draw_ai_stats(white_player, 150, 80)
+    draw_ai_stats(gray_player, 650, 80)
 
 
 def draw_board(board):

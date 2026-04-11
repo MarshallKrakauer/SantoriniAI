@@ -1,4 +1,5 @@
 import random
+import time
 import MCTS
 import MCTS_RAVE
 import minimax_node
@@ -108,6 +109,68 @@ class Game:
                 self.occupants[x_1*5+y_1] = color
                 chose_spaces = True
 
+    # Good opening pairs for white: spread diagonally across the inner ring
+    WHITE_OPENINGS = [
+        ((1, 1), (3, 3)),
+        ((1, 3), (3, 1)),
+        ((1, 2), (3, 2)),
+        ((2, 1), (2, 3)),
+        ((1, 1), (3, 2)),
+        ((1, 2), (3, 3)),
+        ((1, 3), (3, 2)),
+        ((1, 2), (3, 1)),
+    ]
+
+    def hardcode_placement(self, color):
+        """Place workers using a randomly chosen good opening from the inner ring."""
+        space1, space2 = random.choice(self.WHITE_OPENINGS)
+        x0, y0 = space1
+        x1, y1 = space2
+        self.occupants[x0*5+y0] = color
+        self.occupants[x1*5+y1] = color
+
+    def search_placement(self, color, max_seconds=10):
+        """Pick placement for gray via short rollout search, inner squares only."""
+        inner = [(i, j) for i in range(1, 4) for j in range(1, 4)]
+        pairs = [
+            (p1, p2)
+            for idx, p1 in enumerate(inner)
+            for p2 in inner[idx+1:]
+            if self.occupants[p1[0]*5+p1[1]] == 'O' and self.occupants[p2[0]*5+p2[1]] == 'O'
+        ]
+
+        time_per_pair = max_seconds / len(pairs)
+        best_pair = pairs[0]
+        best_win_rate = -1.0
+
+        for p1, p2 in pairs:
+            game_copy = self.game_deep_copy(self, color)
+            x0, y0 = p1
+            x1, y1 = p2
+            game_copy.occupants[x0*5+y0] = color
+            game_copy.occupants[x1*5+y1] = color
+            game_copy.sub_turn = 'switch'
+
+            wins = 0
+            rollouts = 0
+            start = time.perf_counter()
+            while time.perf_counter() - start < time_per_pair:
+                sim = game_copy.game_deep_copy(game_copy, game_copy.color)
+                winner = MCTS.TreeSearch.simulate_random_game(sim)
+                if winner == color:
+                    wins += 1
+                rollouts += 1
+
+            win_rate = wins / rollouts if rollouts > 0 else 0.0
+            if win_rate > best_win_rate:
+                best_win_rate = win_rate
+                best_pair = (p1, p2)
+
+        x0, y0 = best_pair[0]
+        x1, y1 = best_pair[1]
+        self.occupants[x0*5+y0] = color
+        self.occupants[x1*5+y1] = color
+
     def get_height_score(self, color):
         score = 0
         for i, j in SPACE_LIST:
@@ -130,24 +193,29 @@ class Game:
         """
         other_color = self.opponent_color
         score = 0
+
+        # First pass: score occupied squares and collect piece positions
+        player_spaces = []
+        opponent_spaces = []
         for i, j in SPACE_LIST:
             idx = i*5+j
             occ = self.occupants[idx]
             lvl = self.levels[idx]
-            adjacent_spaces = self.get_movable_spaces(game=self, space=(i, j))
-
             if occ == color:
                 if lvl == 3:
                     return 10000
-                else:
-                    score += 4 ** lvl
+                score += 4 ** lvl
+                player_spaces.append((i, j))
             elif occ == other_color:
                 if lvl == 3:
                     return -10000
-                else:
-                    score -= 4 ** lvl
+                score -= 4 ** lvl
+                opponent_spaces.append((i, j))
 
-            for k, l in adjacent_spaces:
+        # Second pass: only check adjacent spaces for occupied squares
+        for i, j in player_spaces + opponent_spaces:
+            occ = self.occupants[i*5+j]
+            for k, l in ADJACENT[(i, j)]:
                 kidx = k*5+l
                 kocc = self.occupants[kidx]
                 klvl = self.levels[kidx]
@@ -359,6 +427,7 @@ class Game:
         self.occupants = best_state.game.occupants[:]
         self.actives = best_state.game.actives[:]
         self.end = best_state.game.end
+        self.prev_game = None  # clear undo snapshot after AI move
 
         if not self.end:
             self.sub_turn = 'switch'
@@ -382,9 +451,16 @@ class Game:
         self.end = best_node.game.end
         self.turn = best_node.game.turn
         self.winner = best_node.game.winner
+        self.prev_game = None  # clear undo snapshot after AI move
 
         if not self.end:
             self.sub_turn = 'switch'
+
+        return {
+            'rollouts': mcts_game_tree.num_rollouts,
+            'win_rate': round(100 * best_node.Q / best_node.N, 1) if best_node.N > 0 else 0.0,
+            'score': round(best_node.mcts_score, 3),
+        }
 
     def get_distance_score(self, color, opponent_color):
         player_spaces = []

@@ -92,13 +92,17 @@ class MiniMaxNode:
                         if build_game.end:
                             new_score = build_game.get_minimax_score(eval_color)
                         else:
-                            new_score = 0
+                            new_score = build_game.get_height_score(move_color) - build_game.get_height_score(build_game.get_opponent_color(move_color))
 
                         return_li.append(MiniMaxNode(
                             game=build_game,
                             score=new_score,
                             parent=node,
                             children=[]))
+
+        # Sort by score — best first for max player, worst first for min player
+        # Good move ordering dramatically increases alpha-beta pruning effectiveness
+        return_li.sort(key=lambda n: n.score, reverse=(move_color == eval_color))
         return return_li
 
     @staticmethod
