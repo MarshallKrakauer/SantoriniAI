@@ -15,6 +15,7 @@ GREEN = (0, 200, 0)
 BLUE = (0, 0, 255)
 RED = (255, 0, 0)
 GRAY = (190, 190, 190)
+GRAY_PIECE = (130, 130, 130)
 GOLD = (100, 84.3, 0)
 LIGHT_GREEN = (30, 250, 150)
 
@@ -89,8 +90,8 @@ def make_undo_button(player):
 def draw_player_info(white_player, gray_player):
     """Draw player type labels above the board."""
     type_display = {'human': 'Human', 'alphabeta': 'Minimax', 'MCTS+RAVE': 'RAVE', 'MCTS': 'MCTS'}
-    white_label = Button((100, 50), 'WHITE: ' + type_display.get(white_player.player_type, ''), 30, BLUE, WHITE, 1)
-    gray_label = Button((700, 50), 'GRAY: ' + type_display.get(gray_player.player_type, ''), 30, BLUE, GRAY, 1)
+    white_label = Button((150, 50), 'WHITE: ' + type_display.get(white_player.player_type, ''), 30, BLUE, WHITE, 1)
+    gray_label = Button((650, 50), 'GRAY: ' + type_display.get(gray_player.player_type, ''), 30, BLUE, GRAY, 1)
     white_label.draw()
     gray_label.draw()
 
@@ -110,7 +111,7 @@ def draw_board(board):
                 pygame.draw.rect(SCREEN, BLACK,
                                  [vertical, horizontal, 50, 50], 0)
             elif board[i][j]['occupant'] == 'G':
-                pygame.draw.circle(SCREEN, GRAY,
+                pygame.draw.circle(SCREEN, GRAY_PIECE,
                                    [vertical + 25, horizontal + 25], 50 / 3)
             elif board[i][j]['occupant'] == 'W':
                 pygame.draw.circle(SCREEN, WHITE,
@@ -263,6 +264,7 @@ def title_screen():
     arrow_dict = {'white human': False, 'white minimax': False, 'white MCTS+RAVE': False, 'white MCTS': False,
                   'gray human': False, 'gray minimax': False, 'gray MCTS+RAVE': False, 'gray MCTS': False}
     end_loop = False
+    quit_game = False
 
     while not end_loop:
         SCREEN.fill(LIGHT_GREEN)
@@ -312,6 +314,7 @@ def title_screen():
             # Allow user to quit the game
             if event.type == pygame.QUIT:
                 end_loop = True
+                quit_game = True
 
         counter += 1
         pygame.display.flip()
@@ -337,7 +340,7 @@ def title_screen():
     elif arrow_dict['gray MCTS']:
         gray_player = 'MCTS'
 
-    return {'W': white_player, 'G': gray_player}
+    return None if quit_game else {'W': white_player, 'G': gray_player}
 
 
 def play_human_turn(event, current_player, game, player_num, players):
@@ -523,6 +526,10 @@ def main():
     """Play game including title screen. Loops back to menu if winner button is clicked."""
     while True:
         player_dict = title_screen()
+        if player_dict is None:
+            pygame.quit()
+            break
+
         this_game = Game()
 
         white_player = SantoriniPlayer(this_game, player_dict['W'], 'W')
@@ -530,6 +537,7 @@ def main():
 
         return_to_menu = play_game(white_player, gray_player)
         if not return_to_menu:
+            pygame.quit()
             break
 
 
