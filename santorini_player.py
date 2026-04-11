@@ -35,7 +35,9 @@ class SantoriniPlayer:
     def place_piece(self, x_val=-1, y_val=-1):
         """Manual or automatic placement of piece on board."""
         if self.player_type == 'human':
-            if self.game.place_worker(self.color, x_val, y_val):
+            prev_occupants = self.game.occupants[:]
+            self.game.play_manual_turn(x_val, y_val)
+            if self.game.occupants != prev_occupants:
                 self.placements += 1
         else:
             self.game.randomize_placement(self.color)
@@ -66,6 +68,8 @@ class SantoriniPlayer:
                 self.game.make_all_spaces_inactive()
         else:
             self.game.sub_turn = 'place'
+            if self.player_type == 'human':
+                self.game.highlight_placement_spaces()
 
     def should_switch_turns(self):
         """Check if player is done with their turn."""
@@ -73,4 +77,4 @@ class SantoriniPlayer:
 
     def can_player_undo(self):
         """Check if player can undo selection."""
-        return self.player_type == 'human' and self.game.sub_turn == 'move'
+        return self.player_type == 'human' and self.game.sub_turn in ('move', 'build') and self.game.prev_game is not None

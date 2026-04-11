@@ -48,6 +48,7 @@ class Game:
         self.row = 0
         self.col = 0
         self.winner = None
+        self.prev_game = None  # snapshot for undo
         self.end = False
         self.turn = 0
         self.sub_turn = 'place'
@@ -161,9 +162,24 @@ class Game:
         return score
 
     def undo(self):
-        """Undo select action."""
-        self.sub_turn = 'select'
-        self.make_color_active()
+        """Restore game to snapshot taken before last move or build."""
+        if self.prev_game is not None:
+            self.levels = self.prev_game.levels[:]
+            self.occupants = self.prev_game.occupants[:]
+            self.turn = self.prev_game.turn
+            self.end = self.prev_game.end
+            self.winner = self.prev_game.winner
+            self.col = self.prev_game.col
+            self.row = self.prev_game.row
+            self.prev_game = None
+            # Always return to select phase and re-highlight active workers
+            self.sub_turn = 'select'
+            self.make_color_active()
+
+    def highlight_placement_spaces(self):
+        """Highlight all empty spaces during piece placement."""
+        for i, j in SPACE_LIST:
+            self.actives[i*5+j] = (self.occupants[i*5+j] == 'O')
 
     def make_all_spaces_inactive(self):
         """Get rid of red boxes for all spaces."""
@@ -273,6 +289,8 @@ class Game:
 
     def move_worker(self, x_val, y_val, auto=False):
         """Move piece to new spot on board."""
+        if not auto:
+            self.prev_game = self.game_deep_copy(self, self.color)
         prev_col = self.col
         prev_row = self.row
         if not auto and (abs(y_val - prev_row) > 1 or
@@ -295,6 +313,8 @@ class Game:
 
     def build_level(self, x_val, y_val, auto=False):
         """Build on a space."""
+        if not auto:
+            self.prev_game = self.game_deep_copy(self, self.color)
         idx = x_val*5+y_val
         if not auto and (abs(y_val - self.row) > 1 or
                          abs(x_val - self.col) > 1) or \
@@ -311,7 +331,10 @@ class Game:
 
     def play_manual_turn(self, x_val, y_val):
         """Run through a human turn."""
-        if self.sub_turn == 'select':
+        if self.sub_turn == 'place':
+            if self.place_worker(self.color, x_val, y_val):
+                self.highlight_placement_spaces()
+        elif self.sub_turn == 'select':
             self.make_color_active()
             self.select_worker(self.color, x_val, y_val)
         elif self.sub_turn == 'move':
