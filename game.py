@@ -54,6 +54,8 @@ class Game:
         self.turn = 0
         self.sub_turn = 'place'
         self.color = 'W'
+        self.last_moved_to = None
+        self.last_built_at = None
 
     def __str__(self):
         """
@@ -375,6 +377,7 @@ class Game:
                 self.end_game()
             self.col = x_val
             self.row = y_val
+            self.last_moved_to = (x_val, y_val)
             self.sub_turn = 'build'
             self.highlight_movable_spaces()
             return True
@@ -393,6 +396,7 @@ class Game:
             self.levels[idx] += 1
             if self.levels[idx] == 4:
                 self.occupants[idx] = 'X'
+            self.last_built_at = (x_val, y_val)
             self.sub_turn = 'switch'
             self.turn += 1
             return True
@@ -416,6 +420,9 @@ class Game:
         if self.end:
             return
 
+        old_occupants = self.occupants[:]
+        old_levels = self.levels[:]
+
         game_copy = self.game_deep_copy(self, self.color)
         root_node = minimax_node.MiniMaxNode(game=game_copy, children=[])
         best_state = root_node.alpha_beta_move_selection(root_node=root_node, depth=tree_depth,
@@ -429,6 +436,13 @@ class Game:
         self.end = best_state.game.end
         self.prev_game = None  # clear undo snapshot after AI move
 
+        for idx in range(25):
+            i, j = idx // 5, idx % 5
+            if self.occupants[idx] == move_color and old_occupants[idx] != move_color:
+                self.last_moved_to = (i, j)
+            if self.levels[idx] > old_levels[idx]:
+                self.last_built_at = (i, j)
+
         if not self.end:
             self.sub_turn = 'switch'
 
@@ -437,6 +451,9 @@ class Game:
         self.check_move_available()
         if self.end:
             return
+
+        old_occupants = self.occupants[:]
+        old_levels = self.levels[:]
 
         game_copy = self.game_deep_copy(self, move_color)
         if not rave:
@@ -452,6 +469,13 @@ class Game:
         self.turn = best_node.game.turn
         self.winner = best_node.game.winner
         self.prev_game = None  # clear undo snapshot after AI move
+
+        for idx in range(25):
+            i, j = idx // 5, idx % 5
+            if self.occupants[idx] == move_color and old_occupants[idx] != move_color:
+                self.last_moved_to = (i, j)
+            if self.levels[idx] > old_levels[idx]:
+                self.last_built_at = (i, j)
 
         if not self.end:
             self.sub_turn = 'switch'
@@ -521,6 +545,9 @@ class Game:
         new_game.color = color
         new_game.turn = game.turn
         new_game.sub_turn = game.sub_turn
+        new_game.prev_game = None
+        new_game.last_moved_to = None
+        new_game.last_built_at = None
         return new_game
 
     @staticmethod

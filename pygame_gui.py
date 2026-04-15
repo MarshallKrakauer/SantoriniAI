@@ -18,6 +18,8 @@ GRAY = (190, 190, 190)
 GRAY_PIECE = (130, 130, 130)
 GOLD = (100, 84.3, 0)
 LIGHT_GREEN = (30, 250, 150)
+PURPLE = (160, 0, 210)
+PURPLE_LIGHT = (200, 100, 255)
 
 # Horizontal and vertical start of board
 BOARD_TOP_EDGE = 100  # SIZE = (800, 600) #(width <-->, height)
@@ -32,6 +34,8 @@ SCREEN = pygame.display.set_mode(SIZE)
 pygame.display.set_caption("Santorini")
 font = pygame.font.SysFont('Calibri', 16, True, False)
 stats_font = pygame.font.SysFont('Calibri', 15, False, False)
+highlight_font = pygame.font.SysFont('Calibri', 22, True, False)
+highlight_font.underline = True
 
 
 def map_numbers(x_val, y_val):
@@ -126,7 +130,7 @@ def draw_player_info(white_player, gray_player):
     draw_ai_stats(gray_player, 650, 80)
 
 
-def draw_board(board):
+def draw_board(board, last_moved_to=None, last_built_at=None):
     """Draw the 5x5 game board with player pieces."""
     for i in range(5):
         for j in range(5):
@@ -134,11 +138,11 @@ def draw_board(board):
             horizontal = BOARD_TOP_EDGE + 50 * j
             pygame.draw.rect(SCREEN, WHITE,
                              [vertical, horizontal, 50, 50], 2)
-            # Draw piece or dome
 
             # Draw occupant
             if board[i][j]['occupant'] == 'X':
-                pygame.draw.rect(SCREEN, BLACK,
+                dome_color = PURPLE if (i, j) == last_built_at else BLACK
+                pygame.draw.rect(SCREEN, dome_color,
                                  [vertical, horizontal, 50, 50], 0)
             elif board[i][j]['occupant'] == 'G':
                 pygame.draw.circle(SCREEN, GRAY_PIECE,
@@ -146,6 +150,12 @@ def draw_board(board):
             elif board[i][j]['occupant'] == 'W':
                 pygame.draw.circle(SCREEN, WHITE,
                                    [vertical + 25, horizontal + 25], 50 / 3)
+
+            # Purple border on moved worker
+            if (i, j) == last_moved_to and board[i][j]['occupant'] in ('W', 'G'):
+                pygame.draw.circle(SCREEN, PURPLE_LIGHT,
+                                   [vertical + 25, horizontal + 25], 50 / 3, 5)
+
             # Draw Active space
             if board[i][j]['active']:
                 pygame.draw.rect(SCREEN, RED,
@@ -157,9 +167,14 @@ def draw_board(board):
                 pygame.draw.rect(SCREEN, GOLD,
                                  [vertical, horizontal, 50, 50], 5)
 
-            # Draw height
-            text = font.render(str(board[i][j]['level']), True, BLACK)
-            SCREEN.blit(text, (vertical + 20, horizontal + 20))
+            # Draw height — bigger underlined purple text on the last built square
+            if (i, j) == last_built_at:
+                text = highlight_font.render(str(board[i][j]['level']), True, PURPLE)
+                text_rect = text.get_rect(center=(vertical + 25, horizontal + 25))
+                SCREEN.blit(text, text_rect)
+            else:
+                text = font.render(str(board[i][j]['level']), True, BLACK)
+                SCREEN.blit(text, (vertical + 20, horizontal + 20))
 
 
 def choose_arrow_location(x_val, y_val):
@@ -543,7 +558,7 @@ def play_game(white_player, gray_player):
         draw_player_info(white_player, gray_player)
 
         # Update the screen
-        draw_board(game.board)
+        draw_board(game.board, game.last_moved_to, game.last_built_at)
         pygame.display.flip()
 
         # Run at 30 frames per second
